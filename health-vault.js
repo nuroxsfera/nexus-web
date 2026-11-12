@@ -39,7 +39,7 @@
   }
   async function persist(db){
     if(!key||!record)return;
-    writeQueue=writeQueue.then(async function(){
+    writeQueue=writeQueue.catch(function(){return undefined}).then(async function(){
       const iv=window.crypto.getRandomValues(new Uint8Array(12));
       const plaintext=new TextEncoder().encode(getPayload(db));
       const ciphertext=await window.crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,plaintext);
