@@ -72,7 +72,7 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function fmt(n){return n>=1000?(n/1000).toFixed(1).replace('.0','')+' тыс.':String(n)}
 function finishOnboarding(){DB.onboarded=true;save();document.getElementById('onboarding').classList.remove('on');toast('Добро пожаловать 🌊')}
 function renderStories(){
-  document.getElementById('stories').innerHTML=DB.stories.map(story=>{
+  document.getElementById('stories').innerHTML=DB.stories.filter(story=>!story.profile||!DB.blocked?.[story.profile]).map(story=>{
     if(story.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
     const seen=DB.seenStories[story.id];
     const avatar=story.avatar?`<img src="${esc(story.avatar)}" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" onerror="this.style.display='none'">`:`<div class="w-full h-full rounded-full bg-[#222] border-[2.5px] border-black"></div>`;
@@ -106,8 +106,9 @@ function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.stor
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
 function renderFeed(){
   const feed=document.getElementById('feed');
-  if(!DB.posts.length){feed.innerHTML='<div class="empty">Лента пуста. Создайте первый пост.</div>';return}
-  feed.innerHTML=DB.posts.map(p=>{
+  const visiblePosts=DB.posts.filter(p=>!p.authorKey||!DB.blocked?.[p.authorKey]);
+  if(!visiblePosts.length){feed.innerHTML='<div class="empty">Лента пуста. Создайте первый пост.</div>';return}
+  feed.innerHTML=visiblePosts.map(p=>{
     const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
     const gallery=images.length?images.map(src=>{
       const source=src.startsWith('idb:')?(`data-media-ref="${src}"`):(`src="${esc(src)}"`);
@@ -171,7 +172,7 @@ function renderSaved(){
   hydrateMediaImages(box);
 }
 function openProfile(key){
-  const pr=DB.profiles[key];if(!pr)return;
+  const pr=DB.profiles[key];if(!pr)return;if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
   document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero}')`;
   document.getElementById('prof-name').textContent=pr.name;
   document.getElementById('prof-handle').textContent=pr.handle;
@@ -351,7 +352,7 @@ function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value
 function renderExplore(){
   const q=(document.getElementById('eq')?.value||'').toLowerCase();
   const tab=DB.etab;let h='';
-  const people=Object.entries(DB.profiles).filter(([k,p])=>!q||p.name.toLowerCase().includes(q)||p.handle.toLowerCase().includes(q));
+  const people=Object.entries(DB.profiles).filter(([k,p])=>!DB.blocked?.[k]&&(!q||p.name.toLowerCase().includes(q)||p.handle.toLowerCase().includes(q)));
   const channels=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
   const shops=DB.shops.filter(shop=>!q||shop.name.toLowerCase().includes(q));
   if(tab==='all'||tab==='people'){
@@ -389,10 +390,36 @@ function renderSettings(){
   document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
   checkBackendStatus();
 }
+function openPrivacySheet(){
+  document.getElementById('privacy-profile-visibility').value=DB.me.visibility||'public';
+  document.getElementById('bd').classList.add('open');document.getElementById('privacy-sheet').classList.add('open');setNav(false);
+}
+function savePrivacySettings(){
+  DB.me.visibility=document.getElementById('privacy-profile-visibility').value;
+  save();closeSheet();toast('Настройка сохранена на устройстве');
+}
+function openBlockSheet(){
+  renderBlockList();document.getElementById('bd').classList.add('open');document.getElementById('blocks-sheet').classList.add('open');setNav(false);
+}
+function renderBlockList(){
+  const box=document.getElementById('block-list');
+  const entries=Object.entries(DB.profiles);
+  box.innerHTML=entries.map(([key,profile])=>{
+    const blocked=!!DB.blocked?.[key];
+    return `<div class="flex items-center gap-3 py-3 border-b border-white/[0.06]"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-10 h-10 rounded-full"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(profile.name)}</p><p class="text-[11px] text-white/40">${esc(profile.handle)}</p></div><button data-profile-key="${esc(key)}" onclick="toggleBlock(this.dataset.profileKey)" class="px-3 py-2 rounded-full text-[11px] font-semibold ${blocked?'glass text-white':'bg-white text-black'}">${blocked?'Разблокировать':'Заблокировать'}</button></div>`;
+  }).join('')||'<div class="empty">Список пуст</div>';
+}
+function toggleBlock(key){
+  DB.blocked=DB.blocked||{};
+  if(DB.blocked[key])delete DB.blocked[key];else DB.blocked[key]=true;
+  save();renderBlockList();renderFeed();renderStories();renderExplore();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
+}
 function settingAction(i){
   if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
   if(i==='Очистить кэш'){toast('Кэш очищен');return}
   if(i==='Профиль'){go('me');return}
+  if(i==='Конфиденциальность'){openPrivacySheet();return}
+  if(i==='Блокировки'){openBlockSheet();return}
   toast(i+' пока не подключено к серверной части');
 }
 function openCreate(){
@@ -469,7 +496,7 @@ function publishPost(){
   if(channelId)go('channel',{id:channelId});else go('home');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
