@@ -10,6 +10,7 @@ const health = fs.readFileSync('api/health.js', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 const gitignore = fs.readFileSync('.gitignore', 'utf8');
+const migration = fs.readFileSync('supabase/migrations/202611120001_initial_schema.sql', 'utf8');
 const vault = fs.readFileSync('health-vault.js', 'utf8');
 const auth = fs.readFileSync('auth.js', 'utf8');
 
@@ -38,8 +39,8 @@ assert.ok(vault.includes('async function lock(db)'));
 assert.ok(vault.includes('async function exportEncrypted()'));
 assert.ok(vault.includes('async function importEncrypted(bundle)'));
 assert.ok(auth.includes('/auth/v1/signup'));
-assert.ok(sql.includes("new.raw_user_meta_data->>'username'"));
-assert.ok(sql.includes('fallback_username'));
+assert.ok(migration.includes("new.raw_user_meta_data->>'username'"));
+assert.ok(migration.includes('fallback_username'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
 assert.ok(auth.includes('hasSession:function()'));
