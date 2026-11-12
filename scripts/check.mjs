@@ -7,6 +7,7 @@ const data = fs.readFileSync('app-data.js', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
 const config = fs.readFileSync('api/config.js', 'utf8');
 const health = fs.readFileSync('api/health.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const vault = fs.readFileSync('health-vault.js', 'utf8');
 
 for (const id of ['feed','stories','compose-text','compose-file-input','story-file-input','story-viewer','bnav','channel-create-sheet','shop-create-sheet','product-create-sheet','new-channel-name','channel-cover-preview','channel-cover-input','new-shop-name','new-product-name','product-create-title','product-save-btn','product-file-input','ch-new-post','ch-edit','sh-add-product','sh-edit-shop','channel-create-title','channel-save-btn','shop-create-title','shop-save-btn','privacy-sheet','blocks-sheet','privacy-profile-visibility','block-list','clip-create-sheet','clip-caption','me-avatar','me-hero','edit-avatar-preview','edit-cover-preview','edit-avatar-file','edit-cover-file','clip-file-input','clip-preview']) {
@@ -27,6 +28,9 @@ assert.ok(health.includes('backendConfigured'));
 assert.ok(vault.includes("iterations:310000"));
 assert.ok(vault.includes("name:'AES-GCM'"));
 assert.ok(vault.includes('async function lock(db)'));
+assert.ok(app.includes("load('/health-vault.js')"));
+assert.ok(data.includes('HEALTH_VAULT.persist(DB)'));
+assert.ok(data.includes('snapshot.healthVaultUnlocked=false'));
 assert.ok(logic.includes('Личный сейф здоровья'));
 assert.ok(logic.includes('lockHealthVault'));
 assert.ok(logic.includes('backend-status'));
