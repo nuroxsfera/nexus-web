@@ -293,7 +293,8 @@ function createShop(){
 function openProductCreate(){
   if(!DB.activeShop)return;
   const sh=DB.shops.find(s=>s.id===DB.activeShop);if(sh?.ownerKey!=='me'){toast('Добавлять товары может владелец');return}
-  DB.pendingProductImage=null;
+  DB.pendingProductImage=null;DB.editingProductId=null;
+  document.getElementById('product-create-title').textContent='Новый товар';document.getElementById('product-save-btn').textContent='Добавить товар';
   ['new-product-name','new-product-price','new-product-desc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('product-image-preview').hidden=true;
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
@@ -307,6 +308,18 @@ async function handleProductFile(input){
     const preview=document.getElementById('product-image-preview');preview.hidden=false;setMediaSource(preview,DB.pendingProductImage);
   }catch(e){toast(e.message||'Не удалось сохранить изображение')}
 }
+function openProductEdit(){
+  const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
+  DB.editingProductId=active.item.id;DB.pendingProductImage=active.item.image||null;
+  document.getElementById('new-product-name').value=active.item.name;document.getElementById('new-product-price').value=String(active.item.price);document.getElementById('new-product-desc').value=active.item.desc||'';
+  const preview=document.getElementById('product-image-preview');preview.hidden=!active.item.image;if(active.item.image)setMediaSource(preview,active.item.image);
+  document.getElementById('product-create-title').textContent='Редактировать товар';document.getElementById('product-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
+}
+function deleteProduct(){
+  const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
+  sh.items=sh.items.filter(item=>item.id!==active.item.id);sh.products=sh.items.length;DB.activeProduct=null;save();closeSheet();openShop(sh.id);toast('Товар удалён');
+}
 function createProduct(){
   const sh=DB.shops.find(s=>s.id===DB.activeShop);
   if(!sh||sh.ownerKey!=='me'){toast('Магазин недоступен');return}
@@ -314,8 +327,11 @@ function createProduct(){
   const price=Number(document.getElementById('new-product-price').value.replace(',','.'));
   const desc=document.getElementById('new-product-desc').value.trim();
   if(name.length<2||!Number.isFinite(price)||price<=0){toast('Проверьте название и цену');return}
-  sh.items.unshift({id:'item'+Date.now(),name,price,desc,image:DB.pendingProductImage||'https://picsum.photos/seed/new-product/600/600'});
-  sh.products=sh.items.length;DB.pendingProductImage=null;save();closeSheet();openShop(sh.id);toast('Товар добавлен · локально');
+  if(DB.editingProductId){
+    const item=sh.items.find(product=>product.id===DB.editingProductId);if(!item){toast('Товар не найден');return}
+    item.name=name;item.price=price;item.desc=desc;item.image=DB.pendingProductImage||item.image;
+  }else{sh.items.unshift({id:'item'+Date.now(),name,price,desc,image:DB.pendingProductImage||'https://picsum.photos/seed/new-product/600/600'})}
+  sh.products=sh.items.length;DB.pendingProductImage=null;DB.editingProductId=null;save();closeSheet();openShop(sh.id);toast('Изменения сохранены локально');
 }
 function openProduct(sid,iid){
   const sh=DB.shops.find(s=>s.id===sid);const item=sh?.items.find(i=>i.id===iid);if(!item)return;
@@ -323,7 +339,7 @@ function openProduct(sid,iid){
   const source=item.image&&item.image.startsWith('idb:')?`<img data-media-ref="${esc(item.image)}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`:`<img src="${esc(item.image||'')}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`;
   document.getElementById('pdetail').innerHTML=`${source}<h3 class="text-[20px] font-bold">${esc(item.name)}</h3><p class="text-[18px] font-bold mt-1 gt">${Number(item.price).toLocaleString('ru-RU')} ₽</p><p class="text-[13px] text-white/55 mt-2">${esc(item.desc)}</p>`;
   hydrateMediaImages(document.getElementById('pdetail'));
-  document.getElementById('pfoot').innerHTML=`<button onclick="addToCart()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">В корзину</button>`;
+  document.getElementById('pfoot').innerHTML=sh.ownerKey==='me'?'<div class="flex gap-2"><button onclick="openProductEdit()" class="flex-1 h-11 rounded-full bg-white text-black font-semibold text-[13px] press">Изменить</button><button onclick="deleteProduct()" class="px-4 h-11 rounded-full bg-red-500/15 text-red-300 font-semibold text-[13px] press">Удалить</button></div>':`<button onclick="addToCart()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">В корзину</button>`;
   document.getElementById('bd').classList.add('open');document.getElementById('product-sheet').classList.add('open');setNav(false);
 }
 function addToCart(){if(!DB.activeProduct)return;const {item}=DB.activeProduct;const ex=DB.cart.find(c=>c.id===item.id);if(ex)ex.qty++;else DB.cart.push({...item,qty:1});save();updateCartBadge();toast('В корзине');closeSheet()}
