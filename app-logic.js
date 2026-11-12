@@ -1,3 +1,47 @@
+
+const MEDIA_DB_NAME='nexus-local-media';
+let mediaDbPromise;
+const mediaUrlCache=new Map();
+function openMediaDB(){
+  if(mediaDbPromise)return mediaDbPromise;
+  mediaDbPromise=new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){reject(new Error('Хранилище фото недоступно в этом браузере'));return}
+    const req=indexedDB.open(MEDIA_DB_NAME,1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'})};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('Не удалось открыть хранилище фото'));
+  });
+  return mediaDbPromise;
+}
+async function saveMediaFile(file){
+  const db=await openMediaDB();
+  const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('files','readwrite');
+    tx.objectStore('files').put({id,blob:file,type:file.type||'image/*'});
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Не удалось сохранить фото'));
+  });
+  return 'idb:'+id;
+}
+async function resolveMediaURL(ref){
+  if(!ref||!ref.startsWith('idb:'))return ref;
+  if(mediaUrlCache.has(ref))return mediaUrlCache.get(ref);
+  const db=await openMediaDB(),id=ref.slice(4);
+  const record=await new Promise((resolve,reject)=>{
+    const req=db.transaction('files','readonly').objectStore('files').get(id);
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  if(!record?.blob)throw new Error('Фотография не найдена на устройстве');
+  const url=URL.createObjectURL(record.blob);mediaUrlCache.set(ref,url);return url;
+}
+async function hydrateMediaImages(root=document){
+  const nodes=[...root.querySelectorAll('img[data-media-ref]')];
+  await Promise.all(nodes.map(async img=>{
+    try{img.src=await resolveMediaURL(img.dataset.mediaRef)}
+    catch(e){img.alt='Фото недоступно';img.classList.add('opacity-40')}
+  }));
+}
+
 const VIEWS=['home','profile','me','saved','notifications','messages','chat','explore','settings','channel','shop','compose'];
 function go(r,p){
   closeSheet();closeStory();
@@ -43,7 +87,9 @@ function showStoryFrame(){
   clearTimeout(DB.storyTimer);
   document.getElementById('sv-av').src=s.avatar||'';
   document.getElementById('sv-name').textContent=s.name;
-  document.getElementById('sv-img').src=s.images[DB.storyIdx];
+  const storyImg=document.getElementById('sv-img'),storyIndex=DB.storyIdx,storyRef=s.images[storyIndex];
+  storyImg.removeAttribute('src');
+  resolveMediaURL(storyRef).then(url=>{if(DB.storyUser===s&&DB.storyIdx===storyIndex)storyImg.src=url}).catch(()=>{storyImg.alt='Фото недоступно'});
   document.getElementById('sv-bars').innerHTML=s.images.map((_,i)=>`<div class="sv-bar"><div class="sv-fill" id="sf${i}" style="width:${i<DB.storyIdx?'100%':'0%'}"></div></div>`).join('');
   requestAnimationFrame(()=>{const f=document.getElementById('sf'+DB.storyIdx);if(f){f.style.transition='width 4s linear';f.style.width='100%'}});
   DB.storyTimer=setTimeout(nextStory,4000);
@@ -56,36 +102,46 @@ function nextStory(){
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
 function renderFeed(){
-  if(!DB.posts.length){document.getElementById('feed').innerHTML='<div class="empty">Лента пуста. Создайте первый пост.</div>';return}
-  document.getElementById('feed').innerHTML=DB.posts.map(p=>`
-  <article class="post-card relative" data-id="${p.id}">
-    <div class="p-1.5"><div class="relative rounded-[22px] overflow-hidden bg-[#e4e4e8]" ondblclick="doubleLike('${p.id}',this)">
-      <img src="${p.image}" class="w-full h-[250px] object-cover" loading="lazy" onerror="this.src='https://picsum.photos/seed/fallback/900/700'">
-      <div class="heart-burst"><svg width="72" height="72" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-      <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
-      <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${p.author}')`}">
-        <img src="${p.avatar}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
-        <span class="text-[12px] font-semibold text-white drop-shadow">${p.author}</span>
-      </button>
-      <div class="absolute bottom-2.5 left-2.5 flex gap-1.5">
-        <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="toggleLike('${p.id}')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="${p.liked?'#ef4444':'none'}" stroke="${p.liked?'#ef4444':'#fff'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span class="text-[11px] font-semibold text-white">${fmt(p.likes)}</span>
+  const feed=document.getElementById('feed');
+  if(!DB.posts.length){feed.innerHTML='<div class="empty">Лента пуста. Создайте первый пост.</div>';return}
+  feed.innerHTML=DB.posts.map(p=>{
+    const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
+    const gallery=images.length?images.map(src=>{
+      const source=src.startsWith('idb:')?(`data-media-ref="${src}"`):(`src="${src}"`);
+      return `<img ${source} class="w-full min-w-full h-[250px] object-cover snap-center" loading="lazy" alt="Фото публикации">`;
+    }).join(''):'<div class="w-full h-[250px] flex items-center justify-center bg-[#dedee3] text-black/35 text-sm">Публикация без фото</div>';
+    return `
+    <article class="post-card relative" data-id="${p.id}">
+      <div class="p-1.5"><div class="relative rounded-[22px] overflow-hidden bg-[#e4e4e8]" ondblclick="doubleLike('${p.id}',this)">
+        <div class="flex w-full overflow-x-auto ns snap-x snap-mandatory">${gallery}</div>
+        ${images.length>1?`<span class="absolute top-2.5 right-2.5 glass rounded-full px-2 py-1 text-[10px] font-semibold text-white">${images.length} фото · листайте</span>`:''}
+        <div class="heart-burst"><svg width="72" height="72" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
+        <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${p.author}')`}">
+          <img src="${p.avatar}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
+          <span class="text-[12px] font-semibold text-white drop-shadow">${p.author}</span>
         </button>
-        <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="openComments('${p.id}')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span class="text-[11px] font-semibold text-white">${p.comments}</span>
+        <div class="absolute bottom-2.5 left-2.5 flex gap-1.5">
+          <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="toggleLike('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="${p.liked?'#ef4444':'none'}" stroke="${p.liked?'#ef4444':'#fff'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="text-[11px] font-semibold text-white">${fmt(p.likes)}</span>
+          </button>
+          <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="openComments('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="text-[11px] font-semibold text-white">${p.comments}</span>
+          </button>
+        </div>
+        <button class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full glass flex items-center justify-center press" onclick="toggleSave('${p.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${p.saved?'#fff':'none'}" stroke="#fff" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </button>
+      </div></div>
+      <div class="px-3.5 pt-1 pb-3.5">
+        <p class="text-[12.5px] font-semibold text-black">${p.author}</p>
+        <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${p.text}</p>
       </div>
-      <button class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full glass flex items-center justify-center press" onclick="toggleSave('${p.id}')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="${p.saved?'#fff':'none'}" stroke="#fff" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      </button>
-    </div></div>
-    <div class="px-3.5 pt-1 pb-3.5">
-      <p class="text-[12.5px] font-semibold text-black">${p.author}</p>
-      <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${p.text}</p>
-    </div>
-  </article>`).join('');
+    </article>`;
+  }).join('');
+  hydrateMediaImages(feed);
 }
 function doubleLike(id,el){
   const p=DB.posts.find(x=>x.id===id);if(!p)return;
@@ -101,10 +157,15 @@ function openComments(id){DB.activePost=id;const p=DB.posts.find(x=>x.id===id);d
 function addCm(){const inp=document.getElementById('cminput');const t=inp.value.trim();if(!t||!DB.activePost)return;const p=DB.posts.find(x=>x.id===DB.activePost);p.commentList.push({user:'Вы',text:t});p.comments++;inp.value='';save();openComments(p.id);renderFeed()}
 function renderSaved(){
   const list=DB.posts.filter(p=>p.saved);
-  document.getElementById('saved-list').innerHTML=list.length?list.map(p=>`
-    <article class="post-card"><div class="p-1.5"><img src="${p.image}" class="w-full h-[200px] object-cover rounded-[20px]"></div>
-    <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-black">${p.author}</p><p class="text-[13px] text-black/70">${p.text}</p>
-    <button class="mt-2 text-[12px] text-black/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
+  const box=document.getElementById('saved-list');
+  box.innerHTML=list.length?list.map(p=>{
+    const src=(Array.isArray(p.images)&&p.images[0])||p.image||'';
+    const image=src?(src.startsWith('idb:')?`<img data-media-ref="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`:`<img src="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`):'';
+    return `<article class="post-card"><div class="p-1.5">${image}</div>
+      <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-black">${p.author}</p><p class="text-[13px] text-black/70">${p.text}</p>
+      <button class="mt-2 text-[12px] text-black/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`;
+  }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
+  hydrateMediaImages(box);
 }
 function openProfile(key){
   const pr=DB.profiles[key];if(!pr)return;
@@ -244,31 +305,51 @@ function openCreate(){
 }
 function addMyStory(){
   closeSheet();
-  const img='https://picsum.photos/seed/mystory'+Date.now()+'/900/1600';
-  let mine=DB.stories.find(s=>s.id==='me');
-  if(!mine){mine={id:'me',name:'Вы',avatar:'https://i.pravatar.cc/140?u=me',images:[]};DB.stories.splice(1,0,mine)}
-  mine.images.push(img);
-  delete DB.seenStories.me;
-  save();renderStories();toast('История добавлена');
-  openStory('me');
+  const picker=document.getElementById('story-file-input');
+  if(picker)picker.click();
+}
+async function handleStoryFiles(input){
+  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/')).slice(0,10);
+  input.value='';
+  if(!files.length)return;
+  try{
+    const refs=[];
+    for(const file of files)refs.push(await saveMediaFile(file));
+    let mine=DB.stories.find(s=>s.id==='me');
+    if(!mine){mine={id:'me',name:'Вы',avatar:'https://i.pravatar.cc/140?u=me',images:[]};DB.stories.splice(1,0,mine)}
+    mine.images.push(...refs);delete DB.seenStories.me;save();renderStories();toast('История добавлена');openStory('me');
+  }catch(e){console.error(e);toast(e.message||'Не удалось сохранить фото')}
 }
 function renderComposeImgs(){
-  document.getElementById('compose-imgs').innerHTML=DB.composeImgs.map((src,i)=>`<div class="relative w-20 h-20 rounded-xl overflow-hidden"><img src="${src}" class="w-full h-full object-cover"><button onclick="DB.composeImgs.splice(${i},1);renderComposeImgs()" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[10px] flex items-center justify-center">✕</button></div>`).join('');
+  const box=document.getElementById('compose-imgs');
+  box.innerHTML=DB.composeImgs.map((src,i)=>`<div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0"><img ${src.startsWith('idb:')?`data-media-ref="${src}"`:`src="${src}"`} class="w-full h-full object-cover" alt="Выбранное фото"><button onclick="DB.composeImgs.splice(${i},1);renderComposeImgs()" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-[10px] flex items-center justify-center">✕</button></div>`).join('');
+  hydrateMediaImages(box);
 }
 function addComposeImg(){
-  if(DB.composeImgs.length>=4){toast('Макс. 4 фото');return}
-  DB.composeImgs.push('https://picsum.photos/seed/post'+Date.now()+Math.random()+'/900/700');
-  renderComposeImgs();
+  if(DB.composeImgs.length>=4){toast('Максимум 4 фото');return}
+  document.getElementById('compose-file-input').click();
+}
+async function handleComposeFiles(input){
+  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/'));
+  input.value='';
+  const room=4-DB.composeImgs.length;
+  if(!room){toast('Максимум 4 фото');return}
+  if(files.length>room)toast('Можно добавить не более 4 фото');
+  try{
+    for(const file of files.slice(0,room))DB.composeImgs.push(await saveMediaFile(file));
+    renderComposeImgs();
+  }catch(e){console.error(e);toast(e.message||'Не удалось сохранить фото')}
 }
 function publishPost(){
   const text=document.getElementById('compose-text').value.trim();
-  if(!text&&!DB.composeImgs.length){toast('Напишите что-нибудь');return}
-  const img=DB.composeImgs[0]||'https://picsum.photos/seed/newpost'+Date.now()+'/900/700';
+  if(!text&&!DB.composeImgs.length){toast('Добавьте текст или фото');return}
+  const images=[...DB.composeImgs];
   DB.posts.unshift({
     id:'p'+Date.now(),author:DB.me.name,authorKey:null,avatar:'https://i.pravatar.cc/64?u=me',
-    image:img,likes:0,comments:0,liked:false,saved:false,text:text||'Новый пост',commentList:[]
+    image:images[0]||null,images,likes:0,comments:0,liked:false,saved:false,text:text||'',
+    commentList:[]
   });
-  save();toast('Опубликовано');go('home');
+  DB.composeImgs=[];save();toast('Опубликовано');go('home');
 }
 function closeSheet(){
   ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
