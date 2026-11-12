@@ -506,6 +506,79 @@ create policy notifications_update_owner on public.notifications for update to a
 create policy reports_insert_reporter on public.reports for insert to authenticated with check (reporter_id=(select auth.uid()));
 create policy reports_read_reporter on public.reports for select to authenticated using (reporter_id=(select auth.uid()));
 
+create or replace function private.can_read_media_object(target_bucket text,target_name text)
+returns boolean language sql stable security definer set search_path=''
+as $
+  select case
+    when target_bucket='nexus-avatars'
+      and split_part(target_name,'/',1) ~* '^[0-9a-f-]{36} Cross-user delivery will use
+-- short-lived signed URLs only after server-side authorization checks.
+insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
+values
+  ('nexus-avatars','nexus-avatars',false,20971520,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif']),
+  ('nexus-media','nexus-media',false,52428800,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','video/mp4','video/quicktime'])
+on conflict (id) do nothing;
+
+drop policy if exists nexus_media_upload_own on storage.objects;
+create policy nexus_media_upload_own on storage.objects for insert to authenticated
+with check (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+drop policy if exists nexus_media_read_own on storage.objects;
+drop policy if exists nexus_media_read_authorized on storage.objects;
+create policy nexus_media_read_authorized on storage.objects for select to authenticated
+using (bucket_id in ('nexus-avatars','nexus-media') and private.can_read_media_object(bucket_id,name));
+drop policy if exists nexus_media_update_own on storage.objects;
+create policy nexus_media_update_own on storage.objects for update to authenticated
+using (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text)
+with check (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+drop policy if exists nexus_media_delete_own on storage.objects;
+create policy nexus_media_delete_own on storage.objects for delete to authenticated
+using (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+
+revoke all on function private.is_blocked_between(uuid,uuid) from public,anon;
+revoke all on function private.is_following(uuid) from public,anon;
+revoke all on function private.can_view_profile(uuid) from public,anon;
+revoke all on function private.can_view_post(uuid,public.content_visibility) from public,anon;
+revoke all on function private.can_view_post_record(uuid) from public,anon;
+revoke all on function private.can_read_media_object(text,text) from public,anon;
+revoke all on function private.is_org_member(uuid) from public,anon;
+revoke all on function private.is_org_admin(uuid) from public,anon;
+revoke all on function private.is_channel_member(uuid) from public,anon;
+revoke all on function private.is_channel_admin(uuid) from public,anon;
+revoke all on function private.is_conversation_member(uuid) from public,anon;
+revoke all on function private.can_view_shop(uuid) from public,anon;
+grant execute on function private.is_blocked_between(uuid,uuid) to authenticated;
+grant execute on function private.is_following(uuid) to authenticated;
+grant execute on function private.can_view_profile(uuid) to authenticated;
+grant execute on function private.can_view_post(uuid,public.content_visibility) to authenticated;
+grant execute on function private.can_view_post_record(uuid) to authenticated;
+grant execute on function private.can_read_media_object(text,text) to authenticated;
+grant execute on function private.is_org_member(uuid) to authenticated;
+grant execute on function private.is_org_admin(uuid) to authenticated;
+grant execute on function private.is_channel_member(uuid) to authenticated;
+grant execute on function private.is_channel_admin(uuid) to authenticated;
+grant execute on function private.is_conversation_member(uuid) to authenticated;
+grant execute on function private.can_view_shop(uuid) to authenticated;
+
+      then private.can_view_profile(split_part(target_name,'/',1)::uuid)
+    when target_bucket='nexus-media'
+      then (
+        exists(select 1 from public.post_media pm where pm.storage_path=target_name and private.can_view_post_record(pm.post_id))
+        or exists(
+          select 1 from public.story_media sm
+          join public.stories s on s.id=sm.story_id
+          where sm.storage_path=target_name and (
+            s.author_id=(select auth.uid()) or (
+              s.expires_at>now()
+              and private.can_view_profile(s.author_id)
+              and (s.visibility='public' or (s.visibility='followers' and private.is_following(s.author_id)))
+            )
+          )
+        )
+      )
+    else false
+  end
+$;
+
 -- Private media buckets: no public listing or anonymous reads. Cross-user delivery will use
 -- short-lived signed URLs only after server-side authorization checks.
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
