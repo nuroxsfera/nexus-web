@@ -172,6 +172,14 @@ try {
   state=window.__getDB();
   assert.equal(state.channels.some(channel=>channel.organizationId===organization.id),true);
   assert.equal(state.shops.some(shop=>shop.organizationId===organization.id),true);
+  window.openOrganizationMembers();
+  const team=window.document.getElementById('organization-members');
+  if(team.options.length)team.options[0].selected=true;
+  window.document.getElementById('organization-member-role').value='admin';
+  window.saveOrganizationMembers();
+  state=window.__getDB();
+  assert.equal(state.organizations[0].members[0].role,'owner');
+  assert.equal(state.organizations[0].members.length,2);
   assert.equal(state.etab,'business');
   state=window.__getDB();
   assert.equal(state.blocked.marley,true);
