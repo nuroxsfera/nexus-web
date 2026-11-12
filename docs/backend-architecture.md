@@ -6,7 +6,7 @@ Supabase Free for the first live backend: PostgreSQL, Auth, private object stora
 ## Product boundaries
 - Profiles, channels, shops and organizations are separate entities.
 - Profile visibility has three explicit states: public, followers-only (accepted followers), and private (owner only).
-- Fitness profiles, workout history, nutrition entries, health measurements and the `nexus-health` storage bucket are owner-only; there is no public/follower access path for this data.
+- Fitness profiles, workout history, nutrition entries and health measurements are owner-only in the database model. The prototype also has a separate local AES-256-GCM vault using PBKDF2-SHA-256 (310,000 iterations); its encryption key remains in memory only while unlocked.
 - A company/organization may own multiple channels and shops.
 - A shop is a catalog and order surface, not a channel disguised as a shop.
 - Posts may belong to a profile or channel; media is stored separately.
