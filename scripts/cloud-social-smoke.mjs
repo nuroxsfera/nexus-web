@@ -28,7 +28,7 @@ const client={
     if(table==='products'&&options.method==='POST')return [{id:'33333333-3333-4333-8333-333333333333'}];
     if(table==='products'&&query.startsWith('select=cover_path'))return [{cover_path:'old-cover.jpg'}];
     if(table==='channels'&&query.startsWith('select=cover_path'))return [];
-    if(table==='channels'&&query.startsWith('select=id,title'))return [{id:'66666666-6666-4666-8666-666666666666',title:'Cloud channel',description:'',visibility:'public',cover_path:null,avatar_path:null,created_at:'2026-11-13T10:00:00Z'}];
+    if(table==='channels'&&query.startsWith('select=id,owner_id'))return [{id:'66666666-6666-4666-8666-666666666666',title:'Cloud channel',description:'',visibility:'public',cover_path:null,avatar_path:null,created_at:'2026-11-13T10:00:00Z'}];
     if(table==='shops'&&query.startsWith('select='))return [{id:'44444444-4444-4444-8444-444444444444',title:'Cloud shop',description:'',visibility:'public',avatar_path:null,products:[{id:'55555555-5555-4555-8555-555555555555',title:'Item',description:'',price:100,currency:'RUB',status:'published',cover_path:null}]}];
     return [];
   }
