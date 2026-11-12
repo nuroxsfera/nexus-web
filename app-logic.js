@@ -612,22 +612,53 @@ function createNutritionEntry(){
   if([grams,calories,protein,carbs,fat].some(value=>value!==null&&(!Number.isFinite(value)||value<0))){toast('Проверь значения питания');return}
   DB.nutritionEntries.unshift({id:'nu'+Date.now(),food,grams,calories:calories||0,protein,carbs,fat,date:new Date().toLocaleString('ru-RU'),consumedAt:Date.now()});save();closeSheet();DB.etab='fitness';go('explore');toast('Запись питания сохранена');
 }
+function openSpaceCreate(){
+  if(!DB.activeOrganization){toast('Сначала открой организацию');return}
+  document.getElementById('space-name').value='';document.getElementById('space-desc').value='';document.getElementById('space-type').value='community';document.getElementById('space-visibility').value='private';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('space-create-sheet').classList.add('open');setNav(false);
+}
+function createSpace(){
+  const name=document.getElementById('space-name').value.trim(),desc=document.getElementById('space-desc').value.trim(),type=document.getElementById('space-type').value,visibility=document.getElementById('space-visibility').value;
+  if(name.length<2){toast('Добавь название пространства');return}
+  const id='space'+Date.now();DB.spaces.unshift({id,organizationId:DB.activeOrganization,name,desc,type,visibility,ownerKey:'me',links:[],createdAt:Date.now()});save();closeSheet();openOrganization(DB.activeOrganization);toast('Пространство создано локально');
+}
+function openSpace(id){
+  const space=DB.spaces.find(item=>item.id===id);if(!space)return;DB.activeSpace=id;
+  const links=space.links||[],box=document.getElementById('eres');
+  box.innerHTML=`<button onclick="openOrganization(DB.activeOrganization)" class="text-[12px] text-white/45 mb-3">← К организации</button><div class="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-500/10 border border-white/[0.06] mb-3"><p class="text-[20px] font-bold">${esc(space.name)}</p><p class="text-[12px] text-white/50 mt-1">${esc(space.desc||'')}</p><p class="text-[11px] text-white/35 mt-2">${esc(space.type)} · ${esc(space.visibility)}</p></div><button onclick="openSpaceLink()" class="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] mb-3 press">＋ Связать канал или магазин</button>`+
+    (links.length?links.map(link=>{const resource=link.type==='channel'?DB.channels.find(item=>item.id===link.id):DB.shops.find(item=>item.id===link.id);return resource?`<div class="p-3 rounded-xl bg-white/[0.04] mb-1.5"><p class="text-[12px] text-white/40">${link.type==='channel'?'Канал':'Магазин'}</p><p class="text-[13px] font-semibold">${esc(resource.name)}</p></div>`:''}).join(''):'<div class="empty">Привяжи каналы и магазины к этому пространству</div>');
+}
+function openSpaceLink(){
+  const space=DB.spaces.find(item=>item.id===DB.activeSpace);if(!space)return;
+  const links=space.links||[];
+  document.getElementById('space-channels').innerHTML=DB.channels.filter(item=>item.organizationId===space.organizationId).map(item=>`<option value="${esc(item.id)}" ${links.some(link=>link.type==='channel'&&link.id===item.id)?'selected':''}>${esc(item.name)}</option>`).join('');
+  document.getElementById('space-shops').innerHTML=DB.shops.filter(item=>item.organizationId===space.organizationId).map(item=>`<option value="${esc(item.id)}" ${links.some(link=>link.type==='shop'&&link.id===item.id)?'selected':''}>${esc(item.name)}</option>`).join('');
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('space-link-sheet').classList.add('open');setNav(false);
+}
+function saveSpaceLinks(){
+  const space=DB.spaces.find(item=>item.id===DB.activeSpace);if(!space)return;
+  const channels=[...document.getElementById('space-channels').selectedOptions].map(option=>({type:'channel',id:option.value}));
+  const shops=[...document.getElementById('space-shops').selectedOptions].map(option=>({type:'shop',id:option.value}));
+  space.links=[...channels,...shops];save();closeSheet();openSpace(space.id);toast('Связи пространства сохранены локально');
+}
 function renderOrganizations(){
   const box=document.getElementById('eres'),orgs=DB.organizations||[];
   box.innerHTML=orgs.length?orgs.map(org=>{
-    const channels=DB.channels.filter(channel=>channel.organizationId===org.id).length,shops=DB.shops.filter(shop=>shop.organizationId===org.id).length,members=org.members?.length||1;
-    return `<button data-org-id="${esc(org.id)}" onclick="openOrganization(this.dataset.orgId)" class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 flex items-center justify-center text-xl">◇</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(org.name)}</p><p class="text-[11px] text-white/40">${channels} каналов · ${shops} магазинов · ${members} участников</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(org.desc||'')}</p></button>`;
+    const channels=DB.channels.filter(channel=>channel.organizationId===org.id).length,shops=DB.shops.filter(shop=>shop.organizationId===org.id).length,spaces=DB.spaces.filter(space=>space.organizationId===org.id).length,members=org.members?.length||1;
+    return `<button data-org-id="${esc(org.id)}" onclick="openOrganization(this.dataset.orgId)" class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/30 to-cyan-500/20 flex items-center justify-center text-xl">◇</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(org.name)}</p><p class="text-[11px] text-white/40">${channels} каналов · ${shops} магазинов · ${spaces} пространств · ${members} участников</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(org.desc||'')}</p></button>`;
   }).join(''):'<div class="empty"><div class="text-3xl mb-3">◇</div><p class="font-semibold text-white mb-1">Бизнес-пространство</p><p class="text-[12px] text-white/40 mb-4">Объединяй компанию, несколько каналов и магазинов в одном месте</p><button onclick="openOrganizationCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Создать организацию</button></div>';
   if(orgs.length)box.innerHTML+='<button onclick="openOrganizationCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новая организация</button>';
 }
 function openOrganization(id){
   const org=DB.organizations.find(item=>item.id===id);if(!org)return;DB.activeOrganization=id;
-  const channels=DB.channels.filter(item=>item.organizationId===id),shops=DB.shops.filter(item=>item.organizationId===id),members=org.members||[{profileKey:'me',role:'owner'}];
+  const channels=DB.channels.filter(item=>item.organizationId===id),shops=DB.shops.filter(item=>item.organizationId===id),spaces=DB.spaces.filter(item=>item.organizationId===id),members=org.members||[{profileKey:'me',role:'owner'}];
   const box=document.getElementById('eres');
   box.innerHTML=`<button onclick="DB.etab='business';renderExplore()" class="text-[12px] text-white/45 mb-3">← Все организации</button><div class="p-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/10 border border-white/[0.06] mb-3"><p class="text-[20px] font-bold">${esc(org.name)}</p><p class="text-[12px] text-white/50 mt-1">${esc(org.desc||'')}</p><p class="text-[11px] text-white/35 mt-2">Организация · локально</p></div><div class="grid grid-cols-2 gap-2 mb-4"><button onclick="openOrganizationLink()" class="py-3 rounded-xl bg-white text-black font-semibold text-[12px] press">＋ Ресурсы</button><button onclick="openOrganizationMembers()" class="py-3 rounded-xl glass text-white font-semibold text-[12px] press">Команда · ${members.length}</button></div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Команда</p>${members.map(member=>{const person=member.profileKey==='me'?DB.me:DB.profiles[member.profileKey];return `<div class="flex items-center gap-2 py-2"><div class="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-[11px]">${esc((person?.name||'?').slice(0,1))}</div><div class="flex-1 min-w-0"><p class="text-[12px] font-semibold truncate">${esc(person?.name||'Участник')}</p><p class="text-[10px] text-white/35">${esc(member.role)}</p></div></div>`}).join('')}<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mt-4 mb-2">Каналы</p>`+
     (channels.length?channels.map(channel=>`<button data-channel-id="${esc(channel.id)}" onclick="go('channel',{id:this.dataset.channelId})" class="w-full text-left p-3 rounded-xl bg-white/[0.04] mb-1.5 press"><p class="text-[13px] font-semibold">${esc(channel.name)}</p><p class="text-[10px] text-white/40">${esc(channel.visibility)}</p></button>`).join(''):'<p class="text-[12px] text-white/35 mb-3">Каналы ещё не связаны</p>')+
     '<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mt-4 mb-2">Магазины</p>'+
-    (shops.length?shops.map(shop=>`<button data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})" class="w-full text-left p-3 rounded-xl bg-white/[0.04] mb-1.5 press"><p class="text-[13px] font-semibold">${esc(shop.name)}</p><p class="text-[10px] text-white/40">${esc(shop.visibility)}</p></button>`).join(''):'<p class="text-[12px] text-white/35">Магазины ещё не связаны</p>');
+    (shops.length?shops.map(shop=>`<button data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})" class="w-full text-left p-3 rounded-xl bg-white/[0.04] mb-1.5 press"><p class="text-[13px] font-semibold">${esc(shop.name)}</p><p class="text-[10px] text-white/40">${esc(shop.visibility)}</p></button>`).join(''):'<p class="text-[12px] text-white/35">Магазины ещё не связаны</p>')+
+    '<div class="flex items-center justify-between mt-5 mb-2"><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold">Пространства</p><button onclick="openSpaceCreate()" class="text-[11px] text-violet-300 press">＋ Создать</button></div>'+
+    (spaces.length?spaces.map(space=>`<button data-space-id="${esc(space.id)}" onclick="openSpace(this.dataset.spaceId)" class="w-full text-left p-3 rounded-xl bg-white/[0.04] mb-1.5 press"><p class="text-[13px] font-semibold">${esc(space.name)}</p><p class="text-[10px] text-white/40">${esc(space.type)} · ${esc(space.visibility)}</p></button>`).join(''):'<p class="text-[12px] text-white/35">Создай пространство команды или сообщества</p>');
 }
 function openOrganizationCreate(){
   document.getElementById('organization-name').value='';document.getElementById('organization-desc').value='';
