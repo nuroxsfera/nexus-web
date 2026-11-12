@@ -6,6 +6,7 @@ Supabase Free for the first live backend: PostgreSQL, Auth, private object stora
 ## Product boundaries
 - Profiles, channels, shops and organizations are separate entities.
 - Profile visibility has three explicit states: public, followers-only (accepted followers), and private (owner only).
+- Fitness profiles, workout history, nutrition entries, health measurements and the `nexus-health` storage bucket are owner-only; there is no public/follower access path for this data.
 - A company/organization may own multiple channels and shops.
 - A shop is a catalog and order surface, not a channel disguised as a shop.
 - Posts may belong to a profile or channel; media is stored separately.
@@ -19,7 +20,7 @@ Supabase Free for the first live backend: PostgreSQL, Auth, private object stora
 - Private profiles and follower-only content are checked in PostgreSQL policies.
 - Blocks are enforced when reading profiles, posts and shops.
 - Conversation reads and writes require conversation membership.
-- Media buckets are private. Storage RLS checks the owning user or the visibility of the parent post/story before allowing reads; the authenticated client can request short-lived signed URLs under that same policy.
+- Media buckets are private. Storage RLS checks the owning user or the visibility of the parent post/story/clip before allowing reads; health files are strictly owner-only. The authenticated client can request short-lived signed URLs under those same policies.
 - Never expose a Supabase service-role/secret key in browser code, GitHub, or client environment variables. The Vercel /api/config endpoint returns only the URL and publishable/anon key; the service-role key is never returned.
 - Do not treat a publishable key as a substitute for RLS. Test both allowed and denied cases before production.
 - The local PGlite suite checks the core row-isolation rules, follow approval, immutable follow/message identity, blocks, and anonymous access; the Supabase pgTAP suite checks the deployed Postgres schema and access behavior.
