@@ -33,6 +33,8 @@ assert.ok(vault.includes('async function exportEncrypted()'));
 assert.ok(vault.includes('async function importEncrypted(bundle)'));
 assert.ok(logic.includes('function exportLocalData()'));
 assert.ok(logic.includes('async function importHealthVaultBackup(input)'));
+assert.ok(logic.includes('async function optimizeImageFile(file)'));
+assert.ok(logic.includes("isVideo?100:40"));
 assert.ok(logic.includes('function refreshMediaCache()'));
 assert.ok(logic.includes('async function resetDemoData()'));
 assert.ok(logic.includes('Зашифрованный сейф здоровья останется отдельно'));
