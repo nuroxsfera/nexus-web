@@ -100,8 +100,8 @@
     if(bio!==undefined)patch.bio=String(bio).slice(0,500);if(visibility!==undefined)patch.visibility=visibility;
     const uploaded=[];
     try{
-      if(avatar){patch.avatar_path=await uploadOwnerMedia(user,'avatars',avatar);uploaded.push(patch.avatar_path)}
-      if(cover){patch.cover_path=await uploadOwnerMedia(user,'covers',cover);uploaded.push(patch.cover_path)}
+      if(avatar){patch.avatar_path=await uploadOwnerMedia(user,'avatars',avatar,'nexus-avatars');uploaded.push(patch.avatar_path)}
+      if(cover){patch.cover_path=await uploadOwnerMedia(user,'covers',cover,'nexus-avatars');uploaded.push(patch.cover_path)}
       await client.rest('profiles','id=eq.'+user.id,{method:'PATCH',body:patch});
     }catch(error){if(uploaded.length)try{await client.removeMedia('nexus-avatars',uploaded)}catch{}throw error}
     const oldPaths=[old?.[0]?.avatar_path,old?.[0]?.cover_path].filter(Boolean);
@@ -136,11 +136,11 @@
     if(blocked)await client.rest('blocks','',{method:'POST',body:{blocker_id:user.id,blocked_id:userId}});
     else await client.rest('blocks','blocker_id=eq.'+user.id+'&blocked_id=eq.'+userId,{method:'DELETE'});
   }
-  async function uploadOwnerMedia(user,folder,item){
+  async function uploadOwnerMedia(user,folder,item,bucket='nexus-media'){
     if(!item)return null;
     const type=item.type||item.blob?.type||'image/jpeg';
     const path=user.id+'/'+folder+'/'+uuid()+'.'+fileExtension(type,item.name);
-    await auth().uploadMedia('nexus-media',path,item.blob||item);
+    await auth().uploadMedia(bucket,path,item.blob||item);
     return path;
   }
   async function joinChannel(channelId,joined){
