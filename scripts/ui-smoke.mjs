@@ -72,6 +72,13 @@ try {
 
   window.toggleBlock('marley');
   state=window.__getDB();
+  state.pendingClipVideo='idb:smoke-video';
+  window.document.getElementById('clip-caption').value='Первый клип';
+  window.createClip();
+  state=window.__getDB();
+  assert.equal(state.clips[0].caption,'Первый клип');
+  assert.equal(state.etab,'clips');
+  state=window.__getDB();
   assert.equal(state.blocked.marley,true);
   assert.equal(window.document.getElementById('view-settings').classList.contains('active'),false);
 
