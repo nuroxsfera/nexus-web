@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
 <title>Atlantis</title>
-<!-- build: v4-low-nav -->
+<!-- build: v5-light-cards -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -35,7 +35,7 @@
   .ns::-webkit-scrollbar{display:none}
   .press:active{opacity:.85;transform:scale(.98)}
   .story-ring{background:linear-gradient(135deg,#a855f7,#ec4899,#f97316)}
-  .post-card{border-radius:20px;overflow:hidden;background:#111}
+  .post-card{border-radius:24px;overflow:hidden;background:#f2f2f7;color:#000}
   .nav-item{transition:all .15s}
   .nav-item.active{background:#fff;color:#000}
   .fade{animation:f .3s ease}
@@ -113,79 +113,85 @@
   <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))">
 
     <!-- Post 1 -->
-    <article class="post-card fade">
-      <div class="relative">
-        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
-        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
-          <img src="https://i.pravatar.cc/48?u=sofia" class="w-8 h-8 rounded-full object-cover border border-white/30" alt="">
-          <span class="text-[13px] font-semibold text-white drop-shadow-md">София Беннетт</span>
-        </div>
-        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
-          <div class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-            <span class="text-[12px] font-medium text-white">18</span>
+    <article class="post-card fade shadow-sm">
+      <div class="px-3 pt-3">
+        <div class="relative rounded-2xl overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+          <div class="absolute top-3 left-3 flex items-center gap-2">
+            <img src="https://i.pravatar.cc/48?u=sofia" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow-md">София Беннетт</span>
+          </div>
+          <div class="absolute bottom-3 left-3 flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[12px] font-medium text-white">18</span>
+            </div>
+          </div>
+          <div class="absolute bottom-3 right-3 flex -space-x-2">
+            <img src="https://i.pravatar.cc/32?u=1" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+            <img src="https://i.pravatar.cc/32?u=2" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+            <img src="https://i.pravatar.cc/32?u=3" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
           </div>
         </div>
-        <div class="absolute bottom-3.5 right-3.5 flex -space-x-2">
-          <img src="https://i.pravatar.cc/32?u=1" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
-          <img src="https://i.pravatar.cc/32?u=2" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
-          <img src="https://i.pravatar.cc/32?u=3" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
-        </div>
       </div>
-      <div class="px-4 py-3.5 bg-[#0f0f0f]">
-        <div class="flex items-center gap-2 mb-2">
+      <div class="px-4 pt-3 pb-4">
+        <div class="flex items-center gap-2 mb-1.5">
           <img src="https://i.pravatar.cc/48?u=sofia" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold">София Беннетт</span>
+          <span class="text-[13px] font-semibold text-black">София Беннетт</span>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-white/90">Просто хороший день. Солнце, ветер и ничего лишнего.</p>
+        <p class="text-[13.5px] leading-relaxed text-black/75">Просто хороший день. Солнце, ветер и ничего лишнего.</p>
       </div>
     </article>
 
     <!-- Post 2 -->
-    <article class="post-card fade">
-      <div class="relative">
-        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
-        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
-          <img src="https://i.pravatar.cc/48?u=max" class="w-8 h-8 rounded-full object-cover border border-white/30" alt="">
-          <span class="text-[13px] font-semibold text-white drop-shadow-md">Макс Уокер</span>
-        </div>
-        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
-          <div class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-            <span class="text-[12px] font-medium text-white">42</span>
+    <article class="post-card fade shadow-sm">
+      <div class="px-3 pt-3">
+        <div class="relative rounded-2xl overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+          <div class="absolute top-3 left-3 flex items-center gap-2">
+            <img src="https://i.pravatar.cc/48?u=max" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow-md">Макс Уокер</span>
+          </div>
+          <div class="absolute bottom-3 left-3 flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[12px] font-medium text-white">42</span>
+            </div>
           </div>
         </div>
       </div>
-      <div class="px-4 py-3.5 bg-[#0f0f0f]">
-        <div class="flex items-center gap-2 mb-2">
+      <div class="px-4 pt-3 pb-4">
+        <div class="flex items-center gap-2 mb-1.5">
           <img src="https://i.pravatar.cc/48?u=max" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold">Макс Уокер</span>
+          <span class="text-[13px] font-semibold text-black">Макс Уокер</span>
         </div>
         <p class="text-[13.5px] leading-relaxed text-white/90">Горы всегда знают, когда тебе нужно выдохнуть. #nature</p>
       </div>
     </article>
 
     <!-- Post 3 -->
-    <article class="post-card fade">
-      <div class="relative">
-        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
-        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
-          <img src="https://i.pravatar.cc/48?u=lena" class="w-8 h-8 rounded-full object-cover border border-white/30" alt="">
-          <span class="text-[13px] font-semibold text-white drop-shadow-md">Лена Морозова</span>
-        </div>
-        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
-          <div class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-            <span class="text-[12px] font-medium text-white">9</span>
+    <article class="post-card fade shadow-sm">
+      <div class="px-3 pt-3">
+        <div class="relative rounded-2xl overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+          <div class="absolute top-3 left-3 flex items-center gap-2">
+            <img src="https://i.pravatar.cc/48?u=lena" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow-md">Лена Морозова</span>
+          </div>
+          <div class="absolute bottom-3 left-3 flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[12px] font-medium text-white">9</span>
+            </div>
           </div>
         </div>
       </div>
-      <div class="px-4 py-3.5 bg-[#0f0f0f]">
-        <div class="flex items-center gap-2 mb-2">
+      <div class="px-4 pt-3 pb-4">
+        <div class="flex items-center gap-2 mb-1.5">
           <img src="https://i.pravatar.cc/48?u=lena" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold">Лена Морозова</span>
+          <span class="text-[13px] font-semibold text-black">Лена Морозова</span>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-white/90">Ночной город. Тишина между огнями.</p>
+        <p class="text-[13.5px] leading-relaxed text-black/75">Ночной город. Тишина между огнями.</p>
       </div>
     </article>
 
