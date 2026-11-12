@@ -69,4 +69,5 @@ function save(){try{const snapshot={...DB,storyTimer:null};
   snapshot.profiles=Object.fromEntries(Object.entries(DB.profiles||{}).filter(([key])=>!key.startsWith('cloud-user-')));
   snapshot.following=Object.fromEntries(Object.entries(DB.following||{}).filter(([key])=>!key.startsWith('cloud-user-')));
   snapshot.blocked=Object.fromEntries(Object.entries(DB.blocked||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  if(DB.me?.cloudId)snapshot.me={...DB.me,name:'Вы',handle:'@you',bio:'',avatar:'',cover:'',cloudId:null,visibility:'public'};
   snapshot.fitnessProfile={};snapshot.workouts=[];snapshot.nutritionEntries=[];snapshot.healthMeasurements=[];snapshot.healthVaultUnlocked=false;localStorage.setItem(LS,JSON.stringify(snapshot));if(window.NEXUS_HEALTH_VAULT?.isUnlocked())void window.NEXUS_HEALTH_VAULT.persist(DB).catch(e=>console.warn('Health vault save failed:',e?.message||e))}catch(e){}}
