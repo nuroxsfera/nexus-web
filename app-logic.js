@@ -906,11 +906,20 @@ function saveOrganizationLinks(){
   DB.shops.forEach(shop=>{if(shop.organizationId===org.id)delete shop.organizationId;if(shopIds.includes(shop.id))shop.organizationId=org.id});
   save();closeSheet();openOrganization(org.id);toast('Связи организации сохранены локально');
 }
+const cloudPeopleCache=new Map(),cloudPeoplePending=new Set();
 function renderExplore(){
-  const q=(document.getElementById('eq')?.value||'').toLowerCase();
+  const q=(document.getElementById('eq')?.value||'').toLowerCase().trim();
   const tab=DB.etab;let h='';
-  const people=Object.entries(DB.profiles).filter(([k,p])=>!DB.blocked?.[k]&&(!q||p.name.toLowerCase().includes(q)||p.handle.toLowerCase().includes(q)));
-  const channels=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
+  if(q.length>=2&&window.NEXUS_AUTH?.hasSession?.()&&window.NEXUS_CLOUD_SOCIAL&&!cloudPeopleCache.has(q)&&!cloudPeoplePending.has(q)){
+    cloudPeoplePending.add(q);
+    window.NEXUS_CLOUD_SOCIAL.searchProfiles(q).then(rows=>{
+      cloudPeopleCache.set(q,rows||[]);
+      (rows||[]).forEach(profile=>{DB.profiles['cloud-user-'+profile.cloudId]=profile});
+      renderExplore();
+    }).catch(()=>{}).finally(()=>cloudPeoplePending.delete(q));
+  }
+  const people=Object.entries(DB.profiles).filter(([key,profile])=>!DB.blocked?.[key]&&(!q||(profile.name||'').toLowerCase().includes(q)||(profile.handle||'').toLowerCase().includes(q)));
+  const channels=DB.channels.filter(channel=>!q||channel.name.toLowerCase().includes(q));
   const shops=DB.shops.filter(shop=>!q||shop.name.toLowerCase().includes(q));
   if(tab==='clips'){renderClips();return}
   if(tab==='music'){renderPlaylists();return}
@@ -918,10 +927,10 @@ function renderExplore(){
   if(tab==='fitness'){renderFitness();return}
   if(tab==='business'){renderOrganizations();return}
   if(tab==='all'||tab==='people'){
-    if(people.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>'+people.map(([key,p])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-profile-key="${esc(key)}" onclick="go('profile',{key:this.dataset.profileKey})"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-11 h-11 rounded-full"><div class="text-left"><p class="text-[14px] font-semibold">${esc(p.name)}</p><p class="text-[12px] text-white/40">${esc(p.handle)}</p></div></button>`).join('');
+    if(people.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>'+people.map(([key,profile])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-profile-key="${esc(key)}" onclick="go('profile',{key:this.dataset.profileKey})"><img src="${esc(profile.avatar||'https://i.pravatar.cc/64?u='+encodeURIComponent(key))}" class="w-11 h-11 rounded-full object-cover"><div class="text-left"><p class="text-[14px] font-semibold">${esc(profile.name||'Пользователь')}</p><p class="text-[12px] text-white/40">${esc(profile.handle||'')}</p></div></button>`).join('');
   }
   if(tab==='all'||tab==='channels'){
-    if(channels.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Каналы</p>'+channels.map(c=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-channel-id="${esc(c.id)}" onclick="go('channel',{id:this.dataset.channelId})"><p class="text-[14px] font-semibold">${esc(c.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(c.desc)} · ${esc(c.members)}</p></button>`).join('');
+    if(channels.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Каналы</p>'+channels.map(channel=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-channel-id="${esc(channel.id)}" onclick="go('channel',{id:this.dataset.channelId})"><p class="text-[14px] font-semibold">${esc(channel.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(channel.desc)} · ${esc(channel.members)}</p></button>`).join('');
   }
   if(tab==='all'||tab==='shops'){
     if(shops.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>'+shops.map(shop=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})"><p class="text-[14px] font-semibold">${esc(shop.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(shop.desc)} · ${Number(shop.ownerKey==='me'?shop.items.length:shop.products)} товаров</p></button>`).join('');
