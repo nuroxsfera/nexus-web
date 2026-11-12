@@ -7,6 +7,7 @@ Mobile-first social product prototype focused on intentional communication, priv
 ## Product modules
 
 - Email/password signup, login, email confirmation, password recovery and tab-scoped sessions (available once Supabase is configured)
+- Optional cloud social feed: private media uploads, posts with audience controls, likes, comments and deletion (requires a linked Supabase project)
 - Profiles, posts, stories and profile privacy
 - Public/private channels and channel posts
 - Independent shops, product catalogs and local cart
