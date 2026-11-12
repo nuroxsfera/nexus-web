@@ -46,6 +46,18 @@ try {
   state=window.__getDB();
   assert.equal(state.shops[0].items[0].name,'Nexus Hoodie');
   assert.equal(state.shops[0].items[0].price,3490);
+  const productId=state.shops[0].items[0].id;
+  window.openProduct(shop.id,productId);
+  window.openProductEdit();
+  window.document.getElementById('new-product-name').value='Nexus Hoodie Pro';
+  window.document.getElementById('new-product-price').value='3990';
+  window.createProduct();
+  state=window.__getDB();
+  assert.equal(state.shops[0].items[0].name,'Nexus Hoodie Pro');
+  window.openProduct(shop.id,productId);
+  window.deleteProduct();
+  state=window.__getDB();
+  assert.equal(state.shops[0].items.length,0);
 
   window.openPrivacySheet();
   window.document.getElementById('privacy-profile-visibility').value='followers';
