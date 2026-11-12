@@ -25,6 +25,24 @@ async function saveMediaFile(file){
   });
   return 'idb:'+id;
 }
+function mediaRefInUse(ref){
+  if(!ref)return false;
+  const inPost=post=>[...(post.images||[]),post.image].filter(Boolean).includes(ref);
+  return DB.me?.avatar===ref||DB.me?.cover===ref
+    ||DB.posts.some(inPost)
+    ||DB.channels.some(channel=>channel.cover===ref||channel.posts?.some(inPost))
+    ||DB.stories.some(story=>story.images?.includes(ref))
+    ||DB.clips.some(clip=>clip.video===ref)
+    ||DB.shops.some(shop=>shop.items?.some(item=>item.image===ref));
+}
+async function cleanupMedia(ref){
+  if(!ref||!ref.startsWith('idb:')||mediaRefInUse(ref))return;
+  try{
+    const db=await openMediaDB(),id=ref.slice(4);
+    await new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});
+    const url=mediaUrlCache.get(ref);if(url){URL.revokeObjectURL(url);mediaUrlCache.delete(ref)}
+  }catch(e){console.warn('Media cleanup failed',e)}
+}
 async function resolveMediaURL(ref){
   if(!ref||!ref.startsWith('idb:'))return ref;
   if(mediaUrlCache.has(ref))return mediaUrlCache.get(ref);
@@ -148,7 +166,7 @@ function renderFeed(){
   }).join('');
   hydrateMediaImages(feed);
 }
-function deletePost(id){const post=DB.posts.find(item=>item.id===id);if(!post||post.authorKey!=='me')return;DB.posts=DB.posts.filter(item=>item.id!==id);save();renderFeed();toast('Публикация удалена локально')}
+function deletePost(id){const post=DB.posts.find(item=>item.id===id);if(!post||post.authorKey!=='me')return;const refs=[...(post.images||[]),post.image].filter(Boolean);DB.posts=DB.posts.filter(item=>item.id!==id);DB.channels.forEach(channel=>{channel.posts=(channel.posts||[]).filter(item=>item.id!==id)});save();refs.forEach(ref=>void cleanupMedia(ref));renderFeed();toast('Публикация удалена локально')}
 function doubleLike(id){
  const p=DB.posts.find(x=>x.id===id);if(!p)return;
  if(!p.liked){p.liked=true;p.likes++}
@@ -475,7 +493,7 @@ function renderClips(){
   }).join(''):'<div class="empty"><div class="text-3xl mb-3">▶</div><p class="font-semibold text-white mb-1">Твоя лента коротких видео</p><p class="text-[12px] text-white/40 mb-4">Добавляй вертикальные ролики и открывай новые истории</p><button onclick="openClipCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Добавить первый клип</button></div>';
   hydrateMediaImages(box);
 }
-function deleteClip(id){const clip=DB.clips.find(item=>item.id===id);if(!clip||clip.authorKey!=='me')return;DB.clips=DB.clips.filter(item=>item.id!==id);save();renderClips();toast('Клип удалён локально')}
+function deleteClip(id){const clip=DB.clips.find(item=>item.id===id);if(!clip||clip.authorKey!=='me')return;DB.clips=DB.clips.filter(item=>item.id!==id);save();void cleanupMedia(clip.video);renderClips();toast('Клип удалён локально')}
 function toggleClipLike(id){
   const clip=DB.clips.find(item=>item.id===id);if(!clip)return;
   clip.liked=!clip.liked;clip.likes=Math.max(0,clip.likes+(clip.liked?1:-1));save();renderClips();
