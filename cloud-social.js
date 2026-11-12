@@ -80,6 +80,62 @@
     const rows=await client.rest('comments','',{method:'POST',body:{post_id:postId,author_id:user.id,body:String(body).slice(0,2000)}});
     return rows?.[0]||null;
   }
+  async function profileWithMedia(row){
+    if(!row)return null;
+    const client=auth();let avatar=null,cover=null;
+    if(row.avatar_path)try{avatar=await client.signedMediaUrl('nexus-avatars',row.avatar_path,3600)}catch{}
+    if(row.cover_path)try{cover=await client.signedMediaUrl('nexus-avatars',row.cover_path,3600)}catch{}
+    return {id:row.id,cloudId:row.id,username:row.username,name:row.display_name||row.username,handle:'@'+row.username,bio:row.bio||'',avatar,hero:cover||'https://picsum.photos/seed/profile-'+row.id+'/1200/1600',cover,visibility:row.visibility||'public'};
+  }
+  async function fetchMyProfile(){
+    const client=auth(),user=await currentUser();if(!user?.id)return null;
+    const rows=await client.rest('profiles','select=id,username,display_name,bio,avatar_path,cover_path,visibility&id=eq.'+user.id);
+    return profileWithMedia(rows?.[0]);
+  }
+  async function updateMyProfile({name,username,bio,avatar=null,cover=null,visibility}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const old=await client.rest('profiles','select=avatar_path,cover_path&id=eq.'+user.id);
+    const patch={};if(name!==undefined)patch.display_name=String(name).slice(0,60);
+    if(username!==undefined)patch.username=String(username).toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,30);
+    if(bio!==undefined)patch.bio=String(bio).slice(0,500);if(visibility!==undefined)patch.visibility=visibility;
+    const uploaded=[];
+    try{
+      if(avatar){patch.avatar_path=await uploadOwnerMedia(user,'avatars',avatar);uploaded.push(patch.avatar_path)}
+      if(cover){patch.cover_path=await uploadOwnerMedia(user,'covers',cover);uploaded.push(patch.cover_path)}
+      await client.rest('profiles','id=eq.'+user.id,{method:'PATCH',body:patch});
+    }catch(error){if(uploaded.length)try{await client.removeMedia('nexus-avatars',uploaded)}catch{}throw error}
+    const oldPaths=[old?.[0]?.avatar_path,old?.[0]?.cover_path].filter(Boolean);
+    if(oldPaths.length)try{await client.removeMedia('nexus-avatars',oldPaths)}catch{}
+    return fetchMyProfile();
+  }
+  async function fetchProfile(userId){
+    const client=auth(),profileRows=await client.rest('profiles','select=id,username,display_name,bio,avatar_path,cover_path,visibility&id=eq.'+userId);
+    if(!profileRows?.[0])return null;
+    const profile=await profileWithMedia(profileRows[0]);
+    const [followers,following,posts]=await Promise.all([
+      client.rest('follows','select=follower_id&following_id=eq.'+userId).catch(()=>[]),
+      client.rest('follows','select=following_id&follower_id=eq.'+userId).catch(()=>[]),
+      client.rest('posts','select=id&author_id=eq.'+userId).catch(()=>[])
+    ]);
+    return {...profile,followers:followers.length,following:following.length,posts:posts.length};
+  }
+  async function searchProfiles(term){
+    const client=auth();await currentUser();
+    const query=encodeURIComponent(String(term||'').replace(/^@/,'').trim());
+    if(!query)return [];
+    const rows=await client.rest('profiles','select=id,username,display_name,bio,avatar_path,cover_path,visibility&username=ilike.*'+query+'*&limit=20');
+    return Promise.all((rows||[]).map(profileWithMedia));
+  }
+  async function followUser(userId,follow){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    if(follow)await client.rest('follows','',{method:'POST',body:{follower_id:user.id,following_id:userId}});
+    else await client.rest('follows','follower_id=eq.'+user.id+'&following_id=eq.'+userId,{method:'DELETE'});
+  }
+  async function blockUser(userId,blocked){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    if(blocked)await client.rest('blocks','',{method:'POST',body:{blocker_id:user.id,blocked_id:userId}});
+    else await client.rest('blocks','blocker_id=eq.'+user.id+'&blocked_id=eq.'+userId,{method:'DELETE'});
+  }
   async function uploadOwnerMedia(user,folder,item){
     if(!item)return null;
     const type=item.type||item.blob?.type||'image/jpeg';
@@ -170,5 +226,5 @@
     }));
     return {channels:mappedChannels,shops:mappedShops};
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel,fetchMyProfile,updateMyProfile,fetchProfile,searchProfiles,followUser,blockUser};
 })();
