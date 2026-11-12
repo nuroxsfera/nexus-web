@@ -423,7 +423,8 @@ as $
       and (
         s.visibility='public'
         or s.created_by=(select auth.uid())
-        or private.is_org_member(s.organization_id)
+        or (s.visibility='followers' and private.is_org_member(s.organization_id))
+        or (s.visibility='private' and private.is_org_admin(s.organization_id))
       )
   );
 $;
