@@ -36,6 +36,8 @@ assert.ok(vault.includes('async function lock(db)'));
 assert.ok(vault.includes('async function exportEncrypted()'));
 assert.ok(vault.includes('async function importEncrypted(bundle)'));
 assert.ok(auth.includes('/auth/v1/signup'));
+assert.ok(sql.includes("new.raw_user_meta_data->>'username'"));
+assert.ok(sql.includes('fallback_username'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
 assert.ok(app.includes("load('/auth.js')"));
