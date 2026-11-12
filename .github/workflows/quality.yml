@@ -14,6 +14,7 @@ jobs:
           node-version: 22
       - run: node --check app.js
       - run: node --check app-data.js
+      - run: node --check health-vault.js
       - run: node --check app-logic.js
       - run: node --check api/config.js
       - run: node --check api/health.js
