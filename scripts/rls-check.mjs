@@ -52,6 +52,11 @@ try {
     "insert into public.conversation_members(conversation_id,user_id) values ('40000000-0000-4000-8000-000000000001','" + B + "'),('40000000-0000-4000-8000-000000000001','" + C + "'),('40000000-0000-4000-8000-000000000002','" + B + "'),('40000000-0000-4000-8000-000000000002','" + A + "');",
     "insert into public.messages(conversation_id,sender_id,body) values ('40000000-0000-4000-8000-000000000001','" + B + "','Secret message');",
     "insert into public.notifications(user_id,kind) values ('" + B + "','system');",
+    "insert into public.fitness_profiles(user_id,height_cm,weight_kg,goal) values ('" + B + "',180,75,'Strength');",
+    "insert into public.workout_sessions(user_id,workout_type,duration_minutes) values ('" + B + "','Strength training',60);",
+    "insert into public.nutrition_entries(user_id,food_name,serving_grams,calories_kcal) values ('" + B + "','Oatmeal',100,370);",
+    "insert into public.health_measurements(user_id,metric,value,unit) values ('" + B + "','resting_heart_rate',62,'bpm');",
+    "insert into storage.objects(bucket_id,name) values ('nexus-health','" + B + "/reports/lab.pdf');",
     "insert into public.shops(id,owner_id,title,slug,visibility) values ('50000000-0000-4000-8000-000000000001','" + B + "','Private shop','private-shop','private'),('50000000-0000-4000-8000-000000000002','" + B + "','Public shop','public-shop','public');",
     "insert into public.products(shop_id,title,price,status) values ('50000000-0000-4000-8000-000000000001','Secret product',100,'published'),('50000000-0000-4000-8000-000000000002','Public product',100,'published');",
     "insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/draft.jpg'),('nexus-media','" + publicPath + "'),('nexus-media','" + privatePath + "'),('nexus-media','" + publicClipPath + "'),('nexus-media','" + followerClipPath + "');"
@@ -67,9 +72,22 @@ try {
   assert.equal(await count('public.notifications'),0,'notifications are recipient-only');
   assert.equal(await count('public.shops'),1,'private shops stay hidden');
   assert.equal(await count('public.products'),1,'private shop products stay hidden');
+  assert.equal(await count('public.fitness_profiles'),0,'fitness profiles are owner-only');
+  assert.equal(await count('public.workout_sessions'),0,'workout history is owner-only');
+  assert.equal(await count('public.nutrition_entries'),0,'nutrition entries are owner-only');
+  assert.equal(await count('public.health_measurements'),0,'health measurements are owner-only');
+  assert.equal((await db.query("select count(*)::int as n from storage.objects where bucket_id='nexus-health'")).rows[0].n,0,'health files are owner-only');
   assert.equal(await count('public.clips'),1,'public clips are visible');
   assert.equal(await count('public.clip_likes'),1,'likes on visible clips are visible');
   assert.equal(await count('storage.objects'),3,'own drafts and authorized public media are readable');
+
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + B + "',false);");
+  assert.equal(await count('public.fitness_profiles'),1,'owner can read fitness profile');
+  assert.equal(await count('public.workout_sessions'),1,'owner can read workout history');
+  assert.equal(await count('public.nutrition_entries'),1,'owner can read nutrition entries');
+  assert.equal(await count('public.health_measurements'),1,'owner can read health measurements');
+  assert.equal((await db.query("select count(*)::int as n from storage.objects where bucket_id='nexus-health'")).rows[0].n,1,'owner can read private health files');
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
 
   await db.query("insert into public.follows(follower_id,followed_id,status) values ('" + A + "','" + C + "','pending')");
   assert.equal((await db.query("select count(*)::int as n from public.profiles where id='" + C + "'")).rows[0].n,0,'pending follow does not unlock private profile');
@@ -100,7 +118,7 @@ try {
   await db.exec('reset role; set role anon;');
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
   await db.exec('reset role');
-  console.log('Nexus RLS checks passed: profiles, posts, channels, media, shops, DMs, notifications, follows, immutable identities, blocks and anonymous access.');
+  console.log('Nexus RLS checks passed: profiles, posts, channels, clips, media, shops, DMs, notifications, owner-only health data, follows, immutable identities, blocks and anonymous access.');
 } catch (error) {
   console.error('RLS check failed:', error?.message || error);
   process.exitCode = 1;
