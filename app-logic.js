@@ -64,7 +64,7 @@ function go(r,p){
   if(r==='settings')renderSettings();
   if(r==='me')renderMe();
   if(r==='saved')renderSaved();
-  if(r==='compose'){document.getElementById('compose-text').value='';DB.composeImgs=[];renderComposeImgs()}
+  if(r==='compose'){DB.composeChannelId=p?.channelId||null;document.getElementById('compose-text').value='';DB.composeImgs=[];renderComposeImgs();document.getElementById('compose-title').textContent=DB.composeChannelId?'Публикация в канале':'Новый пост'}
   if(r==='home'){renderStories();renderFeed()}
 }
 function setNav(v){document.getElementById('bnav').classList.toggle('hide',!v)}
@@ -210,32 +210,109 @@ function saveProfile(){
   DB.me.bio=document.getElementById('edit-bio').value.trim()||'';
   save();closeSheet();renderMe();toast('Профиль сохранён');
 }
+function setMediaSource(img,ref){
+  if(!img)return;
+  if(ref&&ref.startsWith('idb:')){
+    img.removeAttribute('src');img.dataset.mediaRef=ref;
+    resolveMediaURL(ref).then(url=>{img.src=url}).catch(()=>{img.alt='Изображение недоступно'});
+  }else{delete img.dataset.mediaRef;img.src=ref||''}
+}
 function openChannel(id){
   const ch=DB.channels.find(c=>c.id===id);if(!ch)return;DB.activeChannel=id;
-  document.getElementById('ch-cover').src=ch.cover;
-  document.getElementById('ch-av').src=ch.avatar;
+  setMediaSource(document.getElementById('ch-cover'),ch.cover);
+  setMediaSource(document.getElementById('ch-av'),ch.avatar);
   document.getElementById('ch-name').textContent=ch.name;
-  document.getElementById('ch-meta').textContent=ch.members+' подписчиков';
+  document.getElementById('ch-meta').textContent=(ch.members||'0')+' подписчиков';
   document.getElementById('ch-desc').textContent=ch.desc;
+  const owner=ch.ownerKey==='me';
   const sub=!!DB.channelSub[id];
   const btn=document.getElementById('ch-sub');
+  btn.hidden=owner;
   btn.textContent=sub?'Вы подписаны':'Подписаться';
   btn.className=sub?'w-full h-10 rounded-full glass text-white font-semibold text-[14px] press mb-3':'w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3';
-  document.getElementById('ch-posts').innerHTML=ch.posts.map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${p.image}" class="w-full h-[160px] object-cover"><div class="p-3.5"><h3 class="text-[15px] font-semibold">${p.title}</h3><p class="text-[12.5px] text-white/50 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`).join('');
+  document.getElementById('ch-new-post').hidden=!owner;
+  const local=DB.posts.filter(p=>p.channelId===id).map(p=>{
+    const ref=(p.images&&p.images[0])||p.image||'';
+    const image=ref?(ref.startsWith('idb:')?`<img data-media-ref="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`:`<img src="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`):'';
+    return `<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5">${image}<div class="p-3.5"><h3 class="text-[15px] font-semibold">${esc(p.author)}</h3><p class="text-[12.5px] text-white/55 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${fmt(p.likes)}</p></div></article>`;
+  });
+  const seeded=(ch.posts||[]).map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${esc(p.image)}" class="w-full h-[160px] object-cover" alt=""><div class="p-3.5"><h3 class="text-[15px] font-semibold">${esc(p.title)}</h3><p class="text-[12.5px] text-white/50 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`);
+  const box=document.getElementById('ch-posts');
+  box.innerHTML=[...local,...seeded].join('')||'<div class="empty">Пока нет публикаций. Создайте первую.</div>';
+  hydrateMediaImages(box);
 }
-function toggleChSub(){if(!DB.activeChannel)return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
+function createChannel(){
+  const name=document.getElementById('new-channel-name').value.trim();
+  const desc=document.getElementById('new-channel-desc').value.trim();
+  const visibility=document.getElementById('new-channel-visibility').value;
+  if(name.length<2){toast('Название канала должно быть длиннее');return}
+  const id='ch'+Date.now();
+  const channel={id,name,desc,visibility,members:'1',ownerKey:'me',cover:'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
+  DB.channels.unshift(channel);DB.channelSub[id]=true;save();closeSheet();go('channel',{id});toast('Канал создан · сохранён на устройстве');
+}
+function openChannelPost(){if(!DB.activeChannel)return;go('compose',{channelId:DB.activeChannel})}
+function toggleChSub(){if(!DB.activeChannel)return;const ch=DB.channels.find(c=>c.id===DB.activeChannel);if(ch?.ownerKey==='me')return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
 function openShop(id){
   const sh=DB.shops.find(s=>s.id===id);if(!sh)return;DB.activeShop=id;
   document.getElementById('sh-name').textContent=sh.name;
-  document.getElementById('sh-meta').textContent=sh.products+' товаров';
+  document.getElementById('sh-meta').textContent=(sh.ownerKey==='me'?(sh.items.length+' товаров · ваш магазин'):(sh.products+' товаров'));
   document.getElementById('sh-desc').textContent=sh.desc;
-  document.getElementById('sh-grid').innerHTML=sh.items.map(i=>`<button class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5 text-left press" onclick="openProduct('${sh.id}','${i.id}')"><img src="${i.image}" class="w-full aspect-square object-cover"><div class="p-2.5"><p class="text-[12.5px] font-semibold truncate">${i.name}</p><p class="text-[13px] font-bold mt-0.5">${i.price.toLocaleString('ru-RU')} ₽</p></div></button>`).join('');
-  updateCartBadge();
+  document.getElementById('sh-add-product').hidden=sh.ownerKey!=='me';
+  const grid=document.getElementById('sh-grid');
+  grid.innerHTML=sh.items.length?sh.items.map(i=>{
+    const source=i.image&&i.image.startsWith('idb:')?`data-media-ref="${esc(i.image)}"`:`src="${esc(i.image||'')}"`;
+    return `<button class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5 text-left press" onclick="openProduct('${esc(sh.id)}','${esc(i.id)}')"><img ${source} class="w-full aspect-square object-cover" alt="${esc(i.name)}"><div class="p-2.5"><p class="text-[12.5px] font-semibold truncate">${esc(i.name)}</p><p class="text-[13px] font-bold mt-0.5">${Number(i.price).toLocaleString('ru-RU')} ₽</p></div></button>`;
+  }).join(''):'<div class="empty col-span-2">В магазине пока нет товаров.</div>';
+  hydrateMediaImages(grid);updateCartBadge();
+}
+function openShopCreate(){
+  document.getElementById('new-shop-name').value='';
+  document.getElementById('new-shop-desc').value='';
+  document.getElementById('new-shop-visibility').value='public';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
+}
+function createShop(){
+  const name=document.getElementById('new-shop-name').value.trim();
+  const desc=document.getElementById('new-shop-desc').value.trim();
+  const visibility=document.getElementById('new-shop-visibility').value;
+  if(name.length<2){toast('Название магазина должно быть длиннее');return}
+  const id='sh'+Date.now();
+  DB.shops.unshift({id,name,desc,visibility,ownerKey:'me',products:0,items:[]});
+  save();closeSheet();go('shop',{id});toast('Магазин создан · сохранён на устройстве');
+}
+function openProductCreate(){
+  if(!DB.activeShop)return;
+  const sh=DB.shops.find(s=>s.id===DB.activeShop);if(sh?.ownerKey!=='me'){toast('Добавлять товары может владелец');return}
+  DB.pendingProductImage=null;
+  ['new-product-name','new-product-price','new-product-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('product-image-preview').hidden=true;
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
+}
+function chooseProductImage(){document.getElementById('product-file-input').click()}
+async function handleProductFile(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите изображение до 20 МБ');return}
+  try{
+    DB.pendingProductImage=await saveMediaFile(file);
+    const preview=document.getElementById('product-image-preview');preview.hidden=false;setMediaSource(preview,DB.pendingProductImage);
+  }catch(e){toast(e.message||'Не удалось сохранить изображение')}
+}
+function createProduct(){
+  const sh=DB.shops.find(s=>s.id===DB.activeShop);
+  if(!sh||sh.ownerKey!=='me'){toast('Магазин недоступен');return}
+  const name=document.getElementById('new-product-name').value.trim();
+  const price=Number(document.getElementById('new-product-price').value.replace(',','.'));
+  const desc=document.getElementById('new-product-desc').value.trim();
+  if(name.length<2||!Number.isFinite(price)||price<=0){toast('Проверьте название и цену');return}
+  sh.items.unshift({id:'item'+Date.now(),name,price,desc,image:DB.pendingProductImage||'https://picsum.photos/seed/new-product/600/600'});
+  sh.products=sh.items.length;DB.pendingProductImage=null;save();closeSheet();openShop(sh.id);toast('Товар добавлен · локально');
 }
 function openProduct(sid,iid){
   const sh=DB.shops.find(s=>s.id===sid);const item=sh?.items.find(i=>i.id===iid);if(!item)return;
   DB.activeProduct={shopId:sid,item};
-  document.getElementById('pdetail').innerHTML=`<img src="${item.image}" class="w-full aspect-square object-cover rounded-2xl mb-3"><h3 class="text-[20px] font-bold">${item.name}</h3><p class="text-[18px] font-bold mt-1 gt">${item.price.toLocaleString('ru-RU')} ₽</p><p class="text-[13px] text-white/55 mt-2">${item.desc}</p>`;
+  const source=item.image&&item.image.startsWith('idb:')?`<img data-media-ref="${esc(item.image)}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`:`<img src="${esc(item.image||'')}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`;
+  document.getElementById('pdetail').innerHTML=`${source}<h3 class="text-[20px] font-bold">${esc(item.name)}</h3><p class="text-[18px] font-bold mt-1 gt">${Number(item.price).toLocaleString('ru-RU')} ₽</p><p class="text-[13px] text-white/55 mt-2">${esc(item.desc)}</p>`;
+  hydrateMediaImages(document.getElementById('pdetail'));
   document.getElementById('pfoot').innerHTML=`<button onclick="addToCart()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">В корзину</button>`;
   document.getElementById('bd').classList.add('open');document.getElementById('product-sheet').classList.add('open');setNav(false);
 }
@@ -305,13 +382,17 @@ function openCreate(){
       const a=b.dataset.a;
       if(a==='post'){closeSheet();go('compose')}
       else if(a==='story'){addMyStory()}
-      else if(a==='ch'){closeSheet();go('channel',{id:'ch1'})}
-      else if(a==='shop'){closeSheet();go('shop',{id:'sh1'})}
+      else if(a==='ch'){openChannelCreate()}
+      else if(a==='shop'){openShopCreate()}
     };
   });
-  document.getElementById('bd').classList.add('open');
-  document.getElementById('create-sheet').classList.add('open');
-  setNav(false);
+  document.getElementById('bd').classList.add('open');document.getElementById('create-sheet').classList.add('open');setNav(false);
+}
+function openChannelCreate(){
+  document.getElementById('new-channel-name').value='';
+  document.getElementById('new-channel-desc').value='';
+  document.getElementById('new-channel-visibility').value='public';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
 }
 function addMyStory(){
   closeSheet();
@@ -354,16 +435,16 @@ async function handleComposeFiles(input){
 function publishPost(){
   const text=document.getElementById('compose-text').value.trim();
   if(!text&&!DB.composeImgs.length){toast('Добавьте текст или фото');return}
-  const images=[...DB.composeImgs];
+  const images=[...DB.composeImgs],channelId=DB.composeChannelId||null;
   DB.posts.unshift({
     id:'p'+Date.now(),author:DB.me.name,authorKey:null,avatar:'https://i.pravatar.cc/64?u=me',
-    image:images[0]||null,images,likes:0,comments:0,liked:false,saved:false,text:text||'',
-    commentList:[]
+    image:images[0]||null,images,channelId,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]
   });
-  DB.composeImgs=[];save();toast('Опубликовано');go('home');
+  DB.composeImgs=[];DB.composeChannelId=null;save();toast('Опубликовано локально');
+  if(channelId)go('channel',{id:channelId});else go('home');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
