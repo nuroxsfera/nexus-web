@@ -788,23 +788,79 @@ async function checkBackendStatus(){
   try{
     const response=await fetch('/api/health',{cache:'no-store'});
     const state=await response.json();
-    box.textContent=state.backendConfigured
-      ?'Параметры Supabase заданы. Базу данных подключим после применения миграции.'
-      :'Серверная часть ещё не подключена. Сейчас данные прототипа сохраняются на этом устройстве.';
+    if(state.backendConfigured){const authSession=await window.NEXUS_AUTH?.getSession();box.textContent=authSession?.user?.email?'Аккаунт подключён: '+authSession.user.email+'. Сессия хранится только в этой вкладке.':'Сервер аккаунтов настроен. Войди или создай аккаунт, чтобы начать подключение профиля.'}
+    else box.textContent='Серверная часть ещё не подключена. Сейчас данные прототипа сохраняются на этом устройстве.';
+    /*legacy status branch removed*/
+    /*
+      */
   }catch(e){
     box.textContent='Не удалось проверить сервер. Локальные функции приложения остаются доступны.';
   }
 }
 function renderSettings(){
+  const currentUser=window.NEXUS_AUTH?.getSession?.();
   const status='<div id="backend-status" class="mb-3 p-3.5 rounded-2xl bg-white/[0.05] border border-white/[0.06] text-[12px] leading-relaxed text-white/55">Проверяем серверную конфигурацию…</div>';
   const groups=[
-    ['Аккаунт',['Профиль','Конфиденциальность','Блокировки']],
+    ['Аккаунт',['Войти / создать аккаунт','Выйти','Профиль','Конфиденциальность','Блокировки']],
     ['Уведомления',['Push','Категории']],
     ['Безопасность',['2FA','Сессии']],
     ['Данные',['Экспорт данных','Резервная копия сейфа','Импорт сейфа','Обновить кэш изображений','Сбросить демо']]
   ];
   document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
   checkBackendStatus();
+}
+let AUTH_MODE='login';
+function setAuthMode(mode){
+  AUTH_MODE=mode;
+  const titles={login:'Войти в Nexus',signup:'Создать аккаунт',reset:'Восстановить пароль',recovery:'Новый пароль'};
+  document.getElementById('auth-title').textContent=titles[mode]||titles.login;
+  document.getElementById('auth-name-wrap').hidden=mode!=='signup';
+  document.getElementById('auth-username-wrap').hidden=mode!=='signup';
+  document.getElementById('auth-password-wrap').hidden=mode==='reset';
+  document.getElementById('auth-confirm-wrap').hidden=mode!=='signup'&&mode!=='recovery';
+  document.getElementById('auth-switch').hidden=mode==='reset'||mode==='recovery';
+  document.getElementById('auth-reset').hidden=mode!=='login';
+  document.getElementById('auth-switch').textContent=mode==='signup'?'Уже есть аккаунт? Войти':'Нет аккаунта? Создать';
+  document.getElementById('auth-submit').textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[mode]||'Продолжить';
+  document.getElementById('auth-error').textContent='';
+  const configured=!!window.NEXUS_AUTH?.isConfigured();
+  document.getElementById('auth-info').textContent=configured?'Защищённая авторизация Supabase. Пароль не сохраняется в приложении.':'Сервер аккаунтов ещё не подключён. Форма готова, но регистрация станет доступна после настройки Supabase.';
+  document.getElementById('auth-submit').disabled=!configured;
+}
+function openAuth(mode='login'){
+  ['auth-name','auth-username','auth-email','auth-password','auth-confirm'].forEach(id=>document.getElementById(id).value='');
+  setAuthMode(mode);
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('auth-sheet').classList.add('open');setNav(false);
+}
+async function submitAuth(){
+  const api=window.NEXUS_AUTH;if(!api?.isConfigured()){document.getElementById('auth-error').textContent='Сначала подключим сервер аккаунтов.';return}
+  const email=document.getElementById('auth-email').value.trim(),password=document.getElementById('auth-password').value,confirm=document.getElementById('auth-confirm').value;
+  const button=document.getElementById('auth-submit'),error=document.getElementById('auth-error');
+  if(!email){error.textContent='Укажи электронную почту.';return}
+  button.disabled=true;button.textContent='Подождите…';error.textContent='';
+  try{
+    if(AUTH_MODE==='login'){
+      if(!password){error.textContent='Введи пароль.';return}
+      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();
+    }else if(AUTH_MODE==='signup'){
+      const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
+      if(name.length<2){error.textContent='Укажи имя.';return}
+      if(password!==confirm){error.textContent='Пароли не совпадают.';return}
+      const result=await api.signUp({email,password,name,username});
+      if(result.needsEmailConfirmation){error.textContent='Проверь почту и подтверди адрес, затем войди в аккаунт.';return}
+      closeSheet();toast('Аккаунт создан');
+    }else if(AUTH_MODE==='reset'){
+      await api.resetPassword(email);error.textContent='Если аккаунт существует, письмо для восстановления отправлено.';
+    }else if(AUTH_MODE==='recovery'){
+      if(password!==confirm){error.textContent='Пароли не совпадают.';return}
+      await api.updatePassword(password);closeSheet();toast('Пароль обновлён');
+    }
+  }catch(e){error.textContent=e.message||'Не удалось выполнить запрос'}
+  finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
+}
+async function logoutAuth(){
+  try{await window.NEXUS_AUTH.signOut();toast('Вы вышли из аккаунта');renderSettings()}
+  catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
   document.getElementById('report-target-type').value=type;document.getElementById('report-target-id').value=id;
@@ -893,6 +949,8 @@ async function importHealthVaultBackup(input){
   }catch(e){toast(e.message||'Не удалось импортировать сейф')}
 }
 function settingAction(i){
+  if(i==='Войти / создать аккаунт'){openAuth('login');return}
+  if(i==='Выйти'){logoutAuth();return}
   if(i==='Экспорт данных'){exportLocalData();return}
   if(i==='Резервная копия сейфа'){exportHealthVaultBackup();return}
   if(i==='Импорт сейфа'){document.getElementById('health-vault-import-file').click();return}
