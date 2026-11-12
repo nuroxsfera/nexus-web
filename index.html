@@ -50,6 +50,26 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 .heart-burst.show{animation:burst .6s ease-out}
 @keyframes burst{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.4)}}
 .empty{text-align:center;padding:48px 24px;color:rgba(255,255,255,.35);font-size:14px}
+
+/* Product polish: motion, depth, safe areas and accessible focus */
+:root{color-scheme:dark;--accent:#b66cff;--accent-2:#ed78c5;--surface:#111114}
+body{background:radial-gradient(ellipse at 50% -12%,rgba(133,72,196,.18),transparent 42%),#000}
+#app{background:linear-gradient(180deg,#08080b 0%,#000 38%);box-shadow:0 0 80px rgba(0,0,0,.45)}
+.view.active{animation:view-enter .28s cubic-bezier(.2,.75,.25,1) both}
+@keyframes view-enter{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.post-card{transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease}
+.post-card:active{transform:scale(.992);box-shadow:0 2px 16px rgba(0,0,0,.22)}
+.story-ring{transition:transform .22s ease,filter .22s ease}
+.story-ring:active{transform:scale(.94);filter:brightness(1.15)}
+.nav-item{transition:color .2s ease,background .24s cubic-bezier(.2,.8,.2,1),transform .2s ease}
+.nav-item.active{transform:translateY(-1px)}
+.sheet{box-shadow:0 -24px 80px rgba(0,0,0,.48);transition:transform .38s cubic-bezier(.18,.9,.22,1)}
+.bd{background:rgba(0,0,0,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+button,input,textarea{font:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(192,132,252,.9);outline-offset:3px}
+input,textarea{accent-color:#c084fc}
+::selection{background:rgba(192,132,252,.35);color:#fff}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
