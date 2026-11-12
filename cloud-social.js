@@ -41,17 +41,17 @@
   }
   async function fetchFeed(limit=30){
     const client=auth(),user=await currentUser();if(!user?.id)return [];
-    const query='select=id,author_id,body,visibility,channel_id,created_at,profiles(username,display_name,avatar_path),post_media(storage_path,media_type,sort_order),post_likes(user_id),comments(count)&order=created_at.desc&limit='+Math.min(50,Math.max(1,limit));
+    const query='select=id,author_id,body,visibility,channel_id,created_at,profiles(id,username,display_name,bio,avatar_path,cover_path,visibility),post_media(storage_path,media_type,sort_order),post_likes(user_id),comments(count)&order=created_at.desc&limit='+Math.min(50,Math.max(1,limit));
     const rows=await client.rest('posts',query);
     return Promise.all((rows||[]).map(async row=>{
       const media=[...(row.post_media||[])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
       const urls=(await Promise.all(media.map(async item=>{try{return await client.signedMediaUrl('nexus-media',item.storage_path,3600)}catch{return null}}))).filter(Boolean);
-      let avatar='https://i.pravatar.cc/64?u='+encodeURIComponent(row.profiles?.username||row.author_id);
-      if(row.profiles?.avatar_path){try{avatar=await client.signedMediaUrl('nexus-avatars',row.profiles.avatar_path,3600)}catch{}}
+      const profileData=await profileWithMedia(row.profiles?{...row.profiles,id:row.profiles.id||row.author_id}:null);
+      const avatar=profileData?.avatar||'https://i.pravatar.cc/64?u='+encodeURIComponent(row.profiles?.username||row.author_id);
       const commentCount=Array.isArray(row.comments)?Number(row.comments[0]?.count||0):0;
       return {
         id:'cloud-'+row.id,cloudId:row.id,author:row.profiles?.display_name||row.profiles?.username||'Пользователь',
-        authorKey:row.author_id===user.id?'me':null,avatar,image:urls[0]||null,images:urls,
+        authorId:row.author_id,authorKey:row.author_id===user.id?'me':'cloud-user-'+row.author_id,profileData,avatar,image:urls[0]||null,images:urls,
         likes:(row.post_likes||[]).length,comments:commentCount,
         liked:(row.post_likes||[]).some(item=>item.user_id===user.id),saved:false,
         text:row.body||'',commentList:[],createdAt:row.created_at,visibility:row.visibility,channelId:row.channel_id||null
