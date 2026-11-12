@@ -673,7 +673,7 @@ function openOrganizationMembers(){
   const org=DB.organizations.find(item=>item.id===DB.activeOrganization);if(!org)return;
   const current=org.members||[{profileKey:'me',role:'owner'}];
   document.getElementById('organization-members').innerHTML=Object.entries(DB.profiles).filter(([key])=>!DB.blocked?.[key]).map(([key,profile])=>`<option value="${esc(key)}" ${current.some(member=>member.profileKey===key)?'selected':''}>${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
-  document.getElementById('organization-member-role').value='viewer';
+  document.getElementById('organization-member-role').value='member';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('organization-members-sheet').classList.add('open');setNav(false);
 }
 function saveOrganizationMembers(){
