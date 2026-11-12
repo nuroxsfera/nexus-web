@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
 <title>Atlantis</title>
-<!-- build: v6-tight-cards -->
+<!-- build: v7-fix-images -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -63,21 +63,18 @@
   <section class="px-5 pb-3 shrink-0">
     <p class="text-[13px] text-white/50 mb-2.5 font-medium">Ваши Атласы</p>
     <div class="flex gap-4 overflow-x-auto ns -mx-1 px-1">
-      <!-- Add -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full bg-[#1a1a1a] border border-white/10 flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/60"><path d="M12 5v14M5 12h14"/></svg>
         </div>
         <span class="text-[11px] text-white/50">Добавить</span>
       </button>
-      <!-- Alfredo -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full story-ring p-[2.5px]">
           <img src="https://i.pravatar.cc/140?u=alfredo" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" alt="">
         </div>
         <span class="text-[11px] text-white/80">Альфредо</span>
       </button>
-      <!-- Korsgaard -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full story-ring p-[2.5px]">
           <div class="w-full h-full rounded-full bg-[#2a2a2a] border-[2.5px] border-black flex items-center justify-center">
@@ -86,21 +83,18 @@
         </div>
         <span class="text-[11px] text-white/80">Корсгард</span>
       </button>
-      <!-- Ashlynn -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full story-ring p-[2.5px]">
           <img src="https://i.pravatar.cc/140?u=ashlynn" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" alt="">
         </div>
         <span class="text-[11px] text-white/80">Эшлинн</span>
       </button>
-      <!-- Adams -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full story-ring p-[2.5px]">
           <img src="https://i.pravatar.cc/140?u=adams" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" alt="">
         </div>
         <span class="text-[11px] text-white/80">Адамс</span>
       </button>
-      <!-- Mia -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
         <div class="w-[68px] h-[68px] rounded-full story-ring p-[2.5px]">
           <img src="https://i.pravatar.cc/140?u=mia" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" alt="">
@@ -113,18 +107,17 @@
   <!-- Feed -->
   <main class="flex-1 overflow-y-auto ns px-3.5 space-y-3.5" style="padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))">
 
-    <!-- Post 1 -->
     <article class="post-card fade">
       <div class="p-2">
-        <div class="relative rounded-[22px] overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+        <div class="relative rounded-[22px] overflow-hidden bg-[#e8e8ed]">
+          <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=900&q=80" class="w-full aspect-[4/5] object-cover block" loading="lazy" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
             <img src="https://i.pravatar.cc/64?u=marley" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
             <span class="text-[13px] font-semibold text-white drop-shadow">Марли Корсгард</span>
           </div>
           <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
             <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               <span class="text-[11.5px] font-medium text-white">12,1 тыс.</span>
             </div>
             <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
@@ -149,11 +142,10 @@
       </div>
     </article>
 
-    <!-- Post 2 -->
     <article class="post-card fade">
       <div class="p-2">
-        <div class="relative rounded-[22px] overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+        <div class="relative rounded-[22px] overflow-hidden bg-[#e8e8ed]">
+          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80" class="w-full aspect-[4/5] object-cover block" loading="lazy" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
             <img src="https://i.pravatar.cc/64?u=sofia" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
             <span class="text-[13px] font-semibold text-white drop-shadow">София Беннетт</span>
@@ -179,11 +171,10 @@
       </div>
     </article>
 
-    <!-- Post 3 -->
     <article class="post-card fade">
       <div class="p-2">
-        <div class="relative rounded-[22px] overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+        <div class="relative rounded-[22px] overflow-hidden bg-[#e8e8ed]">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=80" class="w-full aspect-[4/5] object-cover block" loading="lazy" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
             <img src="https://i.pravatar.cc/64?u=justin" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
             <span class="text-[13px] font-semibold text-white drop-shadow">Джастин Липшуц</span>
@@ -207,7 +198,6 @@
 
   </main>
 
-  <!-- Bottom Nav -->
   <nav class="absolute bottom-0 left-0 right-0 px-4 pt-0 bg-gradient-to-t from-black from-50% via-black/70 to-transparent"
        style="padding-bottom:max(4px, calc(env(safe-area-inset-bottom) * 0.55))">
     <div class="flex items-center justify-between bg-[#1c1c1e]/95 backdrop-blur-xl rounded-full px-1 py-0.5 border border-white/8 max-w-[270px] mx-auto shadow-xl shadow-black/60">
@@ -228,7 +218,6 @@
 
 </div>
 
-<!-- iOS Install Banner -->
 <div id="ios-install" class="hidden fixed left-4 right-4 z-50 max-w-[400px] mx-auto" style="bottom:calc(100px + env(safe-area-inset-bottom,0px))">
   <div class="bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-start gap-3">
     <div class="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-black">
