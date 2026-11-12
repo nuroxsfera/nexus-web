@@ -38,7 +38,7 @@ try {
   await db.exec([
     "insert into auth.users values ('" + A + "','{}'),('" + B + "','{}'),('" + C + "','{}');",
     "update public.profiles set visibility='public' where id='" + B + "';",
-    "update public.profiles set visibility='private' where id='" + C + "';",
+    "update public.profiles set visibility='followers' where id='" + C + "';",
     "insert into public.channels(id,owner_id,title,slug,visibility) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','" + B + "','Open channel','open-channel','public'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','" + B + "','Locked channel','locked-channel','private');",
     "insert into public.posts(id,author_id,body,visibility) values ('" + publicPost + "','" + B + "','Public post','public'),('10000000-0000-4000-8000-000000000002','" + B + "','Followers post','followers'),('10000000-0000-4000-8000-000000000003','" + C + "','Private profile post','public');",
     "insert into public.posts(id,author_id,channel_id,body,visibility) values ('" + privateChannelPost + "','" + B + "','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Private channel post','public'),('10000000-0000-4000-8000-000000000005','" + B + "','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Public channel post','public');",
