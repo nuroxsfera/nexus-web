@@ -1,4 +1,4 @@
-const CACHE = 'atlantis-v20';
+const CACHE = 'atlantis-v21';
 const ASSETS = [
   '/',
   '/index.html',
