@@ -59,7 +59,7 @@ assert.ok(cloud.includes('async function createShop('));
 assert.ok(cloud.includes('async function createProduct('));
 assert.ok(cloud.includes('async function fetchResources('));
 assert.ok(logic.includes('async function syncCloudResources('));
-assert.ok(migration.includes('private.can_view_channel(c.id)'));
+assert.ok(migration.includes('private.is_channel_member(c.id)'));
 assert.ok(migration.includes('private.can_view_shop(sh.id)'));
 assert.ok(migration.includes('private.can_view_shop(p.shop_id)'));
 assert.ok(logic.includes('async function syncCloudResources('));
