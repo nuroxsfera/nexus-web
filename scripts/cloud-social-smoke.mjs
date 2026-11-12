@@ -27,7 +27,8 @@ const client={
     if(table==='comments'&&options.method==='POST')return [{id:'c2'}];
     if(table==='products'&&options.method==='POST')return [{id:'33333333-3333-4333-8333-333333333333'}];
     if(table==='products'&&query.startsWith('select=cover_path'))return [{cover_path:'old-cover.jpg'}];
-    if(table==='channels'&&query.startsWith('select='))return [];
+    if(table==='channels'&&query.startsWith('select=cover_path'))return [];
+    if(table==='channels'&&query.startsWith('select=id,title'))return [{id:'66666666-6666-4666-8666-666666666666',title:'Cloud channel',description:'',visibility:'public',cover_path:null,avatar_path:null,created_at:'2026-11-13T10:00:00Z'}];
     if(table==='shops'&&query.startsWith('select='))return [{id:'44444444-4444-4444-8444-444444444444',title:'Cloud shop',description:'',visibility:'public',avatar_path:null,products:[{id:'55555555-5555-4555-8555-555555555555',title:'Item',description:'',price:100,currency:'RUB',status:'published',cover_path:null}]}];
     return [];
   }
@@ -60,19 +61,21 @@ await cloud.addComment(feed[0].cloudId,'Thanks');
 assert.ok(calls.some(call=>call[0]==='comments'&&call[2]==='POST'));
 await cloud.deletePost(feed[0].cloudId);
 assert.ok(calls.some(call=>call[0]==='posts'&&call[2]==='DELETE'));
-const channel=await cloud.createChannel({title:'Creators',description:'Community',visibility:'public'});
+const channel=await cloud.createChannel({title:'Creators',description:'Community',visibility:'public',cover:media});
 assert.match(channel.id,/^[0-9a-f-]{36}$/i);
 await cloud.updateChannel(channel.id,{title:'Creators updated',visibility:'followers'});
 const shop=await cloud.createShop({title:'Studio',description:'Store'});
 assert.match(shop.id,/^[0-9a-f-]{36}$/i);
 await cloud.updateShop(shop.id,{title:'Studio updated'});
-const product=await cloud.createProduct({shopId:shop.id,title:'Tee',description:'Basic',price:1200});
+const product=await cloud.createProduct({shopId:shop.id,title:'Tee',description:'Basic',price:1200,cover:media});
 assert.equal(product.id,'33333333-3333-4333-8333-333333333333');
-await cloud.updateProduct(product.id,{title:'Tee updated',price:1400});
+await cloud.updateProduct(product.id,{title:'Tee updated',price:1400,cover:media});
 await cloud.deleteProduct(product.id);
 const resources=await cloud.fetchResources();
+assert.equal(resources.channels.length,1);
 assert.equal(resources.shops.length,1);
 assert.equal(resources.shops[0].products[0].name,'Item');
+assert.ok(calls.filter(call=>call[0]==='upload').length>=3);
 assert.ok(calls.some(call=>call[0]==='remove'&&call[1]==='nexus-media'));
 
 console.log('Cloud social smoke checks passed: auth, posts, media, feed, likes, comments, channels, shops, products and deletion.');
