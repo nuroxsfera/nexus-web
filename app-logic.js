@@ -798,7 +798,6 @@ async function checkBackendStatus(){
   }
 }
 function renderSettings(){
-  const currentUser=window.NEXUS_AUTH?.getSession?.();
   const status='<div id="backend-status" class="mb-3 p-3.5 rounded-2xl bg-white/[0.05] border border-white/[0.06] text-[12px] leading-relaxed text-white/55">Проверяем серверную конфигурацию…</div>';
   const groups=[
     ['Аккаунт',['Войти / создать аккаунт','Выйти','Профиль','Конфиденциальность','Блокировки']],
@@ -812,7 +811,7 @@ function renderSettings(){
 let AUTH_MODE='login';
 function setAuthMode(mode){
   AUTH_MODE=mode;
-  const titles={login:'Войти в Nexus',signup:'Создать аккаунт',reset:'Восстановить пароль',recovery:'Новый пароль'};
+  const titles={login:'Войти в Atlantis',signup:'Создать аккаунт',reset:'Восстановить пароль',recovery:'Новый пароль'};
   document.getElementById('auth-title').textContent=titles[mode]||titles.login;
   document.getElementById('auth-name-wrap').hidden=mode!=='signup';
   document.getElementById('auth-username-wrap').hidden=mode!=='signup';
@@ -1045,9 +1044,10 @@ function publishPost(){
   });
   DB.composeImgs=[];DB.composeChannelId=null;save();toast('Опубликовано локально');
   if(channelId)go('channel',{id:channelId});else go('home');
+if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['auth-sheet','bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
