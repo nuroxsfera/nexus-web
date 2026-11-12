@@ -10,6 +10,8 @@ const publicPost = '10000000-0000-4000-8000-000000000001';
 const privateChannelPost = '10000000-0000-4000-8000-000000000004';
 const publicPath = B + '/' + publicPost + '/public.jpg';
 const privatePath = B + '/' + privateChannelPost + '/private.jpg';
+const publicClipPath = B + '/60000000-0000-4000-8000-000000000001/video.mp4';
+const followerClipPath = C + '/60000000-0000-4000-8000-000000000002/video.mp4';
 
 async function count(table) {
   return (await db.query('select count(*)::int as n from ' + table)).rows[0].n;
@@ -42,6 +44,8 @@ try {
     "insert into public.channels(id,owner_id,title,slug,visibility) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','" + B + "','Open channel','open-channel','public'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','" + B + "','Locked channel','locked-channel','private');",
     "insert into public.posts(id,author_id,body,visibility) values ('" + publicPost + "','" + B + "','Public post','public'),('10000000-0000-4000-8000-000000000002','" + B + "','Followers post','followers'),('10000000-0000-4000-8000-000000000003','" + C + "','Private profile post','public');",
     "insert into public.posts(id,author_id,channel_id,body,visibility) values ('" + privateChannelPost + "','" + B + "','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Private channel post','public'),('10000000-0000-4000-8000-000000000005','" + B + "','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Public channel post','public');",
+    "insert into public.clips(id,author_id,caption,storage_path,visibility) values ('60000000-0000-4000-8000-000000000001','" + B + "','Public clip','" + publicClipPath + "','public'),('60000000-0000-4000-8000-000000000002','" + C + "','Followers-only clip','" + followerClipPath + "','followers');",
+    "insert into public.clip_likes(clip_id,user_id) values ('60000000-0000-4000-8000-000000000001','" + B + "'),('60000000-0000-4000-8000-000000000002','" + C + "');",
     "insert into public.post_media(post_id,storage_path,media_type) values ('" + publicPost + "','" + publicPath + "','image'),('" + privateChannelPost + "','" + privatePath + "','image');",
     "insert into public.comments(post_id,author_id,body) values ('" + privateChannelPost + "','" + B + "','Private channel comment');",
     "insert into public.conversations(id,created_by) values ('40000000-0000-4000-8000-000000000001','" + B + "'),('40000000-0000-4000-8000-000000000002','" + B + "');",
@@ -50,7 +54,7 @@ try {
     "insert into public.notifications(user_id,kind) values ('" + B + "','system');",
     "insert into public.shops(id,owner_id,title,slug,visibility) values ('50000000-0000-4000-8000-000000000001','" + B + "','Private shop','private-shop','private'),('50000000-0000-4000-8000-000000000002','" + B + "','Public shop','public-shop','public');",
     "insert into public.products(shop_id,title,price,status) values ('50000000-0000-4000-8000-000000000001','Secret product',100,'published'),('50000000-0000-4000-8000-000000000002','Public product',100,'published');",
-    "insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/draft.jpg'),('nexus-media','" + publicPath + "'),('nexus-media','" + privatePath + "');"
+    "insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/draft.jpg'),('nexus-media','" + publicPath + "'),('nexus-media','" + privatePath + "'),('nexus-media','" + publicClipPath + "'),('nexus-media','" + followerClipPath + "');"
   ].join('\n'));
 
   await db.exec("set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
@@ -63,7 +67,9 @@ try {
   assert.equal(await count('public.notifications'),0,'notifications are recipient-only');
   assert.equal(await count('public.shops'),1,'private shops stay hidden');
   assert.equal(await count('public.products'),1,'private shop products stay hidden');
-  assert.equal(await count('storage.objects'),2,'own drafts and authorized public media are readable');
+  assert.equal(await count('public.clips'),1,'public clips are visible');
+  assert.equal(await count('public.clip_likes'),1,'likes on visible clips are visible');
+  assert.equal(await count('storage.objects'),3,'own drafts and authorized public media are readable');
 
   await db.query("insert into public.follows(follower_id,followed_id,status) values ('" + A + "','" + C + "','pending')");
   assert.equal((await db.query("select count(*)::int as n from public.profiles where id='" + C + "'")).rows[0].n,0,'pending follow does not unlock private profile');
@@ -75,6 +81,9 @@ try {
   );
   await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
   assert.equal((await db.query("select count(*)::int as n from public.profiles where id='" + C + "'")).rows[0].n,1,'accepted follow unlocks private profile');
+  assert.equal(await count('public.clips'),2,'accepted follow unlocks followers-only clips');
+  assert.equal(await count('public.clip_likes'),2,'accepted follow unlocks likes on followers-only clips');
+  assert.equal(await count('storage.objects'),4,'accepted follow unlocks followers-only clip media');
 
   await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + B + "',false);");
   await assert.rejects(
@@ -85,7 +94,8 @@ try {
 
   await db.exec("insert into public.blocks(blocker_id,blocked_id) values ('" + A + "','" + B + "');");
   assert.equal((await db.query("select count(*)::int as n from public.posts where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user posts');
-  assert.equal(await count('storage.objects'),1,'blocks also hide that users media');
+  assert.equal((await db.query("select count(*)::int as n from public.clips where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user clips');
+  assert.equal(await count('storage.objects'),2,'blocks also hide that users media while retaining followed media');
 
   await db.exec('reset role; set role anon;');
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
