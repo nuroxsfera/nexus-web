@@ -53,4 +53,4 @@ let DB;
 try{DB=JSON.parse(localStorage.getItem(LS))||defaultDB()}catch(e){DB=defaultDB()}
 const def=defaultDB();
 for(const k of Object.keys(def)){if(DB[k]===undefined)DB[k]=def[k]}
-function save(){try{localStorage.setItem(LS,JSON.stringify({...DB,storyTimer:null}))}catch(e){}}
+function save(){try{const snapshot={...DB,storyTimer:null};if(window.NEXUS_HEALTH_VAULT?.hasVault()){snapshot.fitnessProfile={};snapshot.workouts=[];snapshot.nutritionEntries=[];snapshot.healthMeasurements=[];snapshot.healthVaultUnlocked=false}localStorage.setItem(LS,JSON.stringify(snapshot));if(window.NEXUS_HEALTH_VAULT?.isUnlocked())void window.NEXUS_HEALTH_VAULT.persist(DB).catch(e=>console.warn('Health vault save failed:',e?.message||e))}catch(e){}}
