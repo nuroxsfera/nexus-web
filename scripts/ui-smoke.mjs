@@ -10,7 +10,7 @@ window.fetch = async () => ({json:async()=>({backendConfigured:false})});
 window.console = console;
 
 try {
-  window.eval(fs.readFileSync('app-data.js','utf8')+'\\n'+fs.readFileSync('app-logic.js','utf8')+'\\nwindow.__getDB=()=>DB;');
+  window.eval(fs.readFileSync('app-data.js','utf8')+'\n'+fs.readFileSync('app-logic.js','utf8')+'\nwindow.__getDB=()=>DB;');
 
   window.document.getElementById('new-channel-name').value='Nexus Creators';
   window.document.getElementById('new-channel-desc').value='Наше сообщество авторов';
