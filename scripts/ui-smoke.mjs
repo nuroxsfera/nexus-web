@@ -81,6 +81,13 @@ try {
   assert.equal(state.me.cover,'idb:smoke-cover');
 
   window.toggleBlock('marley');
+  window.openNewChat();
+  const people=window.document.getElementById('chat-people');
+  people.options[0].selected=true;
+  window.createChat();
+  state=window.__getDB();
+  assert.equal(state.chats[0].profileKey,people.options[0].value);
+  assert.equal(state.chats[0].messages.length,0);
   state=window.__getDB();
   state.pendingClipVideo='idb:smoke-video';
   window.document.getElementById('clip-caption').value='Первый клип';
