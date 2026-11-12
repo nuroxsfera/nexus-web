@@ -180,7 +180,7 @@ async function syncCloudResources(options={}){
       });
       DB.channels=[...channels,...DB.channels.filter(item=>!item.cloudId)];
       DB.shops=[...shops,...DB.shops.filter(item=>!item.cloudId)];
-      channels.forEach(channel=>{DB.channelSub[channel.id]=true});
+      channels.forEach(channel=>{DB.channelSub[channel.id]=true;channel.posts=DB.posts.filter(post=>post.channelId===channel.cloudId)});
       save();renderMe();if(DB.view==='explore')renderExplore();return true;
     }catch(error){if(!options.silent)toast('Не удалось синхронизировать каналы и магазины: '+(error.message||'ошибка'));return false}
     finally{cloudResourcesSyncPromise=null}
@@ -915,7 +915,7 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudFeed({silent:true});
+      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudResources({silent:true});void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
@@ -1136,6 +1136,6 @@ function closeSheet(){
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
 if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true});}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true})});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true})}});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
