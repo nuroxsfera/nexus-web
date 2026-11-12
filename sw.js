@@ -1,8 +1,11 @@
-const CACHE = 'atlantis-v5';
+const CACHE = 'atlantis-v6';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/app.js',
+  '/app-data.js',
+  '/app-logic.js',
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
