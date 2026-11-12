@@ -530,7 +530,7 @@ create trigger watchlists_set_updated_at before update on public.watchlists for 
 drop trigger if exists fitness_profiles_set_updated_at on public.fitness_profiles;
 create trigger fitness_profiles_set_updated_at before update on public.fitness_profiles for each row execute function public.set_updated_at();
 
-create or replace function public.handle_new_user()
+create or replace function private.handle_new_user()
 returns trigger language plpgsql security definer set search_path=''
 as $$
 declare
@@ -557,7 +557,8 @@ begin
 end
 $$;
 drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+create trigger on_auth_user_created after insert on auth.users for each row execute function private.handle_new_user();
+revoke all on function private.handle_new_user() from public,anon,authenticated;
 
 -- Every exposed application table is protected. Signed-out users get no table grants.
 alter table public.profiles enable row level security;
