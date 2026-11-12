@@ -17,4 +17,5 @@ jobs:
       - run: node --check app-logic.js
       - run: node --check api/config.js
       - run: node --check api/health.js
+      - run: npm install
       - run: npm test
