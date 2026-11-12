@@ -27,6 +27,10 @@ const client={
     if(table==='comments'&&options.method==='POST')return [{id:'c2'}];
     if(table==='profiles'&&query.startsWith('or='))return [{id:'77777777-7777-4777-8777-777777777777',username:'tester2',display_name:'Tester Two',bio:'Bio',avatar_path:null,cover_path:null,visibility:'public'}];
     if(table==='profiles'&&query.startsWith('select='))return [{id:user.id,username:'tester',display_name:'Tester',bio:'Hello',avatar_path:null,cover_path:null,visibility:'public'}];
+    if(table==='conversations'&&options.method==='POST')return [{id:options.body.id}];
+    if(table==='conversations'&&query.startsWith('select=id,title'))return [{id:'88888888-8888-4888-8888-888888888888',title:null,is_group:false,created_by:user.id,created_at:'2026-11-13T10:00:00Z',conversation_members:[{user_id:'99999999-9999-4999-8999-999999999999',profiles:{id:'99999999-9999-4999-8999-999999999999',username:'friend',display_name:'Friend',bio:'',avatar_path:null,cover_path:null,visibility:'public'}}],messages:[{id:'m1',body:'Hey',sender_id:'99999999-9999-4999-8999-999999999999',created_at:'2026-11-13T10:01:00Z'}]}];
+    if(table==='messages'&&query.startsWith('select=id,body'))return [{id:'m1',body:'Hey',sender_id:'99999999-9999-4999-8999-999999999999',created_at:'2026-11-13T10:01:00Z'}];
+    if(table==='messages'&&options.method==='POST')return [{id:'m2'}];
     if(table==='follows'&&query.startsWith('select='))return query.includes('following_id=')?[{follower_id:'x'}]:[];
     if(table==='blocks'&&query.startsWith('select='))return [{blocked_id:'77777777-7777-4777-8777-777777777777'}];
     if(table==='products'&&options.method==='POST')return [{id:'33333333-3333-4333-8333-333333333333'}];
@@ -55,6 +59,13 @@ await cloud.blockUser(remoteProfile.cloudId,true);
 await cloud.blockUser(remoteProfile.cloudId,false);
 const blocked=await cloud.fetchBlocks();
 assert.equal(blocked[0].blocked_id,'77777777-7777-4777-8777-777777777777');
+const conversation=await cloud.createConversation({participantIds:['99999999-9999-4999-8999-999999999999']});
+assert.match(conversation.id,/^[0-9a-f-]{36}$/i);
+const conversations=await cloud.fetchConversations();
+assert.equal(conversations[0].name,'Friend');
+const messages=await cloud.fetchMessages(conversations[0].cloudId);
+assert.equal(messages[0].text,'Hey');
+await cloud.sendMessage(conversations[0].cloudId,'Hello back');
 
 const media={blob:new Blob(['photo'],{type:'image/jpeg'}),type:'image/jpeg',name:'photo.jpg'};
 const created=await cloud.createPost({body:'Hello cloud',media:[media],visibility:'followers'});
@@ -97,4 +108,4 @@ assert.equal(resources.shops[0].products[0].name,'Item');
 assert.ok(calls.filter(call=>call[0]==='upload').length>=3);
 assert.ok(calls.some(call=>call[0]==='remove'&&call[1]==='nexus-media'));
 
-console.log('Cloud social smoke checks passed: auth, profiles, follows, blocks, posts, media, feed, likes, comments, channels, shops, products and deletion.');
+console.log('Cloud social smoke checks passed: auth, profiles, follows, blocks, posts, media, feed, likes, comments, channels, shops, products, conversations and messages.');
