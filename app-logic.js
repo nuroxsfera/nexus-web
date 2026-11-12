@@ -849,7 +849,7 @@ async function checkBackendStatus(){
 function renderSettings(){
   const status='<div id="backend-status" class="mb-3 p-3.5 rounded-2xl bg-white/[0.05] border border-white/[0.06] text-[12px] leading-relaxed text-white/55">Проверяем серверную конфигурацию…</div>';
   const groups=[
-    ['Аккаунт',['Войти / создать аккаунт',...(window.NEXUS_AUTH?.hasSession?.()?['Выйти']:[]),'Профиль','Конфиденциальность','Блокировки']],
+    ['Аккаунт',['Войти / создать аккаунт',...(window.NEXUS_AUTH?.hasSession?.()?['Синхронизировать ленту','Выйти']:[]),'Профиль','Конфиденциальность','Блокировки']],
     ['Уведомления',['Push','Категории']],
     ['Безопасность',['2FA','Сессии']],
     ['Данные',['Экспорт данных','Резервная копия сейфа','Импорт сейфа','Обновить кэш изображений','Сбросить демо']]
@@ -998,6 +998,7 @@ async function importHealthVaultBackup(input){
 }
 function settingAction(i){
   if(i==='Войти / создать аккаунт'){openAuth('login');return}
+  if(i==='Синхронизировать ленту'){void syncCloudFeed();return}
   if(i==='Выйти'){logoutAuth();return}
   if(i==='Экспорт данных'){exportLocalData();return}
   if(i==='Резервная копия сейфа'){exportHealthVaultBackup();return}
