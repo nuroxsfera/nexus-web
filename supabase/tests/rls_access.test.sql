@@ -1,5 +1,5 @@
 begin;
-select plan(41);
+select plan(45);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -49,6 +49,15 @@ insert into public.shops(id,owner_id,title,slug,visibility) values
 ('50000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Private shop','nexus-private-test','private'),
 ('50000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Public shop','nexus-public-test','public');
 
+insert into public.organizations(id,owner_id,name,slug) values ('72000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Nexus Org','nexus-org-test');
+update public.channels set organization_id='72000000-0000-4000-8000-000000000001' where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+update public.shops set organization_id='72000000-0000-4000-8000-000000000001' where id='50000000-0000-4000-8000-000000000002';
+insert into public.spaces(id,organization_id,created_by,title,slug,space_type,visibility) values
+('73000000-0000-4000-8000-000000000001','72000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public community','public-community','community','public'),
+('73000000-0000-4000-8000-000000000002','72000000-0000-4000-8000-222222222222','22222222-2222-4222-8222-222222222222','Private team','private-team','team','private');
+insert into public.space_links(space_id,link_type,channel_id) values ('73000000-0000-4000-8000-000000000001','channel','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+insert into public.space_links(space_id,link_type,shop_id) values ('73000000-0000-4000-8000-000000000002','shop','50000000-0000-4000-8000-000000000002');
+
 insert into public.playlists(id,owner_id,title,visibility) values
 ('70000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public mix','public'),
 ('70000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Private mix','private');
@@ -89,6 +98,11 @@ select is((select count(*)::int from storage.objects where name='22222222-2222-4
 select is((select count(*)::int from public.messages),0,'direct messages are hidden from non-members');
 select is((select count(*)::int from public.notifications),0,'notifications are private to their recipient');
 select is((select count(*)::int from public.shops),1,'private shops are hidden and public shops are visible');
+select is((select count(*)::int from public.spaces),1,'only public spaces are visible');
+select is((select count(*)::int from public.space_links),1,'space links inherit parent space visibility');
+select is((select count(*)::int from public.spaces where id='73000000-0000-4000-8000-000000000002'),0,'private organization spaces are hidden');
+select is((select count(*)::int from public.space_links where space_id='73000000-0000-4000-8000-000000000002'),0,'links in private spaces are hidden');
+
 select is((select count(*)::int from public.playlists),1,'only public playlists are visible');
 select is((select count(*)::int from public.playlist_tracks),1,'tracks inherit playlist visibility');
 select is((select count(*)::int from public.watchlists),1,'only public watchlists are visible');
