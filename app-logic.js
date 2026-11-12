@@ -1191,9 +1191,9 @@ function downloadJsonFile(filename,payload){
 function exportLocalData(){
   const payload={
     format:'nexus-local-export',version:1,exportedAt:new Date().toISOString(),
-    note:'Personal health data is stored separately in the encrypted health vault and is not included. Photo and video binary files are also stored separately on this device and are not included in this JSON export.',
-    profile:DB.me,posts:DB.posts,stories:DB.stories,channels:DB.channels,shops:DB.shops,
-    clips:DB.clips,playlists:DB.playlists,watchlists:DB.watchlists,chats:DB.chats,
+    note:'Cloud posts, chats, channels, shops and profiles remain in the account and are not included. Personal health data is stored separately in the encrypted health vault. Photo and video binary files are also stored separately on this device and are not included in this JSON export.',
+    profile:DB.me,posts:DB.posts.filter(post=>!post.cloudId),stories:DB.stories,channels:DB.channels.filter(channel=>!channel.cloudId),shops:DB.shops.filter(shop=>!shop.cloudId),
+    clips:DB.clips,playlists:DB.playlists,watchlists:DB.watchlists,chats:DB.chats.filter(chat=>!chat.cloudId),
     organizations:DB.organizations,spaces:DB.spaces,notifications:DB.notifications
   };
   downloadJsonFile('nexus-data-'+new Date().toISOString().slice(0,10)+'.json',payload);
