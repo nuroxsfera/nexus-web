@@ -1,512 +1,380 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0c0c0f" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Nexus</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            n: { bg:'#0b0b0e', soft:'#16161c', card:'#1c1c24', accent:'#7c6aef', muted:'#8b8b9e', text:'#f0f0f5', green:'#34d399', amber:'#fbbf24' }
-          },
-          fontFamily: { sans: ['Inter','system-ui','-apple-system','sans-serif'] }
-        }
-      }
-    }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;padding:0;height:100%;background:#0b0b0e!important;color:#f0f0f5;font-family:Inter,system-ui,-apple-system,sans-serif;overflow:hidden}
-    #root{height:100%;height:100dvh}
-    .dot{box-shadow:0 0 0 2px #0b0b0e}
-    .hide-scroll::-webkit-scrollbar{display:none}
-    .hide-scroll{-ms-overflow-style:none;scrollbar-width:none}
-    .fade{animation:f .28s ease-out}
-    @keyframes f{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .slide-up{animation:su .32s ease-out}
-    @keyframes su{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-    .view{display:none;height:100%;flex-direction:column}
-    .view.active{display:flex}
-    .pill{transition:all .15s}
-    .pill.on{background:#7c6aef22;color:#a78bfa;border-color:#7c6aef55}
-    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238b8b9e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#09090b"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Nexus</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{z:{0:'#09090b',1:'#111114',2:'#18181c',3:'#222228',4:'#2a2a32',a:'#8b7cf7',a2:'#a78bfa',m:'#71717a',t:'#fafafa',g:'#34d399',w:'#fbbf24'}},fontFamily:{sans:['Inter','system-ui','-apple-system','sans-serif']}}}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#09090b;color:#fafafa;font-family:Inter,system-ui,sans-serif;overflow:hidden}
+#app{height:100%;height:100dvh}
+.scr{display:none;height:100%;flex-direction:column;overflow:hidden}
+.scr.on{display:flex}
+.fade{animation:fd .25s ease}
+@keyframes fd{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.up{animation:up .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.ns{scrollbar-width:none}
+.ns::-webkit-scrollbar{display:none}
+.dot{box-shadow:0 0 0 2.5px #09090b}
+.press:active{transform:scale(.97);opacity:.9}
+.bar{height:env(safe-area-inset-bottom,0px)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.msg-in{animation:mi .2s ease}
+@keyframes mi{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+</style>
 </head>
 <body>
-<div id="root" class="flex flex-col md:flex-row bg-n-bg">
+<div id="app" class="flex bg-z-0">
 
-  <aside id="sidebar" class="w-full md:w-[380px] lg:w-[400px] flex flex-col border-r border-white/5 h-full bg-n-bg shrink-0">
-    <div class="px-5 pt-5 pb-3 shrink-0">
-      <div class="flex items-center justify-between mb-5">
-        <div class="flex items-center gap-2.5 cursor-pointer" onclick="go('home')">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c6aef] to-[#a78bfa] flex items-center justify-center text-white font-bold text-sm">N</div>
-          <div>
-            <div class="text-[17px] font-semibold leading-tight">Nexus</div>
-            <div class="text-[10px] text-n-muted tracking-wide">presence over noise</div>
-          </div>
+<aside id="side" class="w-full md:w-[400px] lg:w-[420px] flex flex-col border-r border-white/[0.06] h-full bg-z-0 shrink-0">
+  <div class="px-5 pt-5 pb-4 shrink-0">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3 cursor-pointer press" onclick="nav('home')">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#8b7cf7] to-[#c4b5fd] flex items-center justify-center shadow-lg shadow-purple-500/20">
+          <span class="text-white font-bold text-[15px]">N</span>
         </div>
-        <div class="flex gap-1.5">
-          <button onclick="go('philosophy')" class="w-9 h-9 rounded-full bg-n-soft flex items-center justify-center text-n-muted" title="Philosophy">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-          </button>
-          <button onclick="go('settings')" class="w-9 h-9 rounded-full bg-n-soft flex items-center justify-center text-n-muted">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
+        <div>
+          <div class="text-[18px] font-semibold tracking-tight">Nexus</div>
+          <div class="text-[10px] text-z-m tracking-[0.08em] uppercase">presence</div>
         </div>
       </div>
-
-      <div class="mb-4">
-        <div class="flex items-center justify-between mb-2.5">
-          <span class="text-[11px] font-medium text-n-muted uppercase tracking-wider">Circles</span>
-          <button onclick="openModal('newCircle')" class="text-[11px] text-[#a78bfa]">+ New</button>
-        </div>
-        <div id="circlesRow" class="flex gap-3 overflow-x-auto hide-scroll pb-1"></div>
+      <div class="flex gap-1">
+        <button onclick="nav('why')" class="w-10 h-10 rounded-full bg-z-1 flex items-center justify-center text-z-m press hover:text-white transition">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </button>
+        <button onclick="nav('set')" class="w-10 h-10 rounded-full bg-z-1 flex items-center justify-center text-z-m press hover:text-white transition">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
       </div>
+    </div>
 
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-n-muted shrink-0">State</span>
-        <select id="myState" onchange="updateState(this.value)" class="bg-n-soft text-sm rounded-full px-3.5 py-1.5 border border-white/5 text-white focus:outline-none flex-1">
-          <option value="open">Open to deep talk</option>
-          <option value="focus">In focus — protect attention</option>
-          <option value="quiet">Quiet mode</option>
-          <option value="urgent">Only urgent</option>
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-z-m tracking-wider uppercase">Circles</span>
+        <button onclick="modal('circle')" class="text-[12px] text-z-a2 font-medium press">New</button>
+      </div>
+      <div id="circs" class="flex gap-3.5 overflow-x-auto ns pb-1 -mx-1 px-1"></div>
+    </div>
+
+    <div class="flex items-center gap-3 bg-z-1 rounded-2xl px-4 py-3 border border-white/[0.04]">
+      <div class="w-2 h-2 rounded-full bg-z-g shrink-0"></div>
+      <select id="state" class="bg-transparent text-[13px] text-white flex-1 focus:outline-none cursor-pointer">
+        <option value="open">Open to deep talk</option>
+        <option value="focus">In focus — protect attention</option>
+        <option value="quiet">Quiet mode</option>
+        <option value="urgent">Only urgent</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto ns px-3">
+    <div class="flex items-center justify-between px-2 mb-2">
+      <span class="text-[11px] font-medium text-z-m tracking-wider uppercase">Contexts</span>
+      <button onclick="modal('ctx')" class="w-8 h-8 rounded-full bg-z-1 flex items-center justify-center text-z-m press hover:text-white">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+    <div id="list" class="space-y-0.5 pb-6"></div>
+    <div id="empty" class="hidden py-16 text-center">
+      <p class="text-z-m text-sm">Nothing here yet</p>
+      <button onclick="modal('ctx')" class="mt-3 text-z-a2 text-sm font-medium">Create context</button>
+    </div>
+  </div>
+
+  <div class="px-5 py-3 border-t border-white/[0.04] text-center shrink-0">
+    <p class="text-[10px] text-z-m/70">Temporary by default · Seal what matters</p>
+  </div>
+</aside>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden relative bg-z-0">
+
+  <div id="scr-home" class="scr on fade">
+    <div class="flex-1 flex flex-col items-center justify-center px-10 text-center">
+      <div class="w-[72px] h-[72px] rounded-3xl bg-z-1 border border-white/[0.06] flex items-center justify-center mb-6">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8b7cf7" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <h2 class="text-[22px] font-semibold tracking-tight mb-2">Choose a context</h2>
+      <p class="text-z-m text-[14px] max-w-[280px] leading-relaxed mb-8">Or stay. Silence is also presence.</p>
+      <div class="flex flex-wrap gap-2 justify-center mb-10">
+        <span class="px-3 py-1.5 rounded-full bg-z-1 text-z-m text-[11px] border border-white/[0.04]">No feed</span>
+        <span class="px-3 py-1.5 rounded-full bg-z-1 text-z-m text-[11px] border border-white/[0.04]">No scores</span>
+        <span class="px-3 py-1.5 rounded-full bg-z-1 text-z-m text-[11px] border border-white/[0.04]">You own the graph</span>
+      </div>
+      <button onclick="modal('ctx')" class="px-6 py-3 rounded-2xl bg-z-a text-white text-[14px] font-medium press shadow-lg shadow-purple-500/20">New context</button>
+    </div>
+  </div>
+
+  <div id="scr-chat" class="scr">
+    <div class="px-4 py-3.5 border-b border-white/[0.05] flex items-center justify-between shrink-0 bg-z-0/90 backdrop-blur-xl sticky top-0 z-10">
+      <div class="flex items-center gap-3 min-w-0">
+        <button class="md:hidden w-9 h-9 rounded-full bg-z-1 flex items-center justify-center shrink-0 press" onclick="nav('home')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div id="av" class="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-z-2"></div>
+        <div class="min-w-0">
+          <div id="nm" class="font-medium text-[15px] truncate">—</div>
+          <div id="st" class="text-[11px] text-z-g flex items-center gap-1.5 mt-0.5"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="seal" onclick="togSeal()" class="text-[12px] px-3.5 py-1.5 rounded-full border border-white/10 text-z-m flex items-center gap-1.5 press transition-all">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span id="sealT">Seal</span>
+        </button>
+        <button class="w-9 h-9 rounded-full bg-z-1 flex items-center justify-center text-z-m press" onclick="modal('info')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="msgs" class="flex-1 overflow-y-auto ns px-4 py-5 space-y-4"></div>
+    <div class="px-4 pt-2 pb-3 border-t border-white/[0.05] shrink-0 bg-z-0">
+      <div class="flex items-center gap-2 bg-z-1 rounded-2xl px-3.5 py-2.5 border border-white/[0.04]">
+        <button class="text-z-m shrink-0 press p-1" onclick="modal('more')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <input id="inp" type="text" placeholder="Write with intention…" class="flex-1 bg-transparent text-[15px] focus:outline-none placeholder:text-z-m/60 min-w-0 py-1" onkeydown="if(event.key==='Enter')send()">
+        <button onclick="send()" class="w-9 h-9 rounded-xl bg-z-a flex items-center justify-center text-white shrink-0 press shadow-md shadow-purple-500/20">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+      <p id="note" class="text-[10px] text-z-m/60 text-center mt-2.5">Messages disappear unless sealed</p>
+    </div>
+  </div>
+
+  <div id="scr-why" class="scr">
+    <div class="px-5 pt-5 pb-4 flex items-center gap-3 border-b border-white/[0.05] shrink-0">
+      <button onclick="nav('home')" class="w-9 h-9 rounded-full bg-z-1 flex items-center justify-center press">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-semibold text-[17px]">Why Nexus</h2>
+    </div>
+    <div class="flex-1 overflow-y-auto ns px-6 py-8 space-y-8 max-w-lg mx-auto">
+      <div class="fade">
+        <div class="text-z-a2 text-[12px] font-medium tracking-wide uppercase mb-2">Presence over Noise</div>
+        <p class="text-[15px] text-z-m leading-relaxed">No infinite feed. No algorithmic dopamine. You open Nexus to be present with specific people in specific contexts — or to rest in silence.</p>
+      </div>
+      <div>
+        <div class="text-z-a2 text-[12px] font-medium tracking-wide uppercase mb-2">Circles of trust</div>
+        <p class="text-[15px] text-z-m leading-relaxed">You decide who sees what. Close, Work, Explore, Anon — different masks, different rules. No public profile by default.</p>
+      </div>
+      <div>
+        <div class="text-z-a2 text-[12px] font-medium tracking-wide uppercase mb-2">Ephemeral by design</div>
+        <p class="text-[15px] text-z-m leading-relaxed">Most things disappear. Only what you explicitly Seal becomes permanent. Memory is a choice, not a default.</p>
+      </div>
+      <div>
+        <div class="text-z-a2 text-[12px] font-medium tracking-wide uppercase mb-2">Attention states</div>
+        <p class="text-[15px] text-z-m leading-relaxed">“Open to deep talk”, “In focus”, “Quiet”, “Only urgent”. Others see your state. You protect your attention instead of performing availability.</p>
+      </div>
+      <div>
+        <div class="text-z-a2 text-[12px] font-medium tracking-wide uppercase mb-2">You own the graph</div>
+        <p class="text-[15px] text-z-m leading-relaxed">Identity, relationships and history belong to you. Not to a platform that rents them back with ads.</p>
+      </div>
+      <div class="pt-6 border-t border-white/[0.05]">
+        <p class="text-[12px] text-z-m/50 text-center leading-relaxed">This is a living prototype.<br>The goal is evolution of communication,<br>not another social network.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="scr-set" class="scr">
+    <div class="px-5 pt-5 pb-4 flex items-center gap-3 border-b border-white/[0.05] shrink-0">
+      <button onclick="nav('home')" class="w-9 h-9 rounded-full bg-z-1 flex items-center justify-center press">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-semibold text-[17px]">Settings</h2>
+    </div>
+    <div class="flex-1 overflow-y-auto ns px-5 py-4 max-w-md">
+      <div class="py-4 border-b border-white/[0.05]">
+        <div class="text-[14px] font-medium mb-2">Default message lifetime</div>
+        <select class="w-full bg-z-1 text-[13px] rounded-xl px-4 py-3 border border-white/[0.04] text-white">
+          <option>24 hours</option>
+          <option>7 days</option>
+          <option selected>Until sealed</option>
+          <option>Permanent</option>
         </select>
       </div>
-    </div>
-
-    <div class="flex-1 overflow-y-auto px-3 pb-3">
-      <div class="flex items-center justify-between px-2 mb-2 mt-2">
-        <span class="text-[11px] font-medium text-n-muted uppercase tracking-wider">Contexts</span>
-        <div class="flex items-center gap-2">
-          <span id="ctxCount" class="text-[11px] text-n-muted">0</span>
-          <button onclick="openModal('newContext')" class="w-7 h-7 rounded-full bg-n-soft flex items-center justify-center text-n-muted hover:text-white">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
-        </div>
-      </div>
-      <div id="ctxList" class="space-y-0.5"></div>
-      <div id="ctxEmpty" class="hidden py-10 text-center px-4">
-        <p class="text-n-muted text-sm">No contexts here</p>
-        <button onclick="openModal('newContext')" class="mt-3 text-[13px] text-[#a78bfa]">Create one</button>
-      </div>
-    </div>
-
-    <div class="px-4 py-2.5 border-t border-white/5 text-center shrink-0">
-      <p class="text-[10px] text-n-muted">Temporary by default · Seal what matters</p>
-    </div>
-  </aside>
-
-  <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-n-bg">
-
-    <div id="view-home" class="view active fade">
-      <div class="flex-1 flex flex-col items-center justify-center text-center px-8">
-        <div class="w-16 h-16 rounded-2xl bg-n-soft flex items-center justify-center mb-5">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c6aef" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <h2 class="text-xl font-semibold mb-2">Choose a context</h2>
-        <p class="text-n-muted text-sm max-w-[280px] leading-relaxed mb-6">Or stay. Silence is also presence.</p>
-        <div class="flex flex-wrap gap-2 justify-center text-[11px] mb-8">
-          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">No feed</span>
-          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">No scores</span>
-          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">You own the graph</span>
-        </div>
-        <button onclick="openModal('newContext')" class="px-5 py-2.5 rounded-full bg-[#7c6aef] text-white text-sm font-medium">New context</button>
-      </div>
-    </div>
-
-    <div id="view-chat" class="view">
-      <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#0b0b0e]/85 backdrop-blur-md">
-        <div class="flex items-center gap-3 min-w-0">
-          <button class="md:hidden w-8 h-8 rounded-full bg-n-soft flex items-center justify-center shrink-0" onclick="go('home')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          </button>
-          <div id="chatAvatarWrap" class="w-9 h-9 rounded-full bg-n-soft overflow-hidden shrink-0"></div>
-          <div class="min-w-0">
-            <div id="chatName" class="font-medium text-[15px] truncate">—</div>
-            <div id="chatStatus" class="text-[11px] text-n-green flex items-center gap-1"></div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button id="sealBtn" onclick="toggleSeal()" class="pill text-[11px] px-3 py-1.5 rounded-full border border-white/10 text-n-muted flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span id="sealLabel">Seal</span>
-          </button>
-          <button class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center text-n-muted" onclick="openModal('contextInfo')">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-          </button>
-        </div>
-      </div>
-      <div id="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3.5"></div>
-      <div class="px-4 py-3 border-t border-white/5 shrink-0">
-        <div class="flex items-center gap-2 bg-n-soft rounded-2xl px-3.5 py-2.5">
-          <button class="text-n-muted shrink-0" onclick="openModal('attach')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-          <input id="msgInput" type="text" placeholder="Write with intention…" class="flex-1 bg-transparent text-[15px] focus:outline-none placeholder:text-n-muted min-w-0" onkeydown="if(event.key==='Enter')sendMsg()">
-          <button onclick="sendMsg()" class="w-8 h-8 rounded-xl bg-[#7c6aef] flex items-center justify-center text-white shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-          </button>
-        </div>
-        <p id="ephemeralNote" class="text-[10px] text-n-muted text-center mt-2">Messages disappear unless sealed</p>
-      </div>
-    </div>
-
-    <div id="view-philosophy" class="view">
-      <div class="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-white/5 shrink-0">
-        <button onclick="go('home')" class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-        <h2 class="font-semibold">Why Nexus</h2>
-      </div>
-      <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 max-w-lg mx-auto">
+      <div class="py-4 border-b border-white/[0.05] flex items-center justify-between">
         <div>
-          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Presence over Noise</h3>
-          <p class="text-sm text-n-muted leading-relaxed">No infinite feed. No algorithmic dopamine. You open Nexus to be present with specific people in specific contexts — or to rest in silence.</p>
+          <div class="text-[14px] font-medium">Show presence</div>
+          <div class="text-[12px] text-z-m mt-0.5">Others can see your state</div>
         </div>
+        <button onclick="this.classList.toggle('bg-z-a');this.classList.toggle('bg-z-2')" class="w-12 h-7 rounded-full bg-z-a relative transition-colors">
+          <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform"></span>
+        </button>
+      </div>
+      <div class="py-4 border-b border-white/[0.05] flex items-center justify-between">
         <div>
-          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Circles of trust</h3>
-          <p class="text-sm text-n-muted leading-relaxed">You decide who sees what. Close, Work, Explore, Anon — different masks, different rules. No public profile by default.</p>
+          <div class="text-[14px] font-medium">Read receipts</div>
+          <div class="text-[12px] text-z-m mt-0.5">Only in sealed contexts</div>
         </div>
-        <div>
-          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Ephemeral by design</h3>
-          <p class="text-sm text-n-muted leading-relaxed">Most things disappear. Only what you explicitly Seal becomes permanent. Memory is a choice, not a default.</p>
+        <button class="w-12 h-7 rounded-full bg-z-2 relative">
+          <span class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow"></span>
+        </button>
+      </div>
+      <div class="py-4 border-b border-white/[0.05]">
+        <div class="text-[14px] font-medium mb-2">Theme</div>
+        <div class="flex gap-2">
+          <button class="px-4 py-2 rounded-xl bg-z-a text-white text-[12px] font-medium">Dark</button>
+          <button class="px-4 py-2 rounded-xl bg-z-1 text-z-m text-[12px]">System</button>
         </div>
-        <div>
-          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Attention states</h3>
-          <p class="text-sm text-n-muted leading-relaxed">“Open to deep talk”, “In focus”, “Quiet”, “Only urgent”. Others see your state. You protect your attention instead of performing availability.</p>
-        </div>
-        <div>
-          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">You own the graph</h3>
-          <p class="text-sm text-n-muted leading-relaxed">Identity, relationships and history belong to you. Not to a platform that rents them back with ads.</p>
-        </div>
-        <div class="pt-4 border-t border-white/5">
-          <p class="text-xs text-n-muted text-center">This is a living prototype. The goal is evolution of communication, not another social network.</p>
-        </div>
+      </div>
+      <div class="py-4">
+        <button onclick="nav('why')" class="text-[14px] text-z-a2 font-medium">About & Philosophy →</button>
       </div>
     </div>
-
-    <div id="view-settings" class="view">
-      <div class="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-white/5 shrink-0">
-        <button onclick="go('home')" class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-        <h2 class="font-semibold">Settings</h2>
-      </div>
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-1 max-w-md">
-        <div class="py-3 border-b border-white/5">
-          <div class="text-sm font-medium mb-1">Default message lifetime</div>
-          <select class="bg-n-soft text-sm rounded-xl px-3 py-2 border border-white/5 text-white w-full mt-1">
-            <option>24 hours</option>
-            <option>7 days</option>
-            <option>Until sealed</option>
-            <option>Permanent</option>
-          </select>
-        </div>
-        <div class="py-3 border-b border-white/5 flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium">Show presence to circles</div>
-            <div class="text-xs text-n-muted mt-0.5">Others can see your current state</div>
-          </div>
-          <button id="togPresence" onclick="this.classList.toggle('bg-[#7c6aef]');this.classList.toggle('bg-n-soft')" class="w-11 h-6 rounded-full bg-[#7c6aef] relative transition">
-            <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition"></span>
-          </button>
-        </div>
-        <div class="py-3 border-b border-white/5 flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium">Read receipts</div>
-            <div class="text-xs text-n-muted mt-0.5">Only inside sealed contexts</div>
-          </div>
-          <button class="w-11 h-6 rounded-full bg-n-soft relative"><span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white"></span></button>
-        </div>
-        <div class="py-3 border-b border-white/5">
-          <div class="text-sm font-medium mb-1">Theme</div>
-          <div class="flex gap-2 mt-1">
-            <button class="px-3 py-1.5 rounded-full bg-[#7c6aef] text-white text-xs">Dark</button>
-            <button class="px-3 py-1.5 rounded-full bg-n-soft text-n-muted text-xs">System</button>
-          </div>
-        </div>
-        <div class="py-3">
-          <button onclick="go('philosophy')" class="text-sm text-[#a78bfa]">About & Philosophy →</button>
-        </div>
-      </div>
-    </div>
-  </main>
+  </div>
+</main>
 </div>
 
-<div id="modalOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-end md:items-center justify-center" onclick="if(event.target===this)closeModal()">
-  <div id="modalBox" class="bg-n-card w-full md:max-w-md md:rounded-2xl rounded-t-2xl p-5 slide-up max-h-[85vh] overflow-y-auto"></div>
+<div id="ov" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-end md:items-center justify-center" onclick="if(event.target===this)closeM()">
+  <div id="box" class="bg-z-2 w-full md:max-w-[400px] md:rounded-3xl rounded-t-3xl p-6 up border border-white/[0.06] max-h-[88vh] overflow-y-auto"></div>
 </div>
 
 <script>
-const circles = [
-  { id:'all', name:'All', type:'all' },
-  { id:'close', name:'Close', avatar:'https://i.pravatar.cc/112?u=close1', status:'green' },
-  { id:'work', name:'Work', avatar:'https://i.pravatar.cc/112?u=work1', status:'amber' },
-  { id:'explore', name:'Explore', avatar:'https://i.pravatar.cc/112?u=explore1', status:null },
+const C=[{id:'all',n:'All',t:'all'},{id:'close',n:'Close',a:'https://i.pravatar.cc/120?u=c1',s:'g'},{id:'work',n:'Work',a:'https://i.pravatar.cc/120?u=w1',s:'w'},{id:'explore',n:'Explore',a:'https://i.pravatar.cc/120?u=e1',s:null}];
+let X=[
+{id:'d',n:'Daniel Murphy',c:'close',a:'https://i.pravatar.cc/100?u=daniel',p:'Thinking about the program… workshop?',t:'10:20',u:2,st:'Open to deep talk',se:false,m:[{f:'t',x:'I spoke with the coworking manager. We can book Oct 2nd evening.',t:'10:20'},{f:'m',x:\"Nice! Let's lock it in\",t:'10:20'},{f:'t',x:'Did she say anything about catering?',t:'10:20'},{f:'m',x:'Thinking about the program… do we want just talks or also a short workshop?',t:'10:20'},{f:'t',x:\"Perfect. I'll draft an outline today.\",t:'10:20'}]},
+{id:'s',n:'Sophia Bennett',c:'close',a:'https://i.pravatar.cc/100?u=sophia',p:'It was so nice catching up ❤️',t:'Yesterday',u:0,st:'Open to deep talk',se:false,m:[{f:'t',x:'It was so nice catching up the other day ❤️',t:'Yesterday'},{f:'m',x:'Same here. We should do it more often.',t:'Yesterday'}]},
+{id:'w',n:'Workshop Planning',c:'work',a:null,i:'WS',p:'4 people · sealed',t:'Mon',u:0,st:'4 people · sealed',se:true,m:[{f:'t',x:'Agenda draft is ready. Please review before Thursday.',t:'Mon'},{f:'m',x:'Looks solid. I added two speaker slots.',t:'Mon'}]},
+{id:'a',n:'Ava Mitchell',c:'explore',a:'https://i.pravatar.cc/100?u=ava',p:'Yess 👍',t:'Sun',u:0,st:'Quiet mode',se:false,m:[{f:'t',x:'Yess 👍',t:'Sun'}]}
 ];
+let cur='all',ctx=null,se=false;
 
-let contexts = [
-  { id:'daniel', name:'Daniel Murphy', circle:'close', avatar:'https://i.pravatar.cc/96?u=daniel', preview:'Thinking about the program… workshop?', time:'10:20', unread:2, status:'Open to deep talk', sealed:false,
-    messages:[
-      { from:'them', text:'I spoke with the coworking manager. We can book Oct 2nd evening.', time:'10:20' },
-      { from:'me', text:"Nice! Let's lock it in", time:'10:20' },
-      { from:'them', text:'Did she say anything about catering?', time:'10:20' },
-      { from:'me', text:'Thinking about the program… do we want just talks or also a short workshop?', time:'10:20' },
-      { from:'them', text:"Perfect. I'll draft an outline today.", time:'10:20' },
-    ]},
-  { id:'sophia', name:'Sophia Bennett', circle:'close', avatar:'https://i.pravatar.cc/96?u=sophia', preview:'It was so nice catching up ❤️', time:'Yesterday', unread:0, status:'Open to deep talk', sealed:false,
-    messages:[
-      { from:'them', text:'It was so nice catching up the other day ❤️', time:'Yesterday' },
-      { from:'me', text:'Same here. We should do it more often.', time:'Yesterday' },
-    ]},
-  { id:'workshop', name:'Workshop Planning', circle:'work', avatar:null, initials:'WS', preview:'4 people · sealed context', time:'Mon', unread:0, status:'4 people · sealed', sealed:true,
-    messages:[
-      { from:'them', text:'Agenda draft is ready. Please review before Thursday.', time:'Mon' },
-      { from:'me', text:'Looks solid. I added two speaker slots.', time:'Mon' },
-    ]},
-  { id:'ava', name:'Ava Mitchell', circle:'explore', avatar:'https://i.pravatar.cc/96?u=ava', preview:'Yess 👍', time:'Sun', unread:0, status:'Quiet mode', sealed:false,
-    messages:[{ from:'them', text:'Yess 👍', time:'Sun' }]},
-];
-
-let currentCircle = 'all';
-let currentCtx = null;
-let sealed = false;
-
-function renderCircles() {
-  const row = document.getElementById('circlesRow');
-  row.innerHTML = circles.map(c => {
-    if (c.type === 'all') {
-      return `<button data-id="${c.id}" onclick="filterCircle('${c.id}')" class="circle-btn flex flex-col items-center gap-1.5 shrink-0 ${currentCircle===c.id?'':'opacity-80'}">
-        <div class="w-[56px] h-[56px] rounded-full bg-n-soft flex items-center justify-center text-sm font-medium border ${currentCircle===c.id?'border-[#7c6aef] text-white':'border-white/10 text-n-muted'}">All</div>
-        <span class="text-[11px] ${currentCircle===c.id?'text-white font-medium':'text-n-muted'}">All</span>
-      </button>`;
-    }
-    return `<button data-id="${c.id}" onclick="filterCircle('${c.id}')" class="circle-btn flex flex-col items-center gap-1.5 shrink-0">
-      <div class="relative">
-        <img src="${c.avatar}" class="w-[56px] h-[56px] rounded-full object-cover ${currentCircle===c.id?'ring-[2.5px] ring-[#7c6aef]':''}" alt="">
-        ${c.status?`<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full dot ${c.status==='green'?'bg-n-green':'bg-n-amber'}"></span>`:''}
-      </div>
-      <span class="text-[11px] ${currentCircle===c.id?'text-white font-medium':'text-n-muted'}">${c.name}</span>
-    </button>`;
-  }).join('') + `<button onclick="openModal('newCircle')" class="flex flex-col items-center gap-1.5 shrink-0">
-    <div class="w-[56px] h-[56px] rounded-full bg-n-soft border-2 border-dashed border-white/15 flex items-center justify-center text-n-muted">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-    </div>
-    <span class="text-[11px] text-n-muted">New</span>
-  </button>`;
+function rC(){
+  const el=document.getElementById('circs');
+  el.innerHTML=C.map(c=>{
+    if(c.t==='all')return `<button onclick=\"fil('${c.id}')\" class=\"flex flex-col items-center gap-1.5 shrink-0 press\">
+      <div class=\"w-[60px] h-[60px] rounded-full bg-z-1 flex items-center justify-center text-[13px] font-medium border ${cur===c.id?'border-z-a text-white':'border-white/10 text-z-m'}\">All</div>
+      <span class=\"text-[11px] ${cur===c.id?'text-white font-medium':'text-z-m'}\">All</span></button>`;
+    return `<button onclick=\"fil('${c.id}')\" class=\"flex flex-col items-center gap-1.5 shrink-0 press\">
+      <div class=\"relative\"><img src=\"${c.a}\" class=\"w-[60px] h-[60px] rounded-full object-cover ${cur===c.id?'ring-[2.5px] ring-z-a':''}\" alt=\"\">
+      ${c.s?`<span class=\"absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full dot ${c.s==='g'?'bg-z-g':'bg-z-w'}\"></span>`:''}</div>
+      <span class=\"text-[11px] ${cur===c.id?'text-white font-medium':'text-z-m'}\">${c.n}</span></button>`;
+  }).join('')+`<button onclick=\"modal('circle')\" class=\"flex flex-col items-center gap-1.5 shrink-0 press\">
+    <div class=\"w-[60px] h-[60px] rounded-full bg-z-1 border-2 border-dashed border-white/10 flex items-center justify-center text-z-m\">
+      <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 5v14M5 12h14\"/></svg></div>
+    <span class=\"text-[11px] text-z-m\">New</span></button>`;
 }
 
-function renderContexts() {
-  const list = document.getElementById('ctxList');
-  const empty = document.getElementById('ctxEmpty');
-  const filtered = currentCircle === 'all' ? contexts : contexts.filter(c => c.circle === currentCircle);
-  document.getElementById('ctxCount').textContent = filtered.length + ' active';
-  if (!filtered.length) {
-    list.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-  list.innerHTML = filtered.map(c => `
-    <div class="flex items-center gap-3 p-3 rounded-2xl cursor-pointer active:bg-n-soft transition-colors" onclick="openChat('${c.id}')">
-      <div class="relative shrink-0">
-        ${c.avatar
-          ? `<img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover" alt="">`
-          : `<div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">${c.initials||'?'}</div>`}
-        ${c.status && c.status.includes('Open') ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-n-green rounded-full dot"></span>' : ''}
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="font-medium text-[15px] truncate">${c.name}</h3>
-          <span class="text-[11px] text-n-muted shrink-0">${c.time}</span>
-        </div>
-        <p class="text-[13px] text-n-muted truncate mt-0.5">${c.preview}</p>
-      </div>
-      ${c.unread ? `<span class="w-5 h-5 rounded-full bg-[#7c6aef] text-[10px] font-semibold flex items-center justify-center shrink-0">${c.unread}</span>` : ''}
+function rL(){
+  const f=cur==='all'?X:X.filter(x=>x.c===cur);
+  const list=document.getElementById('list'),emp=document.getElementById('empty');
+  if(!f.length){list.innerHTML='';emp.classList.remove('hidden');return}
+  emp.classList.add('hidden');
+  list.innerHTML=f.map(x=>`<div class=\"flex items-center gap-3.5 p-3.5 rounded-2xl press cursor-pointer hover:bg-z-1/60 transition-colors\" onclick=\"open('${x.id}')\">
+    <div class=\"relative shrink-0\">${x.a?`<img src=\"${x.a}\" class=\"w-[52px] h-[52px] rounded-full object-cover\">`:`<div class=\"w-[52px] h-[52px] rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm\">${x.i}</div>`}
+    ${x.st&&x.st.includes('Open')?'<span class=\"absolute bottom-0 right-0 w-3.5 h-3.5 bg-z-g rounded-full dot\"></span>':''}</div>
+    <div class=\"flex-1 min-w-0\">
+      <div class=\"flex items-center justify-between gap-2\"><h3 class=\"font-medium text-[15px] truncate\">${x.n}</h3><span class=\"text-[11px] text-z-m shrink-0\">${x.t}</span></div>
+      <p class=\"text-[13px] text-z-m truncate mt-0.5 leading-snug\">${x.p}</p>
     </div>
-  `).join('');
+    ${x.u?`<span class=\"w-5 h-5 rounded-full bg-z-a text-[10px] font-semibold flex items-center justify-center shrink-0\">${x.u}</span>`:''}
+  </div>`).join('');
 }
 
-function renderMessages(ctx) {
-  const box = document.getElementById('messages');
-  const header = ctx.sealed
-    ? `<div class="flex justify-center"><span class="text-[11px] text-n-green bg-n-soft px-3 py-1 rounded-full">Sealed · permanent</span></div>`
-    : `<div class="flex justify-center"><span class="text-[11px] text-n-muted bg-n-soft px-3 py-1 rounded-full">Today · temporary by default</span></div>`;
-  box.innerHTML = header + ctx.messages.map(m => {
-    if (m.from === 'me') {
-      return `<div class="flex gap-2.5 max-w-[85%] ml-auto flex-row-reverse">
-        <div>
-          <div class="bg-[#7c6aef] rounded-2xl rounded-tr-md px-3.5 py-2.5"><p class="text-[14px] leading-relaxed">${esc(m.text)}</p></div>
-          <span class="text-[10px] text-n-muted mr-1 mt-1 block text-right">${m.time}</span>
-        </div>
-      </div>`;
-    }
-    return `<div class="flex gap-2.5 max-w-[85%]">
-      ${ctx.avatar ? `<img src="${ctx.avatar}" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" alt="">` : `<div class="w-7 h-7 rounded-full bg-n-soft shrink-0 mt-0.5"></div>`}
-      <div>
-        <div class="bg-n-soft rounded-2xl rounded-tl-md px-3.5 py-2.5"><p class="text-[14px] leading-relaxed">${esc(m.text)}</p></div>
-        <span class="text-[10px] text-n-muted ml-1 mt-1 block">${m.time}</span>
-      </div>
-    </div>`;
+function rM(x){
+  const b=document.getElementById('msgs');
+  const h=x.se?`<div class=\"flex justify-center mb-2\"><span class=\"text-[11px] text-z-g bg-z-1 px-3.5 py-1.5 rounded-full border border-z-g/20\">Sealed · permanent</span></div>`
+    :`<div class=\"flex justify-center mb-2\"><span class=\"text-[11px] text-z-m bg-z-1 px-3.5 py-1.5 rounded-full\">Today · temporary by default</span></div>`;
+  b.innerHTML=h+x.m.map(m=>{
+    if(m.f==='m')return `<div class=\"flex justify-end msg-in\"><div class=\"max-w-[80%]\">
+      <div class=\"bg-z-a rounded-2xl rounded-br-md px-4 py-2.5\"><p class=\"text-[14.5px] leading-relaxed\">${e(m.x)}</p></div>
+      <span class=\"text-[10px] text-z-m mt-1 block text-right mr-1\">${m.t}</span></div></div>`;
+    return `<div class=\"flex gap-2.5 msg-in\"><div class=\"w-8 h-8 rounded-full overflow-hidden shrink-0 mt-0.5\">${x.a?`<img src=\"${x.a}\" class=\"w-full h-full object-cover\">`:`<div class=\"w-full h-full bg-z-2\"></div>`}</div>
+      <div class=\"max-w-[75%]\"><div class=\"bg-z-1 rounded-2xl rounded-bl-md px-4 py-2.5 border border-white/[0.03]\"><p class=\"text-[14.5px] leading-relaxed\">${e(m.x)}</p></div>
+      <span class=\"text-[10px] text-z-m mt-1 block ml-1\">${m.t}</span></div></div>`;
   }).join('');
-  box.scrollTop = box.scrollHeight;
+  b.scrollTop=b.scrollHeight;
 }
 
-function esc(s){ return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function e(s){return s.replace(/</g,'&lt;')}
 
-function go(view) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const el = document.getElementById('view-' + view);
-  if (el) { el.classList.add('active'); el.classList.add('fade'); }
-  if (window.innerWidth < 768) {
-    document.getElementById('sidebar').style.display = view === 'home' ? 'flex' : 'none';
-  } else {
-    document.getElementById('sidebar').style.display = 'flex';
-  }
-  if (view === 'home') currentCtx = null;
+function nav(v){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  const el=document.getElementById('scr-'+v);
+  if(el){el.classList.add('on');el.classList.add('fade')}
+  if(window.innerWidth<768)document.getElementById('side').style.display=v==='home'?'flex':'none';
+  else document.getElementById('side').style.display='flex';
+  if(v==='home')ctx=null;
 }
 
-function filterCircle(id) {
-  currentCircle = id;
-  renderCircles();
-  renderContexts();
+function fil(id){cur=id;rC();rL()}
+
+function open(id){
+  const x=X.find(i=>i.id===id);if(!x)return;
+  ctx=x;se=!!x.se;
+  document.getElementById('nm').textContent=x.n;
+  document.getElementById('st').innerHTML=x.se
+    ?`<span class=\"w-1.5 h-1.5 rounded-full bg-z-w\"></span>${x.st}`
+    :`<span class=\"w-1.5 h-1.5 rounded-full bg-z-g\"></span>${x.st}`;
+  document.getElementById('av').innerHTML=x.a
+    ?`<img src=\"${x.a}\" class=\"w-full h-full object-cover\">`
+    :`<div class=\"w-full h-full flex items-center justify-center text-sm font-medium bg-gradient-to-br from-indigo-500 to-purple-600\">${x.i||'?'}</div>`;
+  uSeal();rM(x);nav('chat');
+  if(window.innerWidth<768)document.getElementById('side').style.display='none';
 }
 
-function openChat(id) {
-  const ctx = contexts.find(c => c.id === id);
-  if (!ctx) return;
-  currentCtx = ctx;
-  sealed = !!ctx.sealed;
-  document.getElementById('chatName').textContent = ctx.name;
-  document.getElementById('chatStatus').innerHTML = ctx.sealed
-    ? `<span class="w-1.5 h-1.5 rounded-full bg-n-amber"></span> ${ctx.status}`
-    : `<span class="w-1.5 h-1.5 rounded-full bg-n-green"></span> ${ctx.status}`;
-  const wrap = document.getElementById('chatAvatarWrap');
-  wrap.innerHTML = ctx.avatar
-    ? `<img src="${ctx.avatar}" class="w-full h-full object-cover" alt="">`
-    : `<div class="w-full h-full flex items-center justify-center text-sm font-medium bg-gradient-to-br from-indigo-500 to-purple-600">${ctx.initials||'?'}</div>`;
-  updateSealUI();
-  renderMessages(ctx);
-  go('chat');
-  if (window.innerWidth < 768) document.getElementById('sidebar').style.display = 'none';
+function togSeal(){if(!ctx)return;se=!se;ctx.se=se;uSeal()}
+function uSeal(){
+  const b=document.getElementById('seal'),t=document.getElementById('sealT'),n=document.getElementById('note');
+  if(se){b.classList.add('border-z-g/40','text-z-g','bg-z-g/10');t.textContent='Sealed';n.textContent='This context is now permanent';n.className='text-[10px] text-z-g text-center mt-2.5'}
+  else{b.classList.remove('border-z-g/40','text-z-g','bg-z-g/10');t.textContent='Seal';n.textContent='Messages disappear unless sealed';n.className='text-[10px] text-z-m/60 text-center mt-2.5'}
 }
 
-function toggleSeal() {
-  if (!currentCtx) return;
-  sealed = !sealed;
-  currentCtx.sealed = sealed;
-  updateSealUI();
+function send(){
+  const i=document.getElementById('inp'),t=i.value.trim();
+  if(!t||!ctx)return;
+  ctx.m.push({f:'m',x:t,t:'now'});ctx.p=t;i.value='';rM(ctx);rL();
 }
 
-function updateSealUI() {
-  const btn = document.getElementById('sealBtn');
-  const label = document.getElementById('sealLabel');
-  const note = document.getElementById('ephemeralNote');
-  if (sealed) {
-    btn.classList.add('on');
-    label.textContent = 'Sealed';
-    note.textContent = 'This context is now permanent';
-    note.className = 'text-[10px] text-n-green text-center mt-2';
-  } else {
-    btn.classList.remove('on');
-    label.textContent = 'Seal';
-    note.textContent = 'Messages disappear unless sealed';
-    note.className = 'text-[10px] text-n-muted text-center mt-2';
-  }
+function modal(t){
+  const b=document.getElementById('box'),o=document.getElementById('ov');
+  if(t==='ctx')b.innerHTML=`<h3 class=\"font-semibold text-[18px] mb-1\">New context</h3>
+    <p class=\"text-[12px] text-z-m mb-5\">Temporary by default. Seal later if needed.</p>
+    <input id=\"nn\" placeholder=\"Name or purpose\" class=\"w-full bg-z-1 rounded-2xl px-4 py-3.5 text-[14px] border border-white/[0.05] focus:outline-none focus:ring-1 focus:ring-z-a mb-3\">
+    <select id=\"nc\" class=\"w-full bg-z-1 rounded-2xl px-4 py-3.5 text-[14px] border border-white/[0.05] text-white mb-5\">
+      <option value=\"close\">Close</option><option value=\"work\">Work</option><option value=\"explore\">Explore</option></select>
+    <div class=\"flex gap-3\"><button onclick=\"closeM()\" class=\"flex-1 py-3 rounded-2xl bg-z-1 text-[14px] press\">Cancel</button>
+    <button onclick=\"mkCtx()\" class=\"flex-1 py-3 rounded-2xl bg-z-a text-white text-[14px] font-medium press\">Create</button></div>`;
+  else if(t==='circle')b.innerHTML=`<h3 class=\"font-semibold text-[18px] mb-1\">New circle</h3>
+    <p class=\"text-[12px] text-z-m mb-5\">A set of people + shared visibility rules.</p>
+    <input id=\"cn\" placeholder=\"Circle name\" class=\"w-full bg-z-1 rounded-2xl px-4 py-3.5 text-[14px] border border-white/[0.05] focus:outline-none focus:ring-1 focus:ring-z-a mb-5\">
+    <div class=\"flex gap-3\"><button onclick=\"closeM()\" class=\"flex-1 py-3 rounded-2xl bg-z-1 text-[14px] press\">Cancel</button>
+    <button onclick=\"mkCir()\" class=\"flex-1 py-3 rounded-2xl bg-z-a text-white text-[14px] font-medium press\">Create</button></div>`;
+  else if(t==='info')b.innerHTML=`<h3 class=\"font-semibold text-[18px] mb-4\">${ctx?.n||'Context'}</h3>
+    <div class=\"space-y-3 text-[14px] mb-5\">
+      <div class=\"flex justify-between\"><span class=\"text-z-m\">Circle</span><span>${ctx?.c||'—'}</span></div>
+      <div class=\"flex justify-between\"><span class=\"text-z-m\">Sealed</span><span>${ctx?.se?'Yes':'No'}</span></div>
+      <div class=\"flex justify-between\"><span class=\"text-z-m\">Messages</span><span>${ctx?.m?.length||0}</span></div>
+    </div>
+    <button onclick=\"closeM()\" class=\"w-full py-3 rounded-2xl bg-z-1 text-[14px] press\">Close</button>`;
+  else b.innerHTML=`<p class=\"text-[14px] text-z-m mb-4\">Coming soon</p><button onclick=\"closeM()\" class=\"w-full py-3 rounded-2xl bg-z-1 text-[14px] press\">Close</button>`;
+  o.classList.remove('hidden');o.classList.add('flex');
+}
+function closeM(){document.getElementById('ov').classList.add('hidden');document.getElementById('ov').classList.remove('flex')}
+function mkCtx(){
+  const n=document.getElementById('nn')?.value?.trim(),c=document.getElementById('nc')?.value||'close';
+  if(!n)return;
+  const id='x'+Date.now();
+  X.unshift({id,n,c,a:null,i:n.slice(0,2).toUpperCase(),p:'New context',t:'now',u:0,st:'Open to deep talk',se:false,m:[]});
+  closeM();rL();open(id);
+}
+function mkCir(){
+  const n=document.getElementById('cn')?.value?.trim();if(!n)return;
+  C.push({id:'c'+Date.now(),n,a:`https://i.pravatar.cc/120?u=${Date.now()}`,s:null});
+  closeM();rC();
 }
 
-function sendMsg() {
-  const input = document.getElementById('msgInput');
-  const text = input.value.trim();
-  if (!text || !currentCtx) return;
-  currentCtx.messages.push({ from:'me', text, time:'now' });
-  currentCtx.preview = text;
-  input.value = '';
-  renderMessages(currentCtx);
-  renderContexts();
-}
-
-function updateState(v) {}
-
-function openModal(type) {
-  const box = document.getElementById('modalBox');
-  const overlay = document.getElementById('modalOverlay');
-  if (type === 'newContext') {
-    box.innerHTML = `
-      <h3 class="font-semibold text-lg mb-1">New context</h3>
-      <p class="text-xs text-n-muted mb-4">Temporary by default. Seal later if needed.</p>
-      <input id="newCtxName" placeholder="Name or purpose" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#7c6aef] mb-3">
-      <select id="newCtxCircle" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 text-white mb-4">
-        <option value="close">Close</option>
-        <option value="work">Work</option>
-        <option value="explore">Explore</option>
-      </select>
-      <div class="flex gap-2">
-        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-n-soft text-sm">Cancel</button>
-        <button onclick="createContext()" class="flex-1 py-2.5 rounded-xl bg-[#7c6aef] text-white text-sm font-medium">Create</button>
-      </div>`;
-  } else if (type === 'newCircle') {
-    box.innerHTML = `
-      <h3 class="font-semibold text-lg mb-1">New circle</h3>
-      <p class="text-xs text-n-muted mb-4">A set of people + shared rules of visibility.</p>
-      <input id="newCircleName" placeholder="Circle name" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#7c6aef] mb-4">
-      <div class="flex gap-2">
-        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-n-soft text-sm">Cancel</button>
-        <button onclick="createCircle()" class="flex-1 py-2.5 rounded-xl bg-[#7c6aef] text-white text-sm font-medium">Create</button>
-      </div>`;
-  } else if (type === 'contextInfo') {
-    box.innerHTML = `
-      <h3 class="font-semibold text-lg mb-3">${currentCtx ? currentCtx.name : 'Context'}</h3>
-      <div class="space-y-2 text-sm text-n-muted mb-4">
-        <div class="flex justify-between"><span>Circle</span><span class="text-white">${currentCtx?.circle || '—'}</span></div>
-        <div class="flex justify-between"><span>Sealed</span><span class="text-white">${currentCtx?.sealed ? 'Yes' : 'No'}</span></div>
-        <div class="flex justify-between"><span>Messages</span><span class="text-white">${currentCtx?.messages?.length || 0}</span></div>
-      </div>
-      <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-n-soft text-sm">Close</button>`;
-  } else {
-    box.innerHTML = `<p class="text-sm text-n-muted">Coming soon</p><button onclick="closeModal()" class="mt-4 w-full py-2.5 rounded-xl bg-n-soft text-sm">Close</button>`;
-  }
-  overlay.classList.remove('hidden');
-  overlay.classList.add('flex');
-}
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-  document.getElementById('modalOverlay').classList.remove('flex');
-}
-
-function createContext() {
-  const name = document.getElementById('newCtxName')?.value?.trim();
-  const circle = document.getElementById('newCtxCircle')?.value || 'close';
-  if (!name) return;
-  const id = 'c' + Date.now();
-  contexts.unshift({
-    id, name, circle, avatar: null, initials: name.slice(0,2).toUpperCase(),
-    preview: 'New context', time: 'now', unread: 0, status: 'Open to deep talk', sealed: false,
-    messages: []
-  });
-  closeModal();
-  renderContexts();
-  openChat(id);
-}
-
-function createCircle() {
-  const name = document.getElementById('newCircleName')?.value?.trim();
-  if (!name) return;
-  const id = 'circ' + Date.now();
-  circles.push({ id, name, avatar: `https://i.pravatar.cc/112?u=${id}`, status: null });
-  closeModal();
-  renderCircles();
-}
-
-renderCircles();
-renderContexts();
-if (window.innerWidth >= 768) document.getElementById('sidebar').style.display = 'flex';
-window.addEventListener('resize', () => {
-  if (window.innerWidth >= 768) document.getElementById('sidebar').style.display = 'flex';
-  else if (!currentCtx) document.getElementById('sidebar').style.display = 'flex';
-});
+rC();rL();
+if(window.innerWidth>=768)document.getElementById('side').style.display='flex';
+window.addEventListener('resize',()=>{if(window.innerWidth>=768)document.getElementById('side').style.display='flex';else if(!ctx)document.getElementById('side').style.display='flex'});
 </script>
 </body>
 </html>
