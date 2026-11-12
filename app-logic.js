@@ -852,7 +852,7 @@ async function submitAuth(){
       await api.resetPassword(email);error.textContent='Если аккаунт существует, письмо для восстановления отправлено.';
     }else if(AUTH_MODE==='recovery'){
       if(password!==confirm){error.textContent='Пароли не совпадают.';return}
-      await api.updatePassword(password);closeSheet();toast('Пароль обновлён');
+      await api.updatePassword(password);history.replaceState(null,'',location.pathname);closeSheet();toast('Пароль обновлён');
     }
   }catch(e){error.textContent=e.message||'Не удалось выполнить запрос'}
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
