@@ -64,6 +64,8 @@ assert.ok(calls.some(call=>call[0]==='posts'&&call[2]==='DELETE'));
 const channel=await cloud.createChannel({title:'Creators',description:'Community',visibility:'public',cover:media});
 assert.match(channel.id,/^[0-9a-f-]{36}$/i);
 await cloud.updateChannel(channel.id,{title:'Creators updated',visibility:'followers'});
+await cloud.joinChannel(channel.id,true);
+await cloud.joinChannel(channel.id,false);
 const shop=await cloud.createShop({title:'Studio',description:'Store'});
 assert.match(shop.id,/^[0-9a-f-]{36}$/i);
 await cloud.updateShop(shop.id,{title:'Studio updated'});
