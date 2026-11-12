@@ -16,7 +16,7 @@ Mobile-first social product prototype focused on intentional communication, priv
 
 ## Current implementation boundary
 
-Interactive content is currently stored in the browser (IndexedDB/local storage). It does not sync across devices or accounts. The Supabase/Postgres schema and RLS policies are prepared and covered by local tests, but have not yet been applied to a live Supabase project. Real authentication, cloud media, realtime messaging and orders are not active yet.
+Interactive content is currently stored in the browser (IndexedDB/local storage). It does not sync across devices or accounts, and local records are not encrypted yet. Do not enter sensitive medical information until the private vault/cloud security phase is complete. The Supabase/Postgres schema and RLS policies are prepared and covered by local tests, but have not yet been applied to a live Supabase project. Real authentication, cloud media, realtime messaging and orders are not active yet.
 
 The in-app prototype branding remains unchanged while the product is being developed.
 
