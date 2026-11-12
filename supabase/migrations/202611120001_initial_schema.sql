@@ -168,6 +168,51 @@ create table if not exists public.story_media (
   created_at timestamptz not null default now()
 );
 
+-- Personal fitness and nutrition records are owner-only by default.
+create table if not exists public.fitness_profiles (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  height_cm numeric(5,2) check (height_cm is null or height_cm between 50 and 260),
+  weight_kg numeric(5,2) check (weight_kg is null or weight_kg between 10 and 500),
+  goal text not null default '' check (char_length(goal) <= 500),
+  activity_level text,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.workout_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  workout_type text not null check (char_length(workout_type) between 1 and 120),
+  duration_minutes integer check (duration_minutes is null or duration_minutes between 1 and 1440),
+  notes text not null default '' check (char_length(notes) <= 4000),
+  performed_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.nutrition_entries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  food_name text not null check (char_length(food_name) between 1 and 200),
+  serving_grams numeric(8,2) check (serving_grams is null or serving_grams > 0),
+  calories_kcal numeric(8,2) check (calories_kcal is null or calories_kcal >= 0),
+  protein_g numeric(8,2) check (protein_g is null or protein_g >= 0),
+  carbs_g numeric(8,2) check (carbs_g is null or carbs_g >= 0),
+  fat_g numeric(8,2) check (fat_g is null or fat_g >= 0),
+  notes text not null default '' check (char_length(notes) <= 1000),
+  consumed_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.health_measurements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  metric text not null check (char_length(metric) between 1 and 100),
+  value numeric(12,3) not null,
+  unit text not null check (char_length(unit) between 1 and 30),
+  measured_at timestamptz not null default now(),
+  source text not null default 'manual' check (char_length(source) <= 80),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.clips (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles(id) on delete cascade,
@@ -259,6 +304,9 @@ create index if not exists messages_conversation_created_idx on public.messages(
 create index if not exists notifications_user_created_idx on public.notifications(user_id,created_at desc);
 create index if not exists products_shop_status_idx on public.products(shop_id,status);
 create index if not exists clips_author_created_idx on public.clips(author_id,created_at desc);
+create index if not exists workout_sessions_user_date_idx on public.workout_sessions(user_id,performed_at desc);
+create index if not exists nutrition_entries_user_date_idx on public.nutrition_entries(user_id,consumed_at desc);
+create index if not exists health_measurements_user_date_idx on public.health_measurements(user_id,measured_at desc);
 create index if not exists clips_visibility_created_idx on public.clips(visibility,created_at desc);
 create index if not exists clip_likes_clip_idx on public.clip_likes(clip_id);
 
@@ -383,6 +431,8 @@ drop trigger if exists posts_set_updated_at on public.posts;
 create trigger posts_set_updated_at before update on public.posts for each row execute function public.set_updated_at();
 drop trigger if exists clips_set_updated_at on public.clips;
 create trigger clips_set_updated_at before update on public.clips for each row execute function public.set_updated_at();
+drop trigger if exists fitness_profiles_set_updated_at on public.fitness_profiles;
+create trigger fitness_profiles_set_updated_at before update on public.fitness_profiles for each row execute function public.set_updated_at();
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path=''
@@ -413,6 +463,10 @@ alter table public.stories enable row level security;
 alter table public.story_media enable row level security;
 alter table public.clips enable row level security;
 alter table public.clip_likes enable row level security;
+alter table public.fitness_profiles enable row level security;
+alter table public.workout_sessions enable row level security;
+alter table public.nutrition_entries enable row level security;
+alter table public.health_measurements enable row level security;
 alter table public.comments enable row level security;
 alter table public.post_likes enable row level security;
 alter table public.conversations enable row level security;
@@ -422,7 +476,7 @@ alter table public.notifications enable row level security;
 alter table public.reports enable row level security;
 
 revoke all on all tables in schema public from anon, authenticated;
-grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.clips,public.clip_likes,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
+grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.clips,public.clip_likes,public.fitness_profiles,public.workout_sessions,public.nutrition_entries,public.health_measurements,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
 
 create policy profiles_read on public.profiles for select to authenticated using (private.can_view_profile(id));
 create policy profiles_insert on public.profiles for insert to authenticated with check (id=(select auth.uid()));
@@ -550,6 +604,16 @@ create policy clip_likes_insert_self on public.clip_likes for insert to authenti
 );
 create policy clip_likes_delete_self on public.clip_likes for delete to authenticated using (user_id=(select auth.uid()));
 
+-- Health and body data is never public or follower-visible.
+create policy fitness_profiles_owner_all on public.fitness_profiles for all to authenticated
+using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+create policy workout_sessions_owner_all on public.workout_sessions for all to authenticated
+using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+create policy nutrition_entries_owner_all on public.nutrition_entries for all to authenticated
+using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+create policy health_measurements_owner_all on public.health_measurements for all to authenticated
+using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+
 create policy conversations_read_members on public.conversations for select to authenticated using (private.is_conversation_member(id) or created_by=(select auth.uid()));
 create policy conversations_insert_creator on public.conversations for insert to authenticated with check (created_by=(select auth.uid()));
 create policy conversations_delete_creator on public.conversations for delete to authenticated using (created_by=(select auth.uid()));
@@ -577,6 +641,8 @@ create or replace function private.can_read_media_object(target_bucket text,targ
 returns boolean language sql stable security definer set search_path=''
 as $$
   select case
+    when target_bucket='nexus-health'
+      then split_part(target_name,'/',1)=(select auth.uid())::text
     when target_bucket='nexus-avatars'
       and split_part(target_name,'/',1) ~* '^[0-9a-f-]{36}$'
       then private.can_view_profile(split_part(target_name,'/',1)::uuid)
@@ -605,12 +671,13 @@ $$;
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 values
   ('nexus-avatars','nexus-avatars',false,20971520,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif']),
+  ('nexus-health','nexus-health',false,20971520,array['image/jpeg','image/png','image/webp','application/pdf']),
   ('nexus-media','nexus-media',false,104857600,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','video/mp4','video/quicktime'])
 on conflict (id) do nothing;
 
 drop policy if exists nexus_media_upload_own on storage.objects;
 create policy nexus_media_upload_own on storage.objects for insert to authenticated
-with check (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+with check (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and (storage.foldername(name))[1]=(select auth.uid())::text);
 drop policy if exists nexus_media_read_own on storage.objects;
 drop policy if exists nexus_media_read_authorized on storage.objects;
 create policy nexus_media_read_authorized on storage.objects for select to authenticated
