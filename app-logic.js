@@ -457,6 +457,77 @@ function toggleClipLike(id){
   const clip=DB.clips.find(item=>item.id===id);if(!clip)return;
   clip.liked=!clip.liked;clip.likes=Math.max(0,clip.likes+(clip.liked?1:-1));save();renderClips();
 }
+function safeExternalUrl(value){
+  try{const url=new URL(value);return url.protocol==='https:'?url.href:null}catch{return null}
+}
+function openExternalMedia(value){
+  const url=safeExternalUrl(value);if(!url){toast('Нужна безопасная HTTPS-ссылка');return}
+  window.open(url,'_blank','noopener,noreferrer');
+}
+function renderPlaylists(){
+  const box=document.getElementById('eres');
+  box.innerHTML=(DB.playlists||[]).length?DB.playlists.map(list=>`<button class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press" data-list-id="${esc(list.id)}" onclick="openPlaylist(this.dataset.listId)"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/40 to-fuchsia-500/20 flex items-center justify-center text-xl">♫</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(list.name)}</p><p class="text-[11px] text-white/40">${list.tracks.length} треков · ${list.visibility==='public'?'Публичный':'Приватный'}</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(list.desc||'')}</p></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">♫</div><p class="font-semibold text-white mb-1">Твоя музыкальная библиотека</p><p class="text-[12px] text-white/40 mb-4">Собирай плейлисты и открывай музыку у лицензированных сервисов</p><button onclick="openPlaylistCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Создать плейлист</button></div>';
+  box.innerHTML+='<button onclick="openPlaylistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новый плейлист</button>';
+}
+function openPlaylist(id){
+  const list=DB.playlists.find(item=>item.id===id);if(!list)return;DB.activePlaylist=id;
+  const box=document.getElementById('eres');
+  box.innerHTML=`<button onclick="DB.etab='music';renderExplore()" class="text-[12px] text-white/45 mb-3">← Все плейлисты</button><div class="p-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/10 border border-white/[0.06] mb-3"><p class="text-[20px] font-bold">${esc(list.name)}</p><p class="text-[12px] text-white/50 mt-1">${esc(list.desc||'')}</p><p class="text-[11px] text-white/35 mt-2">${list.tracks.length} треков</p></div>`+
+    (list.ownerKey==='me'?'<button onclick="openTrackCreate()" class="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] mb-3 press">＋ Добавить трек</button>':'')+
+    (list.tracks.length?list.tracks.map((track,index)=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] mb-1.5"><div class="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-sm">${index+1}</div><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(track.title)}</p><p class="text-[11px] text-white/40 truncate">${esc(track.artist)} · ${esc(track.provider)}</p></div><button data-url="${esc(track.url)}" onclick="openExternalMedia(this.dataset.url)" class="px-3 py-2 rounded-full glass text-[11px] press">Открыть</button></div>`).join(''):'<div class="empty">В плейлисте пока нет треков</div>');
+}
+function openPlaylistCreate(){
+  document.getElementById('playlist-name').value='';document.getElementById('playlist-desc').value='';document.getElementById('playlist-visibility').value='private';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('playlist-create-sheet').classList.add('open');setNav(false);
+}
+function createPlaylist(){
+  const name=document.getElementById('playlist-name').value.trim(),desc=document.getElementById('playlist-desc').value.trim(),visibility=document.getElementById('playlist-visibility').value;
+  if(name.length<2){toast('Добавь название плейлиста');return}
+  const id='pl'+Date.now();DB.playlists.unshift({id,name,desc,visibility,ownerKey:'me',tracks:[]});save();closeSheet();DB.etab='music';go('explore');openPlaylist(id);toast('Плейлист создан локально');
+}
+function openTrackCreate(){
+  if(!DB.activePlaylist)return;
+  ['track-title','track-artist','track-url'].forEach(id=>document.getElementById(id).value='');document.getElementById('track-provider').value='spotify';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('track-create-sheet').classList.add('open');setNav(false);
+}
+function createTrack(){
+  const list=DB.playlists.find(item=>item.id===DB.activePlaylist);if(!list||list.ownerKey!=='me')return;
+  const title=document.getElementById('track-title').value.trim(),artist=document.getElementById('track-artist').value.trim(),url=safeExternalUrl(document.getElementById('track-url').value.trim()),provider=document.getElementById('track-provider').value;
+  if(title.length<1||!url){toast('Укажи название и HTTPS-ссылку на трек');return}
+  list.tracks.push({id:'tr'+Date.now(),title,artist,provider,url});save();closeSheet();openPlaylist(list.id);toast('Трек добавлен');
+}
+function renderWatchlists(){
+  const box=document.getElementById('eres');
+  box.innerHTML=(DB.watchlists||[]).length?DB.watchlists.map(list=>`<button class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press" data-list-id="${esc(list.id)}" onclick="openWatchlist(this.dataset.listId)"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500/30 to-indigo-500/20 flex items-center justify-center text-xl">▣</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(list.name)}</p><p class="text-[11px] text-white/40">${list.items.length} фильмов и сериалов · ${list.visibility==='public'?'Публичная':'Приватная'}</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(list.desc||'')}</p></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">▣</div><p class="font-semibold text-white mb-1">Твой список просмотра</p><p class="text-[12px] text-white/40 mb-4">Сохраняй фильмы, сериалы и официальные ссылки на площадки</p><button onclick="openWatchlistCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Создать подборку</button></div>';
+  box.innerHTML+='<button onclick="openWatchlistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новая подборка</button>';
+}
+function openWatchlist(id){
+  const list=DB.watchlists.find(item=>item.id===id);if(!list)return;DB.activeWatchlist=id;
+  const box=document.getElementById('eres');
+  box.innerHTML=`<button onclick="DB.etab='cinema';renderExplore()" class="text-[12px] text-white/45 mb-3">← Все подборки</button><div class="p-4 rounded-2xl bg-gradient-to-br from-sky-500/20 to-indigo-500/10 border border-white/[0.06] mb-3"><p class="text-[20px] font-bold">${esc(list.name)}</p><p class="text-[12px] text-white/50 mt-1">${esc(list.desc||'')}</p><p class="text-[11px] text-white/35 mt-2">${list.items.length} позиций</p></div>`+
+    (list.ownerKey==='me'?'<button onclick="openWatchlistItemCreate()" class="w-full py-3 rounded-xl bg-white text-black font-semibold text-[13px] mb-3 press">＋ Добавить фильм или сериал</button>':'')+
+    (list.items.length?list.items.map(item=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.04] mb-1.5"><div class="w-10 h-12 rounded-lg bg-white/[0.06] flex items-center justify-center text-sm">▣</div><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(item.title)}</p><p class="text-[11px] text-white/40 truncate">${esc(item.mediaType)} · ${esc(item.provider)} · ${esc(item.status)}</p></div><button data-url="${esc(item.url)}" onclick="openExternalMedia(this.dataset.url)" class="px-3 py-2 rounded-full glass text-[11px] press">Смотреть</button></div>`).join(''):'<div class="empty">В подборке пока нет фильмов</div>');
+}
+function openWatchlistCreate(){
+  document.getElementById('watchlist-name').value='';document.getElementById('watchlist-desc').value='';document.getElementById('watchlist-visibility').value='private';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('watchlist-create-sheet').classList.add('open');setNav(false);
+}
+function createWatchlist(){
+  const name=document.getElementById('watchlist-name').value.trim(),desc=document.getElementById('watchlist-desc').value.trim(),visibility=document.getElementById('watchlist-visibility').value;
+  if(name.length<2){toast('Добавь название подборки');return}
+  const id='wl'+Date.now();DB.watchlists.unshift({id,name,desc,visibility,ownerKey:'me',items:[]});save();closeSheet();DB.etab='cinema';go('explore');openWatchlist(id);toast('Подборка создана локально');
+}
+function openWatchlistItemCreate(){
+  if(!DB.activeWatchlist)return;
+  ['watch-item-title','watch-item-url'].forEach(id=>document.getElementById(id).value='');document.getElementById('watch-item-type').value='movie';document.getElementById('watch-item-provider').value='kinopoisk';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('watch-item-create-sheet').classList.add('open');setNav(false);
+}
+function createWatchlistItem(){
+  const list=DB.watchlists.find(item=>item.id===DB.activeWatchlist);if(!list||list.ownerKey!=='me')return;
+  const title=document.getElementById('watch-item-title').value.trim(),url=safeExternalUrl(document.getElementById('watch-item-url').value.trim()),mediaType=document.getElementById('watch-item-type').value,provider=document.getElementById('watch-item-provider').value;
+  if(title.length<1||!url){toast('Укажи название и HTTPS-ссылку на площадку');return}
+  list.items.push({id:'wi'+Date.now(),title,url,mediaType,provider,status:'want_to_watch'});save();closeSheet();openWatchlist(list.id);toast('Добавлено в подборку');
+}
 function renderExplore(){
   const q=(document.getElementById('eq')?.value||'').toLowerCase();
   const tab=DB.etab;let h='';
@@ -464,6 +535,8 @@ function renderExplore(){
   const channels=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
   const shops=DB.shops.filter(shop=>!q||shop.name.toLowerCase().includes(q));
   if(tab==='clips'){renderClips();return}
+  if(tab==='music'){renderPlaylists();return}
+  if(tab==='cinema'){renderWatchlists();return}
   if(tab==='all'||tab==='people'){
     if(people.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>'+people.map(([key,p])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-profile-key="${esc(key)}" onclick="go('profile',{key:this.dataset.profileKey})"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-11 h-11 rounded-full"><div class="text-left"><p class="text-[14px] font-semibold">${esc(p.name)}</p><p class="text-[12px] text-white/40">${esc(p.handle)}</p></div></button>`).join('');
   }
@@ -537,7 +610,9 @@ function openCreate(){
     ['История','Атлас 24ч','✦','story'],
     ['Канал','Для аудитории','📡','ch'],
     ['Магазин','Каталог','🛍','shop'],
-    ['Клип','Короткое видео','▶','clip']
+    ['Клип','Короткое видео','▶','clip'],
+    ['Плейлист','Музыкальная подборка','♫','playlist'],
+    ['Кино','Фильмы и сериалы','▣','watchlist']
   ].map(([t,d,i,a])=>`<button class="w-full flex items-center gap-3 px-2 py-3 rounded-2xl press text-left" data-a="${a}"><div class="w-10 h-10 rounded-xl bg-white/[0.07] flex items-center justify-center text-[16px]">${i}</div><div><p class="text-[14px] font-semibold">${t}</p><p class="text-[11.5px] text-white/40">${d}</p></div></button>`).join('');
   document.querySelectorAll('#create-opts [data-a]').forEach(b=>{
     b.onclick=()=>{
@@ -547,6 +622,8 @@ function openCreate(){
       else if(a==='ch'){openChannelCreate()}
       else if(a==='shop'){openShopCreate()}
       else if(a==='clip'){openClipCreate()}
+      else if(a==='playlist'){openPlaylistCreate()}
+      else if(a==='watchlist'){openWatchlistCreate()}
     };
   });
   document.getElementById('bd').classList.add('open');document.getElementById('create-sheet').classList.add('open');setNav(false);
@@ -609,7 +686,7 @@ function publishPost(){
   if(channelId)go('channel',{id:channelId});else go('home');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
