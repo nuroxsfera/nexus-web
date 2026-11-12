@@ -777,7 +777,7 @@ function renderSettings(){
     ['Аккаунт',['Профиль','Конфиденциальность','Блокировки']],
     ['Уведомления',['Push','Категории']],
     ['Безопасность',['2FA','Сессии']],
-    ['Данные',['Экспорт данных','Резервная копия сейфа','Импорт сейфа','Очистить кэш','Сбросить демо']]
+    ['Данные',['Экспорт данных','Резервная копия сейфа','Импорт сейфа','Обновить кэш изображений','Сбросить демо']]
   ];
   document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
   checkBackendStatus();
@@ -817,6 +817,22 @@ function toggleBlock(key){
   if(DB.blocked[key])delete DB.blocked[key];else DB.blocked[key]=true;
   save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
 }
+function refreshMediaCache(){
+  for(const url of mediaUrlCache.values())URL.revokeObjectURL(url);
+  mediaUrlCache.clear();
+  hydrateMediaImages(document).then(()=>toast('Временный кэш изображений обновлён')).catch(()=>toast('Не удалось обновить кэш изображений'));
+}
+async function resetDemoData(){
+  if(!window.confirm('Удалить локальные публикации, чаты, каналы, магазины и медиа? Зашифрованный сейф здоровья останется отдельно.'))return;
+  try{
+    if(mediaDbPromise){const db=await mediaDbPromise;db.close();mediaDbPromise=null}
+    await new Promise(resolve=>{
+      const request=indexedDB.deleteDatabase(MEDIA_DB_NAME);
+      request.onsuccess=request.onerror=request.onblocked=resolve;
+    });
+  }catch(e){console.warn('Media reset failed',e)}
+  localStorage.removeItem(LS);location.reload();
+}
 function downloadJsonFile(filename,payload){
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -855,8 +871,8 @@ function settingAction(i){
   if(i==='Экспорт данных'){exportLocalData();return}
   if(i==='Резервная копия сейфа'){exportHealthVaultBackup();return}
   if(i==='Импорт сейфа'){document.getElementById('health-vault-import-file').click();return}
-  if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
-  if(i==='Очистить кэш'){toast('Кэш очищен');return}
+  if(i==='Сбросить демо'){resetDemoData();return}
+  if(i==='Обновить кэш изображений'){refreshMediaCache();return}
   if(i==='Профиль'){go('me');return}
   if(i==='Конфиденциальность'){openPrivacySheet();return}
   if(i==='Блокировки'){openBlockSheet();return}
