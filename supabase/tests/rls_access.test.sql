@@ -9,7 +9,7 @@ values
 ('33333333-3333-4333-8333-333333333333','authenticated','authenticated','nexus-c@example.test','',now(),'{"provider":"email","providers":["email"]}','{"name":"Private"}',now(),now());
 
 update public.profiles set visibility='public' where id='22222222-2222-4222-8222-222222222222';
-update public.profiles set visibility='private' where id='33333333-3333-4333-8333-333333333333';
+update public.profiles set visibility='followers' where id='33333333-3333-4333-8333-333333333333';
 
 insert into public.channels(id,owner_id,title,slug,visibility) values
 ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','22222222-2222-4222-8222-222222222222','Open channel','nexus-open-test','public'),
@@ -49,9 +49,9 @@ select is((select count(*)::int from public.posts where id='10000000-0000-4000-8
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000002'),0,'followers-only post is hidden from a non-follower');
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000003'),0,'private profile content is hidden');
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000004'),0,'private channel post is hidden');
-select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'private profile is hidden from non-followers');
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'followers-only profile is hidden from non-followers');
 insert into public.follows(follower_id,followed_id,status) values ('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','pending');
-select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'pending follow does not unlock private profile');
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'pending follow does not unlock followers-only profile');
 select is((select count(*)::int from public.post_media where post_id='10000000-0000-4000-8000-000000000004'),0,'private channel media is hidden');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg'),1,'public post media can be read');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg'),0,'private channel media cannot be read');
@@ -67,7 +67,7 @@ select throws_ok($update public.follows set follower_id='22222222-2222-4222-8222
 reset role;
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
-select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),1,'accepted follower can view private profile');
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),1,'accepted follower can view followers-only profile');
 insert into public.blocks(blocker_id,blocked_id) values ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222');
 select is((select count(*)::int from public.posts where author_id='22222222-2222-4222-8222-222222222222'),0,'blocking a user hides their posts');
 
