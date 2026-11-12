@@ -681,14 +681,14 @@ with check (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and (sto
 drop policy if exists nexus_media_read_own on storage.objects;
 drop policy if exists nexus_media_read_authorized on storage.objects;
 create policy nexus_media_read_authorized on storage.objects for select to authenticated
-using (bucket_id in ('nexus-avatars','nexus-media') and private.can_read_media_object(bucket_id,name));
+using (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and private.can_read_media_object(bucket_id,name));
 drop policy if exists nexus_media_update_own on storage.objects;
 create policy nexus_media_update_own on storage.objects for update to authenticated
-using (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text)
-with check (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+using (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and (storage.foldername(name))[1]=(select auth.uid())::text)
+with check (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and (storage.foldername(name))[1]=(select auth.uid())::text);
 drop policy if exists nexus_media_delete_own on storage.objects;
 create policy nexus_media_delete_own on storage.objects for delete to authenticated
-using (bucket_id in ('nexus-avatars','nexus-media') and (storage.foldername(name))[1]=(select auth.uid())::text);
+using (bucket_id in ('nexus-avatars','nexus-media','nexus-health') and (storage.foldername(name))[1]=(select auth.uid())::text);
 
 revoke all on function private.is_blocked_between(uuid,uuid) from public,anon;
 revoke all on function private.is_following(uuid) from public,anon;
