@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
 <title>Atlantis</title>
-<!-- build: v5-light-cards -->
+<!-- build: v6-tight-cards -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -35,7 +35,7 @@
   .ns::-webkit-scrollbar{display:none}
   .press:active{opacity:.85;transform:scale(.98)}
   .story-ring{background:linear-gradient(135deg,#a855f7,#ec4899,#f97316)}
-  .post-card{border-radius:24px;overflow:hidden;background:#f2f2f7;color:#000}
+  .post-card{border-radius:28px;overflow:hidden;background:#f4f4f6;color:#000}
   .nav-item{transition:all .15s}
   .nav-item.active{background:#fff;color:#000}
   .fade{animation:f .3s ease}
@@ -61,6 +61,7 @@
 
   <!-- Stories / Atlases -->
   <section class="px-5 pb-3 shrink-0">
+    <p class="text-[13px] text-white/50 mb-2.5 font-medium">Ваши Атласы</p>
     <div class="flex gap-4 overflow-x-auto ns -mx-1 px-1">
       <!-- Add -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
@@ -110,88 +111,97 @@
   </section>
 
   <!-- Feed -->
-  <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))">
+  <main class="flex-1 overflow-y-auto ns px-3.5 space-y-3.5" style="padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))">
 
     <!-- Post 1 -->
-    <article class="post-card fade shadow-sm">
-      <div class="px-3 pt-3">
-        <div class="relative rounded-2xl overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+    <article class="post-card fade">
+      <div class="p-2">
+        <div class="relative rounded-[22px] overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=sofia" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
-            <span class="text-[13px] font-semibold text-white drop-shadow-md">София Беннетт</span>
+            <img src="https://i.pravatar.cc/64?u=marley" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow">Марли Корсгард</span>
           </div>
-          <div class="absolute bottom-3 left-3 flex items-center gap-2">
-            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">18</span>
+          <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
+            <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[11.5px] font-medium text-white">12,1 тыс.</span>
+            </div>
+            <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="text-[11.5px] font-medium text-white">24</span>
             </div>
           </div>
-          <div class="absolute bottom-3 right-3 flex -space-x-2">
-            <img src="https://i.pravatar.cc/32?u=1" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
-            <img src="https://i.pravatar.cc/32?u=2" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
-            <img src="https://i.pravatar.cc/32?u=3" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+          <div class="absolute bottom-3 right-3 flex -space-x-1.5">
+            <img src="https://i.pravatar.cc/32?u=a1" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+            <img src="https://i.pravatar.cc/32?u=a2" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+            <img src="https://i.pravatar.cc/32?u=a3" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
           </div>
         </div>
       </div>
-      <div class="px-4 pt-3 pb-4">
-        <div class="flex items-center gap-2 mb-1.5">
-          <img src="https://i.pravatar.cc/48?u=sofia" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold text-black">София Беннетт</span>
+      <div class="px-3.5 pt-1 pb-3.5">
+        <div class="flex items-center gap-2 mb-1">
+          <img src="https://i.pravatar.cc/48?u=marley" class="w-5 h-5 rounded-full object-cover" alt="">
+          <span class="text-[13px] font-semibold text-black">Марли Корсгард</span>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-black/75">Просто хороший день. Солнце, ветер и ничего лишнего.</p>
+        <p class="text-[13px] leading-snug text-black/70">Каждое большое достижение начинается с маленького шага. Продолжай, будь последователен — прогресс накапливается, даже когда этого не чувствуешь. 🔥</p>
+        <p class="text-[12.5px] text-black/45 mt-1">#Продолжай #ПрогрессВажнееСовершенства</p>
       </div>
     </article>
 
     <!-- Post 2 -->
-    <article class="post-card fade shadow-sm">
-      <div class="px-3 pt-3">
-        <div class="relative rounded-2xl overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+    <article class="post-card fade">
+      <div class="p-2">
+        <div class="relative rounded-[22px] overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=max" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
-            <span class="text-[13px] font-semibold text-white drop-shadow-md">Макс Уокер</span>
+            <img src="https://i.pravatar.cc/64?u=sofia" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow">София Беннетт</span>
           </div>
-          <div class="absolute bottom-3 left-3 flex items-center gap-2">
-            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">42</span>
+          <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
+            <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[11.5px] font-medium text-white">18</span>
             </div>
+          </div>
+          <div class="absolute bottom-3 right-3 flex -space-x-1.5">
+            <img src="https://i.pravatar.cc/32?u=b1" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
+            <img src="https://i.pravatar.cc/32?u=b2" class="w-6 h-6 rounded-full border-2 border-white object-cover" alt="">
           </div>
         </div>
       </div>
-      <div class="px-4 pt-3 pb-4">
-        <div class="flex items-center gap-2 mb-1.5">
-          <img src="https://i.pravatar.cc/48?u=max" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold text-black">Макс Уокер</span>
+      <div class="px-3.5 pt-1 pb-3.5">
+        <div class="flex items-center gap-2 mb-1">
+          <img src="https://i.pravatar.cc/48?u=sofia" class="w-5 h-5 rounded-full object-cover" alt="">
+          <span class="text-[13px] font-semibold text-black">София Беннетт</span>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-black/75">Горы всегда знают, когда тебе нужно выдохнуть. #nature</p>
+        <p class="text-[13px] leading-snug text-black/70">Просто хороший день. Солнце, ветер и ничего лишнего.</p>
       </div>
     </article>
 
     <!-- Post 3 -->
-    <article class="post-card fade shadow-sm">
-      <div class="px-3 pt-3">
-        <div class="relative rounded-2xl overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" class="w-full aspect-[4/5] object-cover" alt="">
+    <article class="post-card fade">
+      <div class="p-2">
+        <div class="relative rounded-[22px] overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80" class="w-full aspect-[4/5] object-cover" alt="">
           <div class="absolute top-3 left-3 flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=lena" class="w-8 h-8 rounded-full object-cover border-2 border-white/80 shadow" alt="">
-            <span class="text-[13px] font-semibold text-white drop-shadow-md">Лена Морозова</span>
+            <img src="https://i.pravatar.cc/64?u=justin" class="w-7 h-7 rounded-full object-cover border border-white/70" alt="">
+            <span class="text-[13px] font-semibold text-white drop-shadow">Джастин Липшуц</span>
           </div>
-          <div class="absolute bottom-3 left-3 flex items-center gap-2">
-            <div class="flex items-center gap-1.5 bg-black/45 backdrop-blur-md rounded-full px-2.5 py-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">9</span>
+          <div class="absolute bottom-3 left-3 flex items-center gap-1.5">
+            <div class="flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
+              <span class="text-[11.5px] font-medium text-white">3,4 тыс.</span>
             </div>
           </div>
         </div>
       </div>
-      <div class="px-4 pt-3 pb-4">
-        <div class="flex items-center gap-2 mb-1.5">
-          <img src="https://i.pravatar.cc/48?u=lena" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold text-black">Лена Морозова</span>
+      <div class="px-3.5 pt-1 pb-3.5">
+        <div class="flex items-center gap-2 mb-1">
+          <img src="https://i.pravatar.cc/48?u=justin" class="w-5 h-5 rounded-full object-cover" alt="">
+          <span class="text-[13px] font-semibold text-black">Джастин Липшуц</span>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-black/75">Ночной город. Тишина между огнями.</p>
+        <p class="text-[13px] leading-snug text-black/70">Новые горизонты. Иногда достаточно просто посмотреть вверх.</p>
       </div>
     </article>
 
