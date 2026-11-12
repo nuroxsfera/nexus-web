@@ -45,9 +45,9 @@
     const rows=await client.rest('posts',query);
     return Promise.all((rows||[]).map(async row=>{
       const media=[...(row.post_media||[])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-      const urls=(await Promise.all(media.map(async item=>{try{return await client.signedMediaUrl('nexus-media',item.storage_path)}catch{return null}}))).filter(Boolean);
+      const urls=(await Promise.all(media.map(async item=>{try{return await client.signedMediaUrl('nexus-media',item.storage_path,3600)}catch{return null}}))).filter(Boolean);
       let avatar='https://i.pravatar.cc/64?u='+encodeURIComponent(row.profiles?.username||row.author_id);
-      if(row.profiles?.avatar_path){try{avatar=await client.signedMediaUrl('nexus-avatars',row.profiles.avatar_path)}catch{}}
+      if(row.profiles?.avatar_path){try{avatar=await client.signedMediaUrl('nexus-avatars',row.profiles.avatar_path,3600)}catch{}}
       const commentCount=Array.isArray(row.comments)?Number(row.comments[0]?.count||0):0;
       return {
         id:'cloud-'+row.id,cloudId:row.id,author:row.profiles?.display_name||row.profiles?.username||'Пользователь',
