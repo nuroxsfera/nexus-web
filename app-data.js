@@ -7,7 +7,7 @@ const defaultDB=()=>({
   clips:[],pendingClipVideo:null,
   playlists:[],watchlists:[],activePlaylist:null,activeWatchlist:null,
   fitnessProfile:{},workouts:[],nutritionEntries:[],reports:[],
-  organizations:[],activeOrganization:null,
+  organizations:[],activeOrganization:null,spaces:[],activeSpace:null,
   following:{},channelSub:{},cart:[],seenStories:{},
   stories:[
     {id:'add',type:'add',name:'Добавить'},
