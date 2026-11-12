@@ -317,18 +317,18 @@ $$;
 
 create or replace function public.prevent_follow_identity_change()
 returns trigger language plpgsql set search_path=''
-as $
+as $$
 begin
   if new.follower_id is distinct from old.follower_id or new.followed_id is distinct from old.followed_id then
     raise exception using errcode='42501', message='Follow identity cannot be changed';
   end if;
   return new;
 end
-$;
+$$;
 
 create or replace function public.prevent_message_identity_change()
 returns trigger language plpgsql set search_path=''
-as $
+as $$
 begin
   if new.id is distinct from old.id
     or new.conversation_id is distinct from old.conversation_id
@@ -338,7 +338,7 @@ begin
   end if;
   return new;
 end
-$;
+$$;
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql set search_path=''
