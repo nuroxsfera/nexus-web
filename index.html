@@ -213,8 +213,9 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <button onclick="addComposeImg()" class="mt-4 flex items-center gap-2 text-[13px] text-white/50 press">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
 Добавить фото</button>
-<p class="text-[11px] text-white/25 mt-6">Демо: данные сохраняются на устройстве.</p>
+<p class="text-[11px] text-white/25 mt-6">Фото сохраняются на этом устройстве. Облачная публикация появится после подключения сервера.</p>
 </div></div>
+<input id="compose-file-input" type="file" accept="image/*" multiple hidden onchange="handleComposeFiles(this)"><input id="story-file-input" type="file" accept="image/*" multiple hidden onchange="handleStoryFiles(this)">
 <div id="story-viewer">
 <div class="flex gap-1 px-2" style="padding-top:max(10px,var(--st))" id="sv-bars"></div>
 <div class="flex items-center gap-2 px-3 py-2">
