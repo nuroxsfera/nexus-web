@@ -72,11 +72,11 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function fmt(n){return n>=1000?(n/1000).toFixed(1).replace('.0','')+' тыс.':String(n)}
 function finishOnboarding(){DB.onboarded=true;save();document.getElementById('onboarding').classList.remove('on');toast('Добро пожаловать 🌊')}
 function renderStories(){
-  document.getElementById('stories').innerHTML=DB.stories.map(s=>{
-    if(s.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
-    const seen=DB.seenStories[s.id];
-    const av=s.avatar?`<img src="${s.avatar}" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" onerror="this.style.display='none'">`:`<div class="w-full h-full rounded-full bg-[#222] border-[2.5px] border-black"></div>`;
-    return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openStory('${s.id}')"><div class="w-[66px] h-[66px] ${seen?'story-ring seen':'story-ring'}">${av}</div><span class="text-[10px] text-white/75">${s.name}</span></button>`;
+  document.getElementById('stories').innerHTML=DB.stories.map(story=>{
+    if(story.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
+    const seen=DB.seenStories[story.id];
+    const avatar=story.avatar?`<img src="${esc(story.avatar)}" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" onerror="this.style.display='none'">`:`<div class="w-full h-full rounded-full bg-[#222] border-[2.5px] border-black"></div>`;
+    return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openStory('${esc(story.id)}')"><div class="w-[66px] h-[66px] ${seen?'story-ring seen':'story-ring'}">${avatar}</div><span class="text-[10px] text-white/75">${esc(story.name)}</span></button>`;
   }).join('');
 }
 function openStory(id){
@@ -322,8 +322,12 @@ function openCart(){
   const list=document.getElementById('cart-list');
   if(!DB.cart.length){list.innerHTML='<div class="empty">Корзина пуста</div>';document.getElementById('cart-foot').innerHTML=''}
   else{
-    list.innerHTML=DB.cart.map(c=>`<div class="flex gap-2.5 items-center"><img src="${c.image}" class="w-14 h-14 rounded-xl object-cover"><div class="flex-1"><p class="text-[13px] font-semibold">${c.name}</p><p class="text-[12px] text-white/50">${c.price.toLocaleString('ru-RU')} ₽ × ${c.qty}</p></div><button class="text-white/40 text-[11px] press" onclick="rmCart('${c.id}')">✕</button></div>`).join('');
-    const total=DB.cart.reduce((s,c)=>s+c.price*c.qty,0);
+    list.innerHTML=DB.cart.map(item=>{
+      const source=item.image&&item.image.startsWith('idb:')?`data-media-ref="${esc(item.image)}"`:`src="${esc(item.image||'')}"`;
+      return `<div class="flex gap-2.5 items-center"><img ${source} class="w-14 h-14 rounded-xl object-cover"><div class="flex-1"><p class="text-[13px] font-semibold">${esc(item.name)}</p><p class="text-[12px] text-white/50">${Number(item.price).toLocaleString('ru-RU')} ₽ × ${Number(item.qty)}</p></div><button class="text-white/40 text-[11px] press" data-cart-id="${esc(item.id)}" onclick="rmCart(this.dataset.cartId)">✕</button></div>`;
+    }).join('');
+    hydrateMediaImages(list);
+    const total=DB.cart.reduce((sum,item)=>sum+Number(item.price)*Number(item.qty),0);
     document.getElementById('cart-foot').innerHTML=`<div class="flex justify-between mb-2.5"><span class="text-white/50 text-[13px]">Итого</span><span class="font-bold">${total.toLocaleString('ru-RU')} ₽</span></div><button onclick="checkout()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Оформить</button>`;
   }
   document.getElementById('bd').classList.add('open');document.getElementById('cart-sheet').classList.add('open');setNav(false);
@@ -332,15 +336,15 @@ function rmCart(id){DB.cart=DB.cart.filter(c=>c.id!==id);save();updateCartBadge(
 function checkout(){toast('Оформление заказов подключим вместе с сервером. Корзина сохранена.')}
 function renderNotifs(){
   if(!DB.notifications.length){document.getElementById('nlist').innerHTML='<div class="empty">Нет уведомлений</div>';document.getElementById('ndot').style.display='none';return}
-  document.getElementById('nlist').innerHTML=DB.notifications.map(n=>`<div class="flex gap-3 p-3 rounded-2xl ${n.read?'bg-white/[0.03]':'bg-white/[0.07]'} border border-white/[0.04]"><div class="w-11 h-11 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">${n.avatar?`<img src="${n.avatar}" class="w-full h-full object-cover">`:'🔔'}</div><div class="flex-1"><p class="text-[13px]"><span class="font-semibold">${n.title}</span> <span class="text-white/55">${n.body}</span></p><p class="text-[11px] text-white/35 mt-0.5">${n.time}</p></div></div>`).join('');
+  document.getElementById('nlist').innerHTML=DB.notifications.map(n=>`<div class="flex gap-3 p-3 rounded-2xl ${n.read?'bg-white/[0.03]':'bg-white/[0.07]'} border border-white/[0.04]"><div class="w-11 h-11 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">${n.avatar?`<img src="${esc(n.avatar)}" class="w-full h-full object-cover">`:'🔔'}</div><div class="flex-1"><p class="text-[13px]"><span class="font-semibold">${esc(n.title)}</span> <span class="text-white/55">${esc(n.body)}</span></p><p class="text-[11px] text-white/35 mt-0.5">${esc(n.time)}</p></div></div>`).join('');
   document.getElementById('ndot').style.display=DB.notifications.some(n=>!n.read)?'':'none';
 }
 function markRead(){DB.notifications.forEach(n=>n.read=true);save();renderNotifs();toast('Прочитано')}
 function renderChats(){
   const q=(document.getElementById('csearch')?.value||'').toLowerCase();
   const list=DB.chats.filter(c=>!q||c.name.toLowerCase().includes(q));
-  document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" onclick="go('chat',{chatId:'${c.id}'})"><img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${c.name}</p><span class="text-[10px] text-white/35">${c.time}</span></div><p class="text-[12.5px] text-white/45 truncate">${c.last}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${c.unread}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
-  const u=DB.chats.reduce((s,c)=>s+c.unread,0);const b=document.getElementById('mbadge');if(u){b.textContent=u;b.classList.remove('hidden')}else b.classList.add('hidden');
+  document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" data-chat-id="${esc(c.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(c.avatar)}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${esc(c.name)}</p><span class="text-[10px] text-white/35">${esc(c.time)}</span></div><p class="text-[12.5px] text-white/45 truncate">${esc(c.last)}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${Number(c.unread)}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
+  const unread=DB.chats.reduce((sum,c)=>sum+Number(c.unread||0),0);const badge=document.getElementById('mbadge');if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden');
 }
 function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'bubble-me':'bubble-them'}">${esc(m.text)}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
 function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value.trim();if(!t||!DB.activeChat)return;const c=DB.chats.find(x=>x.id===DB.activeChat);c.messages.push({me:true,text:t});c.last=t;c.time='сейчас';inp.value='';save();openChat(c.id)}
@@ -348,11 +352,17 @@ function renderExplore(){
   const q=(document.getElementById('eq')?.value||'').toLowerCase();
   const tab=DB.etab;let h='';
   const people=Object.entries(DB.profiles).filter(([k,p])=>!q||p.name.toLowerCase().includes(q)||p.handle.toLowerCase().includes(q));
-  const ch=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
-  const sh=DB.shops.filter(s=>!q||s.name.toLowerCase().includes(q));
-  if(tab==='all'||tab==='people'){if(people.length)h+=`<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>`+people.map(([k,p])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" onclick="go('profile',{key:'${k}'})"><img src="https://i.pravatar.cc/64?u=${k}" class="w-11 h-11 rounded-full"><div class="text-left"><p class="text-[14px] font-semibold">${p.name}</p><p class="text-[12px] text-white/40">${p.handle}</p></div></button>`).join('')}
-  if(tab==='all'||tab==='channels'){if(ch.length)h+=`<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Каналы</p>`+ch.map(c=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" onclick="go('channel',{id:'${c.id}'})"><p class="text-[14px] font-semibold">${c.name}</p><p class="text-[12px] text-white/40 mt-0.5">${c.desc} · ${c.members}</p></button>`).join('')}
-  if(tab==='all'||tab==='shops'){if(sh.length)h+=`<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>`+sh.map(s=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" onclick="go('shop',{id:'${s.id}'})"><p class="text-[14px] font-semibold">${s.name}</p><p class="text-[12px] text-white/40 mt-0.5">${s.desc} · ${s.products} товаров</p></button>`).join('')}
+  const channels=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
+  const shops=DB.shops.filter(shop=>!q||shop.name.toLowerCase().includes(q));
+  if(tab==='all'||tab==='people'){
+    if(people.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>'+people.map(([key,p])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-profile-key="${esc(key)}" onclick="go('profile',{key:this.dataset.profileKey})"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-11 h-11 rounded-full"><div class="text-left"><p class="text-[14px] font-semibold">${esc(p.name)}</p><p class="text-[12px] text-white/40">${esc(p.handle)}</p></div></button>`).join('');
+  }
+  if(tab==='all'||tab==='channels'){
+    if(channels.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Каналы</p>'+channels.map(c=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-channel-id="${esc(c.id)}" onclick="go('channel',{id:this.dataset.channelId})"><p class="text-[14px] font-semibold">${esc(c.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(c.desc)} · ${esc(c.members)}</p></button>`).join('');
+  }
+  if(tab==='all'||tab==='shops'){
+    if(shops.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>'+shops.map(shop=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})"><p class="text-[14px] font-semibold">${esc(shop.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(shop.desc)} · ${Number(shop.items?.length??shop.products??0)} товаров</p></button>`).join('');
+  }
   document.getElementById('eres').innerHTML=h||'<div class="empty">Ничего не найдено</div>';
 }
 document.getElementById('etabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;DB.etab=b.dataset.t;document.querySelectorAll('.etab').forEach(x=>{const on=x.dataset.t===DB.etab;x.className='etab px-3.5 py-1.5 rounded-full text-[12px] '+(on?'font-semibold bg-white text-black':'font-medium glass text-white/70')});renderExplore()});
