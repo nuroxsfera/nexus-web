@@ -1,1 +1,512 @@
-FULL_CONTENT_TOO_LONG_USE_FILE
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c0c0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Nexus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            n: { bg:'#0b0b0e', soft:'#16161c', card:'#1c1c24', accent:'#7c6aef', muted:'#8b8b9e', text:'#f0f0f5', green:'#34d399', amber:'#fbbf24' }
+          },
+          fontFamily: { sans: ['Inter','system-ui','-apple-system','sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;height:100%;background:#0b0b0e!important;color:#f0f0f5;font-family:Inter,system-ui,-apple-system,sans-serif;overflow:hidden}
+    #root{height:100%;height:100dvh}
+    .dot{box-shadow:0 0 0 2px #0b0b0e}
+    .hide-scroll::-webkit-scrollbar{display:none}
+    .hide-scroll{-ms-overflow-style:none;scrollbar-width:none}
+    .fade{animation:f .28s ease-out}
+    @keyframes f{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .slide-up{animation:su .32s ease-out}
+    @keyframes su{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+    .view{display:none;height:100%;flex-direction:column}
+    .view.active{display:flex}
+    .pill{transition:all .15s}
+    .pill.on{background:#7c6aef22;color:#a78bfa;border-color:#7c6aef55}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238b8b9e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+  </style>
+</head>
+<body>
+<div id="root" class="flex flex-col md:flex-row bg-n-bg">
+
+  <aside id="sidebar" class="w-full md:w-[380px] lg:w-[400px] flex flex-col border-r border-white/5 h-full bg-n-bg shrink-0">
+    <div class="px-5 pt-5 pb-3 shrink-0">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="go('home')">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c6aef] to-[#a78bfa] flex items-center justify-center text-white font-bold text-sm">N</div>
+          <div>
+            <div class="text-[17px] font-semibold leading-tight">Nexus</div>
+            <div class="text-[10px] text-n-muted tracking-wide">presence over noise</div>
+          </div>
+        </div>
+        <div class="flex gap-1.5">
+          <button onclick="go('philosophy')" class="w-9 h-9 rounded-full bg-n-soft flex items-center justify-center text-n-muted" title="Philosophy">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          </button>
+          <button onclick="go('settings')" class="w-9 h-9 rounded-full bg-n-soft flex items-center justify-center text-n-muted">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-[11px] font-medium text-n-muted uppercase tracking-wider">Circles</span>
+          <button onclick="openModal('newCircle')" class="text-[11px] text-[#a78bfa]">+ New</button>
+        </div>
+        <div id="circlesRow" class="flex gap-3 overflow-x-auto hide-scroll pb-1"></div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-n-muted shrink-0">State</span>
+        <select id="myState" onchange="updateState(this.value)" class="bg-n-soft text-sm rounded-full px-3.5 py-1.5 border border-white/5 text-white focus:outline-none flex-1">
+          <option value="open">Open to deep talk</option>
+          <option value="focus">In focus — protect attention</option>
+          <option value="quiet">Quiet mode</option>
+          <option value="urgent">Only urgent</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-3 pb-3">
+      <div class="flex items-center justify-between px-2 mb-2 mt-2">
+        <span class="text-[11px] font-medium text-n-muted uppercase tracking-wider">Contexts</span>
+        <div class="flex items-center gap-2">
+          <span id="ctxCount" class="text-[11px] text-n-muted">0</span>
+          <button onclick="openModal('newContext')" class="w-7 h-7 rounded-full bg-n-soft flex items-center justify-center text-n-muted hover:text-white">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="ctxList" class="space-y-0.5"></div>
+      <div id="ctxEmpty" class="hidden py-10 text-center px-4">
+        <p class="text-n-muted text-sm">No contexts here</p>
+        <button onclick="openModal('newContext')" class="mt-3 text-[13px] text-[#a78bfa]">Create one</button>
+      </div>
+    </div>
+
+    <div class="px-4 py-2.5 border-t border-white/5 text-center shrink-0">
+      <p class="text-[10px] text-n-muted">Temporary by default · Seal what matters</p>
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-n-bg">
+
+    <div id="view-home" class="view active fade">
+      <div class="flex-1 flex flex-col items-center justify-center text-center px-8">
+        <div class="w-16 h-16 rounded-2xl bg-n-soft flex items-center justify-center mb-5">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c6aef" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h2 class="text-xl font-semibold mb-2">Choose a context</h2>
+        <p class="text-n-muted text-sm max-w-[280px] leading-relaxed mb-6">Or stay. Silence is also presence.</p>
+        <div class="flex flex-wrap gap-2 justify-center text-[11px] mb-8">
+          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">No feed</span>
+          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">No scores</span>
+          <span class="px-2.5 py-1 rounded-full bg-n-soft text-n-muted">You own the graph</span>
+        </div>
+        <button onclick="openModal('newContext')" class="px-5 py-2.5 rounded-full bg-[#7c6aef] text-white text-sm font-medium">New context</button>
+      </div>
+    </div>
+
+    <div id="view-chat" class="view">
+      <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#0b0b0e]/85 backdrop-blur-md">
+        <div class="flex items-center gap-3 min-w-0">
+          <button class="md:hidden w-8 h-8 rounded-full bg-n-soft flex items-center justify-center shrink-0" onclick="go('home')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div id="chatAvatarWrap" class="w-9 h-9 rounded-full bg-n-soft overflow-hidden shrink-0"></div>
+          <div class="min-w-0">
+            <div id="chatName" class="font-medium text-[15px] truncate">—</div>
+            <div id="chatStatus" class="text-[11px] text-n-green flex items-center gap-1"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="sealBtn" onclick="toggleSeal()" class="pill text-[11px] px-3 py-1.5 rounded-full border border-white/10 text-n-muted flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span id="sealLabel">Seal</span>
+          </button>
+          <button class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center text-n-muted" onclick="openModal('contextInfo')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3.5"></div>
+      <div class="px-4 py-3 border-t border-white/5 shrink-0">
+        <div class="flex items-center gap-2 bg-n-soft rounded-2xl px-3.5 py-2.5">
+          <button class="text-n-muted shrink-0" onclick="openModal('attach')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+          <input id="msgInput" type="text" placeholder="Write with intention…" class="flex-1 bg-transparent text-[15px] focus:outline-none placeholder:text-n-muted min-w-0" onkeydown="if(event.key==='Enter')sendMsg()">
+          <button onclick="sendMsg()" class="w-8 h-8 rounded-xl bg-[#7c6aef] flex items-center justify-center text-white shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <p id="ephemeralNote" class="text-[10px] text-n-muted text-center mt-2">Messages disappear unless sealed</p>
+      </div>
+    </div>
+
+    <div id="view-philosophy" class="view">
+      <div class="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-white/5 shrink-0">
+        <button onclick="go('home')" class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <h2 class="font-semibold">Why Nexus</h2>
+      </div>
+      <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 max-w-lg mx-auto">
+        <div>
+          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Presence over Noise</h3>
+          <p class="text-sm text-n-muted leading-relaxed">No infinite feed. No algorithmic dopamine. You open Nexus to be present with specific people in specific contexts — or to rest in silence.</p>
+        </div>
+        <div>
+          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Circles of trust</h3>
+          <p class="text-sm text-n-muted leading-relaxed">You decide who sees what. Close, Work, Explore, Anon — different masks, different rules. No public profile by default.</p>
+        </div>
+        <div>
+          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Ephemeral by design</h3>
+          <p class="text-sm text-n-muted leading-relaxed">Most things disappear. Only what you explicitly Seal becomes permanent. Memory is a choice, not a default.</p>
+        </div>
+        <div>
+          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">Attention states</h3>
+          <p class="text-sm text-n-muted leading-relaxed">“Open to deep talk”, “In focus”, “Quiet”, “Only urgent”. Others see your state. You protect your attention instead of performing availability.</p>
+        </div>
+        <div>
+          <h3 class="text-[#a78bfa] text-sm font-medium mb-1.5">You own the graph</h3>
+          <p class="text-sm text-n-muted leading-relaxed">Identity, relationships and history belong to you. Not to a platform that rents them back with ads.</p>
+        </div>
+        <div class="pt-4 border-t border-white/5">
+          <p class="text-xs text-n-muted text-center">This is a living prototype. The goal is evolution of communication, not another social network.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-settings" class="view">
+      <div class="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-white/5 shrink-0">
+        <button onclick="go('home')" class="w-8 h-8 rounded-full bg-n-soft flex items-center justify-center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <h2 class="font-semibold">Settings</h2>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-1 max-w-md">
+        <div class="py-3 border-b border-white/5">
+          <div class="text-sm font-medium mb-1">Default message lifetime</div>
+          <select class="bg-n-soft text-sm rounded-xl px-3 py-2 border border-white/5 text-white w-full mt-1">
+            <option>24 hours</option>
+            <option>7 days</option>
+            <option>Until sealed</option>
+            <option>Permanent</option>
+          </select>
+        </div>
+        <div class="py-3 border-b border-white/5 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium">Show presence to circles</div>
+            <div class="text-xs text-n-muted mt-0.5">Others can see your current state</div>
+          </div>
+          <button id="togPresence" onclick="this.classList.toggle('bg-[#7c6aef]');this.classList.toggle('bg-n-soft')" class="w-11 h-6 rounded-full bg-[#7c6aef] relative transition">
+            <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition"></span>
+          </button>
+        </div>
+        <div class="py-3 border-b border-white/5 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium">Read receipts</div>
+            <div class="text-xs text-n-muted mt-0.5">Only inside sealed contexts</div>
+          </div>
+          <button class="w-11 h-6 rounded-full bg-n-soft relative"><span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white"></span></button>
+        </div>
+        <div class="py-3 border-b border-white/5">
+          <div class="text-sm font-medium mb-1">Theme</div>
+          <div class="flex gap-2 mt-1">
+            <button class="px-3 py-1.5 rounded-full bg-[#7c6aef] text-white text-xs">Dark</button>
+            <button class="px-3 py-1.5 rounded-full bg-n-soft text-n-muted text-xs">System</button>
+          </div>
+        </div>
+        <div class="py-3">
+          <button onclick="go('philosophy')" class="text-sm text-[#a78bfa]">About & Philosophy →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="modalOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-end md:items-center justify-center" onclick="if(event.target===this)closeModal()">
+  <div id="modalBox" class="bg-n-card w-full md:max-w-md md:rounded-2xl rounded-t-2xl p-5 slide-up max-h-[85vh] overflow-y-auto"></div>
+</div>
+
+<script>
+const circles = [
+  { id:'all', name:'All', type:'all' },
+  { id:'close', name:'Close', avatar:'https://i.pravatar.cc/112?u=close1', status:'green' },
+  { id:'work', name:'Work', avatar:'https://i.pravatar.cc/112?u=work1', status:'amber' },
+  { id:'explore', name:'Explore', avatar:'https://i.pravatar.cc/112?u=explore1', status:null },
+];
+
+let contexts = [
+  { id:'daniel', name:'Daniel Murphy', circle:'close', avatar:'https://i.pravatar.cc/96?u=daniel', preview:'Thinking about the program… workshop?', time:'10:20', unread:2, status:'Open to deep talk', sealed:false,
+    messages:[
+      { from:'them', text:'I spoke with the coworking manager. We can book Oct 2nd evening.', time:'10:20' },
+      { from:'me', text:"Nice! Let's lock it in", time:'10:20' },
+      { from:'them', text:'Did she say anything about catering?', time:'10:20' },
+      { from:'me', text:'Thinking about the program… do we want just talks or also a short workshop?', time:'10:20' },
+      { from:'them', text:"Perfect. I'll draft an outline today.", time:'10:20' },
+    ]},
+  { id:'sophia', name:'Sophia Bennett', circle:'close', avatar:'https://i.pravatar.cc/96?u=sophia', preview:'It was so nice catching up ❤️', time:'Yesterday', unread:0, status:'Open to deep talk', sealed:false,
+    messages:[
+      { from:'them', text:'It was so nice catching up the other day ❤️', time:'Yesterday' },
+      { from:'me', text:'Same here. We should do it more often.', time:'Yesterday' },
+    ]},
+  { id:'workshop', name:'Workshop Planning', circle:'work', avatar:null, initials:'WS', preview:'4 people · sealed context', time:'Mon', unread:0, status:'4 people · sealed', sealed:true,
+    messages:[
+      { from:'them', text:'Agenda draft is ready. Please review before Thursday.', time:'Mon' },
+      { from:'me', text:'Looks solid. I added two speaker slots.', time:'Mon' },
+    ]},
+  { id:'ava', name:'Ava Mitchell', circle:'explore', avatar:'https://i.pravatar.cc/96?u=ava', preview:'Yess 👍', time:'Sun', unread:0, status:'Quiet mode', sealed:false,
+    messages:[{ from:'them', text:'Yess 👍', time:'Sun' }]},
+];
+
+let currentCircle = 'all';
+let currentCtx = null;
+let sealed = false;
+
+function renderCircles() {
+  const row = document.getElementById('circlesRow');
+  row.innerHTML = circles.map(c => {
+    if (c.type === 'all') {
+      return `<button data-id="${c.id}" onclick="filterCircle('${c.id}')" class="circle-btn flex flex-col items-center gap-1.5 shrink-0 ${currentCircle===c.id?'':'opacity-80'}">
+        <div class="w-[56px] h-[56px] rounded-full bg-n-soft flex items-center justify-center text-sm font-medium border ${currentCircle===c.id?'border-[#7c6aef] text-white':'border-white/10 text-n-muted'}">All</div>
+        <span class="text-[11px] ${currentCircle===c.id?'text-white font-medium':'text-n-muted'}">All</span>
+      </button>`;
+    }
+    return `<button data-id="${c.id}" onclick="filterCircle('${c.id}')" class="circle-btn flex flex-col items-center gap-1.5 shrink-0">
+      <div class="relative">
+        <img src="${c.avatar}" class="w-[56px] h-[56px] rounded-full object-cover ${currentCircle===c.id?'ring-[2.5px] ring-[#7c6aef]':''}" alt="">
+        ${c.status?`<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full dot ${c.status==='green'?'bg-n-green':'bg-n-amber'}"></span>`:''}
+      </div>
+      <span class="text-[11px] ${currentCircle===c.id?'text-white font-medium':'text-n-muted'}">${c.name}</span>
+    </button>`;
+  }).join('') + `<button onclick="openModal('newCircle')" class="flex flex-col items-center gap-1.5 shrink-0">
+    <div class="w-[56px] h-[56px] rounded-full bg-n-soft border-2 border-dashed border-white/15 flex items-center justify-center text-n-muted">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <span class="text-[11px] text-n-muted">New</span>
+  </button>`;
+}
+
+function renderContexts() {
+  const list = document.getElementById('ctxList');
+  const empty = document.getElementById('ctxEmpty');
+  const filtered = currentCircle === 'all' ? contexts : contexts.filter(c => c.circle === currentCircle);
+  document.getElementById('ctxCount').textContent = filtered.length + ' active';
+  if (!filtered.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  list.innerHTML = filtered.map(c => `
+    <div class="flex items-center gap-3 p-3 rounded-2xl cursor-pointer active:bg-n-soft transition-colors" onclick="openChat('${c.id}')">
+      <div class="relative shrink-0">
+        ${c.avatar
+          ? `<img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover" alt="">`
+          : `<div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">${c.initials||'?'}</div>`}
+        ${c.status && c.status.includes('Open') ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-n-green rounded-full dot"></span>' : ''}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="font-medium text-[15px] truncate">${c.name}</h3>
+          <span class="text-[11px] text-n-muted shrink-0">${c.time}</span>
+        </div>
+        <p class="text-[13px] text-n-muted truncate mt-0.5">${c.preview}</p>
+      </div>
+      ${c.unread ? `<span class="w-5 h-5 rounded-full bg-[#7c6aef] text-[10px] font-semibold flex items-center justify-center shrink-0">${c.unread}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderMessages(ctx) {
+  const box = document.getElementById('messages');
+  const header = ctx.sealed
+    ? `<div class="flex justify-center"><span class="text-[11px] text-n-green bg-n-soft px-3 py-1 rounded-full">Sealed · permanent</span></div>`
+    : `<div class="flex justify-center"><span class="text-[11px] text-n-muted bg-n-soft px-3 py-1 rounded-full">Today · temporary by default</span></div>`;
+  box.innerHTML = header + ctx.messages.map(m => {
+    if (m.from === 'me') {
+      return `<div class="flex gap-2.5 max-w-[85%] ml-auto flex-row-reverse">
+        <div>
+          <div class="bg-[#7c6aef] rounded-2xl rounded-tr-md px-3.5 py-2.5"><p class="text-[14px] leading-relaxed">${esc(m.text)}</p></div>
+          <span class="text-[10px] text-n-muted mr-1 mt-1 block text-right">${m.time}</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="flex gap-2.5 max-w-[85%]">
+      ${ctx.avatar ? `<img src="${ctx.avatar}" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" alt="">` : `<div class="w-7 h-7 rounded-full bg-n-soft shrink-0 mt-0.5"></div>`}
+      <div>
+        <div class="bg-n-soft rounded-2xl rounded-tl-md px-3.5 py-2.5"><p class="text-[14px] leading-relaxed">${esc(m.text)}</p></div>
+        <span class="text-[10px] text-n-muted ml-1 mt-1 block">${m.time}</span>
+      </div>
+    </div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function esc(s){ return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function go(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-' + view);
+  if (el) { el.classList.add('active'); el.classList.add('fade'); }
+  if (window.innerWidth < 768) {
+    document.getElementById('sidebar').style.display = view === 'home' ? 'flex' : 'none';
+  } else {
+    document.getElementById('sidebar').style.display = 'flex';
+  }
+  if (view === 'home') currentCtx = null;
+}
+
+function filterCircle(id) {
+  currentCircle = id;
+  renderCircles();
+  renderContexts();
+}
+
+function openChat(id) {
+  const ctx = contexts.find(c => c.id === id);
+  if (!ctx) return;
+  currentCtx = ctx;
+  sealed = !!ctx.sealed;
+  document.getElementById('chatName').textContent = ctx.name;
+  document.getElementById('chatStatus').innerHTML = ctx.sealed
+    ? `<span class="w-1.5 h-1.5 rounded-full bg-n-amber"></span> ${ctx.status}`
+    : `<span class="w-1.5 h-1.5 rounded-full bg-n-green"></span> ${ctx.status}`;
+  const wrap = document.getElementById('chatAvatarWrap');
+  wrap.innerHTML = ctx.avatar
+    ? `<img src="${ctx.avatar}" class="w-full h-full object-cover" alt="">`
+    : `<div class="w-full h-full flex items-center justify-center text-sm font-medium bg-gradient-to-br from-indigo-500 to-purple-600">${ctx.initials||'?'}</div>`;
+  updateSealUI();
+  renderMessages(ctx);
+  go('chat');
+  if (window.innerWidth < 768) document.getElementById('sidebar').style.display = 'none';
+}
+
+function toggleSeal() {
+  if (!currentCtx) return;
+  sealed = !sealed;
+  currentCtx.sealed = sealed;
+  updateSealUI();
+}
+
+function updateSealUI() {
+  const btn = document.getElementById('sealBtn');
+  const label = document.getElementById('sealLabel');
+  const note = document.getElementById('ephemeralNote');
+  if (sealed) {
+    btn.classList.add('on');
+    label.textContent = 'Sealed';
+    note.textContent = 'This context is now permanent';
+    note.className = 'text-[10px] text-n-green text-center mt-2';
+  } else {
+    btn.classList.remove('on');
+    label.textContent = 'Seal';
+    note.textContent = 'Messages disappear unless sealed';
+    note.className = 'text-[10px] text-n-muted text-center mt-2';
+  }
+}
+
+function sendMsg() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || !currentCtx) return;
+  currentCtx.messages.push({ from:'me', text, time:'now' });
+  currentCtx.preview = text;
+  input.value = '';
+  renderMessages(currentCtx);
+  renderContexts();
+}
+
+function updateState(v) {}
+
+function openModal(type) {
+  const box = document.getElementById('modalBox');
+  const overlay = document.getElementById('modalOverlay');
+  if (type === 'newContext') {
+    box.innerHTML = `
+      <h3 class="font-semibold text-lg mb-1">New context</h3>
+      <p class="text-xs text-n-muted mb-4">Temporary by default. Seal later if needed.</p>
+      <input id="newCtxName" placeholder="Name or purpose" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#7c6aef] mb-3">
+      <select id="newCtxCircle" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 text-white mb-4">
+        <option value="close">Close</option>
+        <option value="work">Work</option>
+        <option value="explore">Explore</option>
+      </select>
+      <div class="flex gap-2">
+        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-n-soft text-sm">Cancel</button>
+        <button onclick="createContext()" class="flex-1 py-2.5 rounded-xl bg-[#7c6aef] text-white text-sm font-medium">Create</button>
+      </div>`;
+  } else if (type === 'newCircle') {
+    box.innerHTML = `
+      <h3 class="font-semibold text-lg mb-1">New circle</h3>
+      <p class="text-xs text-n-muted mb-4">A set of people + shared rules of visibility.</p>
+      <input id="newCircleName" placeholder="Circle name" class="w-full bg-n-soft rounded-xl px-4 py-3 text-sm border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#7c6aef] mb-4">
+      <div class="flex gap-2">
+        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-n-soft text-sm">Cancel</button>
+        <button onclick="createCircle()" class="flex-1 py-2.5 rounded-xl bg-[#7c6aef] text-white text-sm font-medium">Create</button>
+      </div>`;
+  } else if (type === 'contextInfo') {
+    box.innerHTML = `
+      <h3 class="font-semibold text-lg mb-3">${currentCtx ? currentCtx.name : 'Context'}</h3>
+      <div class="space-y-2 text-sm text-n-muted mb-4">
+        <div class="flex justify-between"><span>Circle</span><span class="text-white">${currentCtx?.circle || '—'}</span></div>
+        <div class="flex justify-between"><span>Sealed</span><span class="text-white">${currentCtx?.sealed ? 'Yes' : 'No'}</span></div>
+        <div class="flex justify-between"><span>Messages</span><span class="text-white">${currentCtx?.messages?.length || 0}</span></div>
+      </div>
+      <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-n-soft text-sm">Close</button>`;
+  } else {
+    box.innerHTML = `<p class="text-sm text-n-muted">Coming soon</p><button onclick="closeModal()" class="mt-4 w-full py-2.5 rounded-xl bg-n-soft text-sm">Close</button>`;
+  }
+  overlay.classList.remove('hidden');
+  overlay.classList.add('flex');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  document.getElementById('modalOverlay').classList.remove('flex');
+}
+
+function createContext() {
+  const name = document.getElementById('newCtxName')?.value?.trim();
+  const circle = document.getElementById('newCtxCircle')?.value || 'close';
+  if (!name) return;
+  const id = 'c' + Date.now();
+  contexts.unshift({
+    id, name, circle, avatar: null, initials: name.slice(0,2).toUpperCase(),
+    preview: 'New context', time: 'now', unread: 0, status: 'Open to deep talk', sealed: false,
+    messages: []
+  });
+  closeModal();
+  renderContexts();
+  openChat(id);
+}
+
+function createCircle() {
+  const name = document.getElementById('newCircleName')?.value?.trim();
+  if (!name) return;
+  const id = 'circ' + Date.now();
+  circles.push({ id, name, avatar: `https://i.pravatar.cc/112?u=${id}`, status: null });
+  closeModal();
+  renderCircles();
+}
+
+renderCircles();
+renderContexts();
+if (window.innerWidth >= 768) document.getElementById('sidebar').style.display = 'flex';
+window.addEventListener('resize', () => {
+  if (window.innerWidth >= 768) document.getElementById('sidebar').style.display = 'flex';
+  else if (!currentCtx) document.getElementById('sidebar').style.display = 'flex';
+});
+</script>
+</body>
+</html>
