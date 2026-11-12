@@ -59,6 +59,8 @@ assert.ok(cloud.includes('async function createShop('));
 assert.ok(cloud.includes('async function createProduct('));
 assert.ok(cloud.includes('async function fetchResources('));
 assert.ok(cloud.includes('async function updateShop('));
+assert.ok(cloud.includes('async function joinChannel('));
+assert.ok(logic.includes('async function toggleChSub()'));
 assert.ok(cloud.includes('async function updateChannel('));
 assert.ok(cloud.includes('async function updateProduct('));
 assert.ok(logic.includes('function openShopEdit()'));
