@@ -96,7 +96,7 @@
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
     const old=await client.rest('profiles','select=avatar_path,cover_path&id=eq.'+user.id);
     const patch={};if(name!==undefined)patch.display_name=String(name).slice(0,60);
-    if(username!==undefined)patch.username=String(username).toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,30);
+    if(username!==undefined){const clean=String(username).toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,30);if(clean.length<3)throw new Error('Логин должен содержать минимум 3 символа');patch.username=clean;}
     if(bio!==undefined)patch.bio=String(bio).slice(0,500);if(visibility!==undefined)patch.visibility=visibility;
     const uploaded=[];
     try{
