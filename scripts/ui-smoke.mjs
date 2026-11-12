@@ -34,7 +34,7 @@ try {
   window.document.getElementById('new-channel-name').value='Nexus Creators';
   window.document.getElementById('new-channel-desc').value='Наше сообщество авторов';
   window.document.getElementById('new-channel-visibility').value='public';
-  window.createChannel();
+  await window.createChannel();
   let state=window.__getDB();
   const channel=state.channels[0];
   assert.equal(channel.name,'Nexus Creators');
@@ -43,7 +43,7 @@ try {
 
   window.openChannelPost();
   window.document.getElementById('compose-text').value='Первый пост канала';
-  window.publishPost();
+  await window.publishPost();
   state=window.__getDB();
   assert.equal(state.posts[0].channelId,channel.id);
   assert.equal(state.posts[0].authorKey,'me');
@@ -56,14 +56,14 @@ try {
   window.document.getElementById('new-shop-name').value='Nexus Market';
   window.document.getElementById('new-shop-desc').value='Магазин сообщества';
   window.document.getElementById('new-shop-visibility').value='public';
-  window.createShop();
+  await window.createShop();
   state=window.__getDB();
   const shop=state.shops[0];
   assert.equal(shop.name,'Nexus Market');
   assert.equal(shop.ownerKey,'me');
   window.openShopEdit();
   window.document.getElementById('new-shop-name').value='Nexus Market Plus';
-  window.createShop();
+  await window.createShop();
   state=window.__getDB();
   assert.equal(state.shops[0].name,'Nexus Market Plus');
 
@@ -71,7 +71,7 @@ try {
   window.document.getElementById('new-product-name').value='Nexus Hoodie';
   window.document.getElementById('new-product-price').value='3490';
   window.document.getElementById('new-product-desc').value='Плотный хлопок';
-  window.createProduct();
+  await window.createProduct();
   state=window.__getDB();
   assert.equal(state.shops[0].items[0].name,'Nexus Hoodie');
   assert.equal(state.shops[0].items[0].price,3490);
@@ -80,11 +80,11 @@ try {
   window.openProductEdit();
   window.document.getElementById('new-product-name').value='Nexus Hoodie Pro';
   window.document.getElementById('new-product-price').value='3990';
-  window.createProduct();
+  await window.createProduct();
   state=window.__getDB();
   assert.equal(state.shops[0].items[0].name,'Nexus Hoodie Pro');
   window.openProduct(shop.id,productId);
-  window.deleteProduct();
+  await window.deleteProduct();
   state=window.__getDB();
   assert.equal(state.shops[0].items.length,0);
 
