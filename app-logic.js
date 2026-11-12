@@ -1064,7 +1064,7 @@ async function toggleBlock(key){
     catch(error){toast(error.message||'Не удалось изменить блокировку');return}
   }
   if(next)DB.blocked[key]=true;else delete DB.blocked[key];
-  save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(next?'Профиль заблокирован':'Блокировка снята');
+  save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();void syncCloudFeed({silent:true});toast(next?'Профиль заблокирован':'Блокировка снята');
 }
 function refreshMediaCache(){
   for(const url of mediaUrlCache.values())URL.revokeObjectURL(url);
