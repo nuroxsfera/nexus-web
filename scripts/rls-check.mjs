@@ -44,8 +44,8 @@ try {
     "insert into public.posts(id,author_id,channel_id,body,visibility) values ('" + privateChannelPost + "','" + B + "','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Private channel post','public'),('10000000-0000-4000-8000-000000000005','" + B + "','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Public channel post','public');",
     "insert into public.post_media(post_id,storage_path,media_type) values ('" + publicPost + "','" + publicPath + "','image'),('" + privateChannelPost + "','" + privatePath + "','image');",
     "insert into public.comments(post_id,author_id,body) values ('" + privateChannelPost + "','" + B + "','Private channel comment');",
-    "insert into public.conversations(id,created_by) values ('40000000-0000-4000-8000-000000000001','" + B + "');",
-    "insert into public.conversation_members(conversation_id,user_id) values ('40000000-0000-4000-8000-000000000001','" + B + "'),('40000000-0000-4000-8000-000000000001','" + C + "');",
+    "insert into public.conversations(id,created_by) values ('40000000-0000-4000-8000-000000000001','" + B + "'),('40000000-0000-4000-8000-000000000002','" + B + "');",
+    "insert into public.conversation_members(conversation_id,user_id) values ('40000000-0000-4000-8000-000000000001','" + B + "'),('40000000-0000-4000-8000-000000000001','" + C + "'),('40000000-0000-4000-8000-000000000002','" + B + "'),('40000000-0000-4000-8000-000000000002','" + A + "');",
     "insert into public.messages(conversation_id,sender_id,body) values ('40000000-0000-4000-8000-000000000001','" + B + "','Secret message');",
     "insert into public.notifications(user_id,kind) values ('" + B + "','system');",
     "insert into public.shops(id,owner_id,title,slug,visibility) values ('50000000-0000-4000-8000-000000000001','" + B + "','Private shop','private-shop','private'),('50000000-0000-4000-8000-000000000002','" + B + "','Public shop','public-shop','public');",
@@ -65,6 +65,24 @@ try {
   assert.equal(await count('public.products'),1,'private shop products stay hidden');
   assert.equal(await count('storage.objects'),2,'own drafts and authorized public media are readable');
 
+  await db.query("insert into public.follows(follower_id,followed_id,status) values ('" + A + "','" + C + "','pending')");
+  assert.equal((await db.query("select count(*)::int as n from public.profiles where id='" + C + "'")).rows[0].n,0,'pending follow does not unlock private profile');
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + C + "',false);");
+  await db.query("update public.follows set status='accepted' where follower_id='" + A + "' and followed_id='" + C + "'");
+  await assert.rejects(
+    db.query("update public.follows set follower_id='" + B + "' where follower_id='" + A + "' and followed_id='" + C + "'"),
+    /Follow identity cannot be changed/
+  );
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
+  assert.equal((await db.query("select count(*)::int as n from public.profiles where id='" + C + "'")).rows[0].n,1,'accepted follow unlocks private profile');
+
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + B + "',false);");
+  await assert.rejects(
+    db.query("update public.messages set conversation_id='40000000-0000-4000-8000-000000000002' where body='Secret message'"),
+    /Message identity cannot be changed/
+  );
+  await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
+
   await db.exec("insert into public.blocks(blocker_id,blocked_id) values ('" + A + "','" + B + "');");
   assert.equal((await db.query("select count(*)::int as n from public.posts where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user posts');
   assert.equal(await count('storage.objects'),1,'blocks also hide that users media');
@@ -72,7 +90,7 @@ try {
   await db.exec('reset role; set role anon;');
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
   await db.exec('reset role');
-  console.log('Nexus RLS checks passed: profiles, posts, channels, media, shops, DMs, notifications, blocks and anonymous access.');
+  console.log('Nexus RLS checks passed: profiles, posts, channels, media, shops, DMs, notifications, follows, immutable identities, blocks and anonymous access.');
 } finally {
   await db.close();
 }
