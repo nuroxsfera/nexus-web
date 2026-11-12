@@ -30,6 +30,7 @@
 - Make all demo-only behavior clearly labeled.
 
 ### Phase 2 — Real accounts and cloud data
+- Add a local encrypted health vault before inviting users to store sensitive personal measurements.
 - Create and link a Supabase project.
 - Apply the migration and run the pgTAP suite against the real database.
 - Configure Vercel with the Supabase URL and publishable/anon key.
@@ -50,4 +51,4 @@
 - Expand fitness and nutrition with progress charts, goals, meal templates and body-measurement history; keep records private by default.
 
 ## Current boundary
-The current branch is a local interactive prototype plus a prepared/tested Postgres security foundation. It is not yet a multi-user cloud social network: no live Supabase project has been linked, and local IndexedDB content does not sync between devices or accounts.
+The current branch is a local interactive prototype plus a prepared/tested Postgres security foundation. Browser-local data is not encrypted yet; do not use it for sensitive health records. It is not yet a multi-user cloud social network: no live Supabase project has been linked, and local IndexedDB content does not sync between devices or accounts.
