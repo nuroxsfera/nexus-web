@@ -1,5 +1,5 @@
 begin;
-select plan(32);
+select plan(36);
 select has_table('public','profiles','profiles table exists');
 select has_table('public','follows','follows table exists');
 select has_table('public','organizations','organizations table exists');
@@ -7,6 +7,8 @@ select has_table('public','channels','channels table exists');
 select has_table('public','shops','shops table exists');
 select has_table('public','products','products table exists');
 select has_table('public','posts','posts table exists');
+select has_table('public','clips','clips table exists');
+select has_table('public','clip_likes','clip_likes table exists');
 select has_table('public','stories','stories table exists');
 select has_table('public','conversations','conversations table exists');
 select has_table('public','messages','messages table exists');
@@ -22,6 +24,8 @@ select ok((select relrowsecurity from pg_class where oid='public.channel_members
 select ok((select relrowsecurity from pg_class where oid='public.shops'::regclass),'shops has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.products'::regclass),'products has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.posts'::regclass),'posts has RLS');
+select ok((select relrowsecurity from pg_class where oid='public.clips'::regclass),'clips has RLS');
+select ok((select relrowsecurity from pg_class where oid='public.clip_likes'::regclass),'clip_likes has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.post_media'::regclass),'post_media has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.stories'::regclass),'stories has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.story_media'::regclass),'story_media has RLS');
