@@ -94,6 +94,9 @@ assert.ok(vercel.headers[0].headers.some(header=>header.key==='X-Frame-Options')
 assert.ok(gitignore.includes('.env'));
 assert.ok(data.includes("filter(post=>!post.cloudId)"));
 assert.ok(data.includes("filter(chat=>!chat.cloudId)"));
+assert.ok(data.includes('snapshot.fitnessProfile={}'));
+assert.ok(app.includes('save();return load(\'/auth.js\')'));
+assert.ok(logic.includes('if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}'));
 assert.ok(envExample.includes('SUPABASE_URL='));
 assert.ok(!envExample.includes('SERVICE_ROLE'));
 assert.ok(app.includes("load('/auth.js')"));
