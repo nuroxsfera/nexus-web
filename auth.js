@@ -89,9 +89,45 @@
     if(result)storeSession({...current,user:result});
     return result;
   }
+  async function rest(table,query='',options={}){
+    const current=await getSession();if(!current?.access_token)throw new Error('Войди в аккаунт для синхронизации');
+    const method=options.method||'GET',headers={...(options.headers||{})};
+    if(['POST','PATCH','DELETE'].includes(method)&&options.returning!==false)headers.Prefer='return=representation';
+    const suffix=query?(query.startsWith('?')?query:'?'+query):'';
+    return request('/rest/v1/'+encodeURIComponent(table)+suffix,{
+      method,headers,body:options.body===undefined?undefined:JSON.stringify(options.body)
+    },current.access_token);
+  }
+  async function uploadMedia(bucket,path,file){
+    const current=await getSession();if(!current?.access_token)throw new Error('Войди в аккаунт для загрузки медиа');
+    const encoded=path.split('/').map(encodeURIComponent).join('/');
+    const response=await fetch(config.url+'/storage/v1/object/'+encodeURIComponent(bucket)+'/'+encoded,{
+      method:'POST',
+      headers:{apikey:config.publicKey,Authorization:'Bearer '+current.access_token,'Content-Type':file.type||'application/octet-stream','x-upsert':'false'},
+      body:file
+    });
+    return readJson(response);
+  }
+  async function signedMediaUrl(bucket,path,expiresIn=300){
+    const current=await getSession();if(!current?.access_token)throw new Error('Нужен вход в аккаунт');
+    const encoded=path.split('/').map(encodeURIComponent).join('/');
+    const result=await request('/storage/v1/object/sign/'+encodeURIComponent(bucket)+'/'+encoded,{
+      method:'POST',body:JSON.stringify({expiresIn})
+    },current.access_token);
+    if(result.signedURL?.startsWith('http'))return result.signedURL;
+    const signed=result.signedURL||result.signedUrl;
+    if(!signed)throw new Error('Не удалось получить ссылку на медиа');
+    return config.url+'/storage/v1'+(signed.startsWith('/')?signed:'/'+signed);
+  }
+  async function removeMedia(bucket,paths){
+    const current=await getSession();if(!current?.access_token)throw new Error('Нужен вход в аккаунт');
+    return request('/storage/v1/object/'+encodeURIComponent(bucket),{
+      method:'DELETE',body:JSON.stringify({prefixes:paths})
+    },current.access_token);
+  }
   async function getUser(){
     const current=await getSession();if(!current?.access_token)return null;
     try{return await request('/auth/v1/user',{method:'GET'},current.access_token)}catch{storeSession(null);return null}
   }
-  window.NEXUS_AUTH={initialize,isConfigured,hasSession:function(){return !!session},getSession,getUser,signUp,signIn,signOut,resetPassword,updatePassword};
+  window.NEXUS_AUTH={initialize,isConfigured,hasSession:function(){return !!session},getSession,getUser,signUp,signIn,signOut,resetPassword,updatePassword,rest,uploadMedia,signedMediaUrl,removeMedia};
 })();
