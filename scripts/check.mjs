@@ -6,10 +6,10 @@ const logic = fs.readFileSync('app-logic.js', 'utf8');
 const data = fs.readFileSync('app-data.js', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
 
-for (const id of ['feed','stories','compose-text','compose-file-input','story-file-input','story-viewer','bnav']) {
+for (const id of ['feed','stories','compose-text','compose-file-input','story-file-input','story-viewer','bnav','channel-create-sheet','shop-create-sheet','product-create-sheet','new-channel-name','new-shop-name','new-product-name','product-file-input','ch-new-post','sh-add-product']) {
   assert.ok(html.includes(`id="${id}"`) || html.includes(`id='${id}'`), `Missing required UI element: ${id}`);
 }
-for (const fn of ['renderFeed','renderStories','openStory','handleComposeFiles','handleStoryFiles','publishPost','openChat','sendMsg','renderExplore']) {
+for (const fn of ['renderFeed','renderStories','openStory','handleComposeFiles','handleStoryFiles','publishPost','openChat','sendMsg','renderExplore','createChannel','createShop','createProduct','openProductCreate','openChannelPost']) {
   assert.ok(logic.includes(`function ${fn}(`) || logic.includes(`async function ${fn}(`), `Missing app function: ${fn}`);
 }
 assert.ok(logic.includes('async function saveMediaFile'));
