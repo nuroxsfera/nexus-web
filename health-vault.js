@@ -78,6 +78,27 @@
     db.healthVaultUnlocked=false;
     db.fitnessProfile={};db.workouts=[];db.nutritionEntries=[];db.healthMeasurements=[];
   }
+  function toBase64(value){
+    const bytes=new Uint8Array(value);let binary='';
+    for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
+    return window.btoa(binary);
+  }
+  function fromBase64(value){
+    const binary=window.atob(value),bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+    return bytes.buffer;
+  }
+  async function exportEncrypted(){
+    const current=await readRecord();if(!current||!current.ciphertext)throw new Error('Сейф ещё не создан');
+    return {format:'nexus-health-vault',version:1,salt:toBase64(current.salt),iv:toBase64(current.iv),ciphertext:toBase64(current.ciphertext),updatedAt:current.updatedAt||null};
+  }
+  async function importEncrypted(bundle){
+    if(!bundle||bundle.format!=='nexus-health-vault'||bundle.version!==1||typeof bundle.salt!=='string'||typeof bundle.iv!=='string'||typeof bundle.ciphertext!=='string')throw new Error('Файл не является резервной копией Nexus');
+    const salt=fromBase64(bundle.salt),iv=fromBase64(bundle.iv),ciphertext=fromBase64(bundle.ciphertext);
+    if(salt.byteLength!==16||iv.byteLength!==12||ciphertext.byteLength<16||ciphertext.byteLength>25*1024*1024)throw new Error('Повреждённая или слишком большая резервная копия');
+    record={id:'health',salt,iv,ciphertext,updatedAt:bundle.updatedAt||Date.now()};
+    await writeRecord(record);key=null;ready=true;return true;
+  }
   async function initialize(db){
     try{record=await readRecord()}catch(error){window.NEXUS_HEALTH_VAULT.error=error}
     ready=true;
@@ -85,5 +106,5 @@
     window.dispatchEvent(new Event('nexus:health-vault-ready'));
     return !!record;
   }
-  window.NEXUS_HEALTH_VAULT={initialize:initialize,setup:setup,unlock:unlock,lock:lock,persist:persist,hasVault:function(){return !!record},isReady:function(){return ready},isUnlocked:function(){return !!key}};
+  window.NEXUS_HEALTH_VAULT={initialize:initialize,setup:setup,unlock:unlock,lock:lock,persist:persist,exportEncrypted:exportEncrypted,importEncrypted:importEncrypted,hasVault:function(){return !!record},isReady:function(){return ready},isUnlocked:function(){return !!key}};
 })();
