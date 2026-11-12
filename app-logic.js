@@ -480,7 +480,7 @@ function openProductEdit(){
   document.getElementById('product-create-title').textContent='Редактировать товар';document.getElementById('product-save-btn').textContent='Сохранить изменения';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
 }
-async async function deleteProduct(){
+async function deleteProduct(){
   const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
   if(active.item.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.deleteProduct(active.item.cloudId)}catch(error){toast(error.message||'Не удалось удалить товар в облаке');return}
   sh.items=sh.items.filter(item=>item.id!==active.item.id);sh.products=sh.items.length;DB.activeProduct=null;save();closeSheet();openShop(sh.id);toast('Товар удалён');
