@@ -89,6 +89,7 @@
     return bytes.buffer;
   }
   async function exportEncrypted(){
+    await writeQueue.catch(function(){return undefined});
     const current=await readRecord();if(!current||!current.ciphertext)throw new Error('Сейф ещё не создан');
     return {format:'nexus-health-vault',version:1,salt:toBase64(current.salt),iv:toBase64(current.iv),ciphertext:toBase64(current.ciphertext),updatedAt:current.updatedAt||null};
   }
@@ -96,6 +97,7 @@
     if(!bundle||bundle.format!=='nexus-health-vault'||bundle.version!==1||typeof bundle.salt!=='string'||typeof bundle.iv!=='string'||typeof bundle.ciphertext!=='string')throw new Error('Файл не является резервной копией Nexus');
     const salt=fromBase64(bundle.salt),iv=fromBase64(bundle.iv),ciphertext=fromBase64(bundle.ciphertext);
     if(salt.byteLength!==16||iv.byteLength!==12||ciphertext.byteLength<16||ciphertext.byteLength>25*1024*1024)throw new Error('Повреждённая или слишком большая резервная копия');
+    await writeQueue.catch(function(){return undefined});
     record={id:'health',salt,iv,ciphertext,updatedAt:bundle.updatedAt||Date.now()};
     await writeRecord(record);key=null;ready=true;return true;
   }
