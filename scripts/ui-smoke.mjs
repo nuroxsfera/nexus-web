@@ -110,7 +110,7 @@ try {
   window.createWatchlistItem();
   state=window.__getDB();
   assert.equal(state.watchlists[0].items[0].title,'Example Film');
-  assert.equal(state.etab,'clips');
+  assert.equal(state.etab,'cinema');
   state=window.__getDB();
   assert.equal(state.blocked.marley,true);
   assert.equal(window.document.getElementById('view-settings').classList.contains('active'),false);
