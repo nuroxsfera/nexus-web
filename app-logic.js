@@ -467,7 +467,7 @@ function openExternalMedia(value){
 function renderPlaylists(){
   const box=document.getElementById('eres');
   box.innerHTML=(DB.playlists||[]).length?DB.playlists.map(list=>`<button class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press" data-list-id="${esc(list.id)}" onclick="openPlaylist(this.dataset.listId)"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/40 to-fuchsia-500/20 flex items-center justify-center text-xl">♫</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(list.name)}</p><p class="text-[11px] text-white/40">${list.tracks.length} треков · ${list.visibility==='public'?'Публичный':'Приватный'}</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(list.desc||'')}</p></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">♫</div><p class="font-semibold text-white mb-1">Твоя музыкальная библиотека</p><p class="text-[12px] text-white/40 mb-4">Собирай плейлисты и открывай музыку у лицензированных сервисов</p><button onclick="openPlaylistCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Создать плейлист</button></div>';
-  box.innerHTML+='<button onclick="openPlaylistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новый плейлист</button>';
+  if((DB.playlists||[]).length)box.innerHTML+='<button onclick="openPlaylistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новый плейлист</button>';
 }
 function openPlaylist(id){
   const list=DB.playlists.find(item=>item.id===id);if(!list)return;DB.activePlaylist=id;
@@ -499,7 +499,7 @@ function createTrack(){
 function renderWatchlists(){
   const box=document.getElementById('eres');
   box.innerHTML=(DB.watchlists||[]).length?DB.watchlists.map(list=>`<button class="w-full text-left p-4 rounded-2xl bg-white/[0.04] border border-white/[0.05] mb-2 press" data-list-id="${esc(list.id)}" onclick="openWatchlist(this.dataset.listId)"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500/30 to-indigo-500/20 flex items-center justify-center text-xl">▣</div><div class="min-w-0"><p class="text-[14px] font-semibold truncate">${esc(list.name)}</p><p class="text-[11px] text-white/40">${list.items.length} фильмов и сериалов · ${list.visibility==='public'?'Публичная':'Приватная'}</p></div></div><p class="text-[12px] text-white/50 mt-2">${esc(list.desc||'')}</p></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">▣</div><p class="font-semibold text-white mb-1">Твой список просмотра</p><p class="text-[12px] text-white/40 mb-4">Сохраняй фильмы, сериалы и официальные ссылки на площадки</p><button onclick="openWatchlistCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Создать подборку</button></div>';
-  box.innerHTML+='<button onclick="openWatchlistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новая подборка</button>';
+  if((DB.watchlists||[]).length)box.innerHTML+='<button onclick="openWatchlistCreate()" class="w-full py-3 rounded-2xl glass text-[13px] text-white/75 press">＋ Новая подборка</button>';
 }
 function openWatchlist(id){
   const list=DB.watchlists.find(item=>item.id===id);if(!list)return;DB.activeWatchlist=id;
