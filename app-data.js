@@ -1,7 +1,8 @@
 const LS='atlantis_v2';
 const defaultDB=()=>({
   onboarded:false,
-  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊',visibility:'public'},
+  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊',visibility:'public',avatar:'https://i.pravatar.cc/300?u=me',cover:'https://picsum.photos/seed/mehero/1200/1600'},
+  pendingAvatar:null,pendingCover:null,
   blocked:{},
   clips:[],pendingClipVideo:null,
   following:{},channelSub:{},cart:[],seenStories:{},
