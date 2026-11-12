@@ -402,6 +402,11 @@ async function handleChannelCover(input){
     const preview=document.getElementById('channel-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingChannelCover);
   }catch(e){toast(e.message||'Не удалось сохранить обложку')}
 }
+function openChannelPost(){
+  const channel=DB.channels.find(item=>item.id===DB.activeChannel);
+  if(!channel||channel.ownerKey!=='me'){toast('Публиковать в канале может владелец');return}
+  go('compose',{channelId:channel.id});
+}
 function openChannelEdit(){
   const ch=DB.channels.find(channel=>channel.id===DB.activeChannel);if(ch?.ownerKey!=='me')return;
   DB.editingChannelId=ch.id;DB.pendingChannelCover=ch.cover||null;
@@ -479,6 +484,16 @@ async async function deleteProduct(){
   const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
   if(active.item.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.deleteProduct(active.item.cloudId)}catch(error){toast(error.message||'Не удалось удалить товар в облаке');return}
   sh.items=sh.items.filter(item=>item.id!==active.item.id);sh.products=sh.items.length;DB.activeProduct=null;save();closeSheet();openShop(sh.id);toast('Товар удалён');
+}
+function openShopEdit(){
+  const shop=DB.shops.find(item=>item.id===DB.activeShop);if(shop?.ownerKey!=='me')return;
+  DB.editingShopId=shop.id;
+  document.getElementById('new-shop-name').value=shop.name;
+  document.getElementById('new-shop-desc').value=shop.desc||'';
+  document.getElementById('new-shop-visibility').value=shop.visibility||'public';
+  document.getElementById('shop-create-title').textContent='Настройки магазина';
+  document.getElementById('shop-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
 }
 async function createProduct(){
   const sh=DB.shops.find(item=>item.id===DB.activeShop);
