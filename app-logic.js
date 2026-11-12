@@ -192,14 +192,19 @@ async function shareProfile(){
 }
 function renderMe(){
   document.getElementById('me-name').textContent=DB.me.name;
+  setMediaSource(document.getElementById('me-avatar'),DB.me.avatar||'https://i.pravatar.cc/300?u=me');
+  setMediaBackground(document.getElementById('me-hero'),DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600');
   document.getElementById('me-handle').textContent=DB.me.handle;
   document.getElementById('me-bio').textContent=DB.me.bio;
   document.getElementById('me-posts').textContent=DB.posts.filter(p=>p.author==='Вы'||p.author===DB.me.name).length;
 }
 function openEditProfile(){
+  DB.pendingAvatar=null;DB.pendingCover=null;
   document.getElementById('edit-name').value=DB.me.name;
   document.getElementById('edit-handle').value=DB.me.handle;
   document.getElementById('edit-bio').value=DB.me.bio;
+  const avatarPreview=document.getElementById('edit-avatar-preview'),coverPreview=document.getElementById('edit-cover-preview');
+  avatarPreview.hidden=false;coverPreview.hidden=false;setMediaSource(avatarPreview,DB.me.avatar||'https://i.pravatar.cc/300?u=me');setMediaSource(coverPreview,DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600');
   document.getElementById('bd').classList.add('open');
   document.getElementById('edit-sheet').classList.add('open');
   setNav(false);
@@ -209,7 +214,27 @@ function saveProfile(){
   DB.me.handle=document.getElementById('edit-handle').value.trim()||'@you';
   if(!DB.me.handle.startsWith('@'))DB.me.handle='@'+DB.me.handle;
   DB.me.bio=document.getElementById('edit-bio').value.trim()||'';
+  DB.me.avatar=DB.pendingAvatar||DB.me.avatar||'https://i.pravatar.cc/300?u=me';DB.me.cover=DB.pendingCover||DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600';DB.pendingAvatar=null;DB.pendingCover=null;
   save();closeSheet();renderMe();toast('Профиль сохранён');
+}
+function setMediaBackground(element,ref){
+  if(!element)return;
+  if(ref&&ref.startsWith('idb:'))resolveMediaURL(ref).then(url=>{element.style.backgroundImage='url("'+url+'")'}).catch(()=>{});
+  else element.style.backgroundImage=ref?'url("'+ref+'")':'';
+}
+function chooseProfileAvatar(){document.getElementById('edit-avatar-file').click()}
+function chooseProfileCover(){document.getElementById('edit-cover-file').click()}
+async function handleProfileAvatar(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите фото до 20 МБ');return}
+  try{DB.pendingAvatar=await saveMediaFile(file);const preview=document.getElementById('edit-avatar-preview');preview.hidden=false;setMediaSource(preview,DB.pendingAvatar)}
+  catch(e){toast(e.message||'Не удалось сохранить фото')}
+}
+async function handleProfileCover(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите обложку до 20 МБ');return}
+  try{DB.pendingCover=await saveMediaFile(file);const preview=document.getElementById('edit-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingCover)}
+  catch(e){toast(e.message||'Не удалось сохранить обложку')}
 }
 function setMediaSource(img,ref){
   if(!img)return;
