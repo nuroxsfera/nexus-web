@@ -39,7 +39,7 @@ The test suite includes static integrity checks, a PGlite Postgres/RLS simulatio
 
 ## Backend setup
 
-See [backend architecture](docs/backend-architecture.md) and [product roadmap](docs/product-roadmap.md).
+See [backend architecture](docs/backend-architecture.md), [Supabase setup](docs/supabase-setup.md), and [product roadmap](docs/product-roadmap.md).
 
 After creating and linking a Supabase project:
 1. Apply the SQL migration in `supabase/migrations`.
