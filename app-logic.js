@@ -454,6 +454,25 @@ async function createShop(){
   toast(cloudResult?'Магазин создан и синхронизирован':cloudError?'Магазин сохранён локально: '+cloudError.message:'Магазин создан · сохранён на устройстве');
   if(cloudResult)void syncCloudResources({silent:true});
 }
+function openShop(id){
+  const shop=DB.shops.find(item=>item.id===id);if(!shop)return;
+  DB.activeShop=id;shop.items=shop.items||[];
+  document.getElementById('sh-name').textContent=shop.name;
+  document.getElementById('sh-meta').textContent=shop.items.length+' товаров';
+  document.getElementById('sh-desc').textContent=shop.desc||'';
+  const owner=shop.ownerKey==='me';
+  document.getElementById('sh-edit-shop').hidden=!owner;
+  document.getElementById('sh-add-product').hidden=!owner;
+  const grid=document.getElementById('sh-grid');
+  grid.innerHTML=shop.items.map(item=>{
+    const ref=item.image||'';
+    const image=ref?(ref.startsWith('idb:')?`<img data-media-ref="${esc(ref)}" class="w-full h-full object-cover" alt="${esc(item.name)}">`:`<img src="${esc(ref)}" class="w-full h-full object-cover" alt="${esc(item.name)}">`):'<div class="w-full h-full bg-white/5"></div>';
+    return `<button class="text-left rounded-2xl overflow-hidden bg-[#151517] border border-white/5 press" onclick="openProduct('${esc(shop.id)}','${esc(item.id)}')"><div class="aspect-square overflow-hidden">${image}</div><div class="p-3"><p class="text-[13px] font-semibold line-clamp-2">${esc(item.name)}</p><p class="text-[12px] text-white/45 mt-1 line-clamp-2">${esc(item.desc||'')}</p><p class="text-[14px] font-bold mt-2">${Number(item.price||0).toLocaleString('ru-RU')} ₽</p></div></button>`;
+  }).join('')||'<div class="empty col-span-2">В магазине пока нет товаров.</div>';
+  hydrateMediaImages(grid);
+  const cartCount=(DB.cart||[]).reduce((sum,item)=>sum+Number(item.qty||1),0);
+  const badge=document.getElementById('cart-n');badge.textContent=cartCount;badge.classList.toggle('hidden',!cartCount);
+}
 function openProductCreate(){
   if(!DB.activeShop)return;
   const sh=DB.shops.find(s=>s.id===DB.activeShop);if(sh?.ownerKey!=='me'){toast('Добавлять товары может владелец');return}
