@@ -837,8 +837,8 @@ insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 values
   ('nexus-avatars','nexus-avatars',false,20971520,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif']),
   ('nexus-health','nexus-health',false,20971520,array['image/jpeg','image/png','image/webp','application/pdf']),
-  ('nexus-media','nexus-media',false,104857600,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','video/mp4','video/quicktime'])
-on conflict (id) do nothing;
+  ('nexus-media','nexus-media',false,104857600,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','image/gif','video/mp4','video/quicktime','video/webm'])
+on conflict (id) do update set public=excluded.public,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists nexus_media_upload_own on storage.objects;
 create policy nexus_media_upload_own on storage.objects for insert to authenticated
