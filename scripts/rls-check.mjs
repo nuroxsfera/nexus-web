@@ -58,6 +58,11 @@ try {
     "insert into public.health_measurements(user_id,metric,value,unit) values ('" + B + "','resting_heart_rate',62,'bpm');",
     "insert into storage.objects(bucket_id,name) values ('nexus-health','" + B + "/reports/lab.pdf');",
     "insert into public.shops(id,owner_id,title,slug,visibility) values ('50000000-0000-4000-8000-000000000001','" + B + "','Private shop','private-shop','private'),('50000000-0000-4000-8000-000000000002','" + B + "','Public shop','public-shop','public');",
+    "insert into public.playlists(id,owner_id,title,visibility) values ('70000000-0000-4000-8000-000000000001','" + B + "','Public mix','public'),('70000000-0000-4000-8000-000000000002','" + B + "','Private mix','private');",
+    "insert into public.playlist_tracks(playlist_id,title,artist,provider,provider_url) values ('70000000-0000-4000-8000-000000000001','Track A','Artist A','spotify','https://open.spotify.com/track/example'),('70000000-0000-4000-8000-000000000002','Secret track','Artist B','apple_music','https://music.apple.com/track/example');",
+    "insert into public.watchlists(id,owner_id,title,visibility) values ('71000000-0000-4000-8000-000000000001','" + B + "','Public watchlist','public'),('71000000-0000-4000-8000-000000000002','" + B + "','Private watchlist','private');",
+    "insert into public.watchlist_items(watchlist_id,title,media_type,provider,provider_url) values ('71000000-0000-4000-8000-000000000001','Example film','movie','kinopoisk','https://www.kinopoisk.ru/film/1/'),('71000000-0000-4000-8000-000000000002','Private series','series','ivi','https://www.ivi.ru/watch/example');",
+
     "insert into public.products(shop_id,title,price,status) values ('50000000-0000-4000-8000-000000000001','Secret product',100,'published'),('50000000-0000-4000-8000-000000000002','Public product',100,'published');",
     "insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/draft.jpg'),('nexus-media','" + publicPath + "'),('nexus-media','" + privatePath + "'),('nexus-media','" + publicClipPath + "'),('nexus-media','" + followerClipPath + "');"
   ].join('\n'));
@@ -72,6 +77,10 @@ try {
   assert.equal(await count('public.notifications'),0,'notifications are recipient-only');
   assert.equal(await count('public.shops'),1,'private shops stay hidden');
   assert.equal(await count('public.products'),1,'private shop products stay hidden');
+  assert.equal(await count('public.playlists'),1,'private playlists stay hidden');
+  assert.equal(await count('public.playlist_tracks'),1,'playlist tracks inherit visibility');
+  assert.equal(await count('public.watchlists'),1,'private watchlists stay hidden');
+  assert.equal(await count('public.watchlist_items'),1,'watchlist items inherit visibility');
   assert.equal(await count('public.fitness_profiles'),0,'fitness profiles are owner-only');
   assert.equal(await count('public.workout_sessions'),0,'workout history is owner-only');
   assert.equal(await count('public.nutrition_entries'),0,'nutrition entries are owner-only');
@@ -118,7 +127,7 @@ try {
   await db.exec('reset role; set role anon;');
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
   await db.exec('reset role');
-  console.log('Nexus RLS checks passed: profiles, posts, channels, clips, media, shops, DMs, notifications, owner-only health data, follows, immutable identities, blocks and anonymous access.');
+  console.log('Nexus RLS checks passed: profiles, posts, channels, clips, music playlists, watchlists, media, shops, DMs, notifications, owner-only health data, follows, immutable identities, blocks and anonymous access.');
 } catch (error) {
   console.error('RLS check failed:', error?.message || error);
   process.exitCode = 1;
