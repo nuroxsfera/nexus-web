@@ -419,7 +419,7 @@ function renderNotifs(){
 function markRead(){DB.notifications.forEach(n=>n.read=true);save();renderNotifs();toast('Прочитано')}
 function openNewChat(){
   document.getElementById('chat-group-name').value='';
-  document.getElementById('chat-people').innerHTML=Object.entries(DB.profiles).map(([key,profile])=>`<option value="${esc(key)}">${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
+  document.getElementById('chat-people').innerHTML=Object.entries(DB.profiles).filter(([key])=>!DB.blocked?.[key]).map(([key,profile])=>`<option value="${esc(key)}">${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('new-chat-sheet').classList.add('open');setNav(false);
 }
 function createChat(){
@@ -439,7 +439,7 @@ function createChat(){
 }
 function renderChats(){
   const q=(document.getElementById('csearch')?.value||'').toLowerCase();
-  const list=DB.chats.filter(c=>!q||c.name.toLowerCase().includes(q));
+  const list=DB.chats.filter(c=>!(c.profileKey&&DB.blocked?.[c.profileKey])&&!(c.profileKeys||[]).some(key=>DB.blocked?.[key])&&(!q||c.name.toLowerCase().includes(q)));
   document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" data-chat-id="${esc(c.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(c.avatar)}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${esc(c.name)}</p><span class="text-[10px] text-white/35">${esc(c.time)}</span></div><p class="text-[12.5px] text-white/45 truncate">${esc(c.last)}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${Number(c.unread)}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
   const unread=DB.chats.reduce((sum,c)=>sum+Number(c.unread||0),0);const badge=document.getElementById('mbadge');if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden');
 }
@@ -658,7 +658,7 @@ function renderBlockList(){
 function toggleBlock(key){
   DB.blocked=DB.blocked||{};
   if(DB.blocked[key])delete DB.blocked[key];else DB.blocked[key]=true;
-  save();renderBlockList();renderFeed();renderStories();renderExplore();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
+  save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
 }
 function settingAction(i){
   if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
