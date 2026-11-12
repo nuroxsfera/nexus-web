@@ -18,7 +18,9 @@ try {
   window.openWorkoutCreate();
   assert.equal(window.document.getElementById('health-vault-sheet').classList.contains('open'),true);
   assert.equal(window.document.getElementById('workout-create-sheet').classList.contains('open'),false);
-  window.closeSheet();window.__vaultUnlocked=true;
+  window.closeSheet();
+  assert.equal(window.document.getElementById('health-vault-sheet').classList.contains('open'),false);
+  window.__vaultUnlocked=true;
   window.document.getElementById('new-channel-name').value='Nexus Creators';
   window.document.getElementById('new-channel-desc').value='Наше сообщество авторов';
   window.document.getElementById('new-channel-visibility').value='public';
