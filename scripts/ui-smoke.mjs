@@ -180,6 +180,18 @@ try {
   state=window.__getDB();
   assert.equal(state.organizations[0].members[0].role,'owner');
   assert.equal(state.organizations[0].members.length,2);
+  window.document.getElementById('space-name').value='Nexus Community';
+  window.document.getElementById('space-desc').value='Общее пространство';
+  window.createSpace();
+  state=window.__getDB();
+  const space=state.spaces[0];
+  window.openSpaceLink();
+  const spaceChannels=window.document.getElementById('space-channels'),spaceShops=window.document.getElementById('space-shops');
+  if(spaceChannels.options.length)spaceChannels.options[0].selected=true;
+  if(spaceShops.options.length)spaceShops.options[0].selected=true;
+  window.saveSpaceLinks();
+  state=window.__getDB();
+  assert.equal(state.spaces[0].links.length,2);
   assert.equal(state.etab,'business');
   state=window.__getDB();
   assert.equal(state.blocked.marley,true);
