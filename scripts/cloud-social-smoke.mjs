@@ -28,6 +28,7 @@ const client={
     if(table==='profiles'&&query.startsWith('or='))return [{id:'77777777-7777-4777-8777-777777777777',username:'tester2',display_name:'Tester Two',bio:'Bio',avatar_path:null,cover_path:null,visibility:'public'}];
     if(table==='profiles'&&query.startsWith('select='))return [{id:user.id,username:'tester',display_name:'Tester',bio:'Hello',avatar_path:null,cover_path:null,visibility:'public'}];
     if(table==='follows'&&query.startsWith('select='))return query.includes('following_id=')?[{follower_id:'x'}]:[];
+    if(table==='blocks'&&query.startsWith('select='))return [{blocked_id:'77777777-7777-4777-8777-777777777777'}];
     if(table==='products'&&options.method==='POST')return [{id:'33333333-3333-4333-8333-333333333333'}];
     if(table==='products'&&query.startsWith('select=cover_path'))return [{cover_path:'old-cover.jpg'}];
     if(table==='channels'&&query.startsWith('select=cover_path'))return [];
@@ -52,6 +53,8 @@ await cloud.followUser(remoteProfile.cloudId,true);
 await cloud.followUser(remoteProfile.cloudId,false);
 await cloud.blockUser(remoteProfile.cloudId,true);
 await cloud.blockUser(remoteProfile.cloudId,false);
+const blocked=await cloud.fetchBlocks();
+assert.equal(blocked[0].blocked_id,'77777777-7777-4777-8777-777777777777');
 
 const media={blob:new Blob(['photo'],{type:'image/jpeg'}),type:'image/jpeg',name:'photo.jpg'};
 const created=await cloud.createPost({body:'Hello cloud',media:[media],visibility:'followers'});
