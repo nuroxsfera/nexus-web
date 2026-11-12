@@ -272,20 +272,6 @@ as $$
   )
 $$;
 
-create or replace function private.can_view_post_record(target_post uuid)
-returns boolean language sql stable security definer set search_path=''
-as $
-  select exists(
-    select 1 from public.posts p
-    where p.id=target_post
-      and private.can_view_post(p.author_id,p.visibility)
-      and (p.channel_id is null or exists(
-        select 1 from public.channels c
-        where c.id=p.channel_id and (c.visibility='public' or private.is_channel_member(c.id))
-      ))
-  )
-$;
-
 create or replace function private.is_org_member(target_org uuid)
 returns boolean language sql stable security definer set search_path=''
 as $$ select exists(select 1 from public.organization_members m where m.organization_id=target_org and m.user_id=(select auth.uid())) $$;
@@ -301,6 +287,20 @@ as $$ select exists(select 1 from public.channel_members m where m.channel_id=ta
 create or replace function private.is_channel_admin(target_channel uuid)
 returns boolean language sql stable security definer set search_path=''
 as $$ select exists(select 1 from public.channel_members m where m.channel_id=target_channel and m.user_id=(select auth.uid()) and m.role in ('owner','admin','moderator')) or exists(select 1 from public.channels c where c.id=target_channel and c.owner_id=(select auth.uid())) $$;
+
+create or replace function private.can_view_post_record(target_post uuid)
+returns boolean language sql stable security definer set search_path=''
+as $$
+  select exists(
+    select 1 from public.posts p
+    where p.id=target_post
+      and private.can_view_post(p.author_id,p.visibility)
+      and (p.channel_id is null or exists(
+        select 1 from public.channels c
+        where c.id=p.channel_id and (c.visibility='public' or private.is_channel_member(c.id))
+      ))
+  )
+$$;
 
 create or replace function private.is_conversation_member(target_conversation uuid)
 returns boolean language sql stable security definer set search_path=''
@@ -466,20 +466,20 @@ create policy story_media_delete_author on public.story_media for delete to auth
 );
 
 create policy comments_read_accessible on public.comments for select to authenticated using (
-  exists(select 1 from public.posts p where p.id=post_id and private.can_view_post(p.author_id,p.visibility))
+  private.can_view_post_record(post_id)
 );
 create policy comments_insert_author on public.comments for insert to authenticated with check (
-  author_id=(select auth.uid()) and exists(select 1 from public.posts p where p.id=post_id and private.can_view_post(p.author_id,p.visibility))
+  author_id=(select auth.uid()) and private.can_view_post_record(post_id)
 );
 create policy comments_delete_author on public.comments for delete to authenticated using (
   author_id=(select auth.uid()) or exists(select 1 from public.posts p where p.id=post_id and p.author_id=(select auth.uid()))
 );
 
 create policy post_likes_read_accessible on public.post_likes for select to authenticated using (
-  exists(select 1 from public.posts p where p.id=post_id and private.can_view_post(p.author_id,p.visibility))
+  private.can_view_post_record(post_id)
 );
 create policy post_likes_insert_self on public.post_likes for insert to authenticated with check (
-  user_id=(select auth.uid()) and exists(select 1 from public.posts p where p.id=post_id and private.can_view_post(p.author_id,p.visibility))
+  user_id=(select auth.uid()) and private.can_view_post_record(post_id)
 );
 create policy post_likes_delete_self on public.post_likes for delete to authenticated using (user_id=(select auth.uid()));
 
