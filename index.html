@@ -19,7 +19,7 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;overflow:hidden}
-#app{height:100%;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;background:#000}
+#app{height:100%;height:100dvh;height:100svh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;background:#000;padding-bottom:env(safe-area-inset-bottom,0px)}
 .ns{scrollbar-width:none}
 .ns::-webkit-scrollbar{display:none}
 .press:active{opacity:.85;transform:scale(.98)}
@@ -50,9 +50,10 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-ap
 
   <!-- Stories / Atlases -->
   <section class="px-5 pb-4 shrink-0">
-    <div class="flex gap-4 overflow-x-auto ns">
+    <div class="flex gap-4 overflow-x-auto ns -mx-1 px-1 pb-1">
+      <!-- Add -->
       <button class="flex flex-col items-center gap-1.5 shrink-0 press">
-        <div class="w-[68px] h-[68px] rounded-full bg-[#1a1a1a] border-2 border-dashed border-white/20 flex items-center justify-center">
+        <div class="w-[68px] h-[68px] rounded-full bg-[#1a1a1a] border border-white/10 flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/60"><path d="M12 5v14M5 12h14"/></svg>
         </div>
         <span class="text-[11px] text-white/50">Добавить</span>
@@ -97,103 +98,26 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-ap
   </section>
 
   <!-- Feed -->
-  <main class="flex-1 overflow-y-auto ns px-4 pb-28 space-y-5 fade">
+  <main class="flex-1 overflow-y-auto ns px-4 pb-24 space-y-4">
 
     <!-- Post 1 -->
-    <article class="post-card">
-      <div class="relative aspect-[4/5] bg-[#1a1a1a]">
+    <article class="post-card fade">
+      <div class="relative aspect-[4/5] max-h-[420px]">
         <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80" class="w-full h-full object-cover" alt="">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-        <div class="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-          <div class="flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=marcus" class="w-8 h-8 rounded-full object-cover border border-white/20" alt="">
-            <div>
-              <p class="text-[13px] font-semibold text-white">Маркус Чен</p>
-              <p class="text-[11px] text-white/60">2 часа назад</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">42</span>
-            </button>
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span class="text-[12px] font-medium text-white">8</span>
-            </button>
-          </div>
+        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
+          <img src="https://i.pravatar.cc/48?u=sofia" class="w-8 h-8 rounded-full object-cover border-2 border-white/20" alt="">
+          <span class="text-[13px] font-semibold text-white drop-shadow">София Беннетт</span>
         </div>
-      </div>
-      <div class="px-4 py-3.5 bg-[#0f0f0f]">
-        <div class="flex items-center gap-2 mb-2">
-          <img src="https://i.pravatar.cc/48?u=marcus" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold">Маркус Чен</span>
+        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
+          <button class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 press">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="text-[12px] font-medium text-white">18</span>
+          </button>
         </div>
-        <p class="text-[13.5px] leading-relaxed text-white/90">
-          Утро в горах. Тишина, которую не купишь. #presence #mountains
-        </p>
-      </div>
-    </article>
-
-    <!-- Post 2 -->
-    <article class="post-card">
-      <div class="relative aspect-[4/5] bg-[#1a1a1a]">
-        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" class="w-full h-full object-cover" alt="">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-        <div class="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-          <div class="flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=elena" class="w-8 h-8 rounded-full object-cover border border-white/20" alt="">
-            <div>
-              <p class="text-[13px] font-semibold text-white">Елена Воронцова</p>
-              <p class="text-[11px] text-white/60">5 часов назад</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">127</span>
-            </button>
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span class="text-[12px] font-medium text-white">23</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="px-4 py-3.5 bg-[#0f0f0f]">
-        <div class="flex items-center gap-2 mb-2">
-          <img src="https://i.pravatar.cc/48?u=elena" class="w-6 h-6 rounded-full object-cover" alt="">
-          <span class="text-[13px] font-semibold">Елена Воронцова</span>
-        </div>
-        <p class="text-[13.5px] leading-relaxed text-white/90">
-          Ночной город снизу. Иногда нужно просто смотреть вверх.
-        </p>
-      </div>
-    </article>
-
-    <!-- Post 3 -->
-    <article class="post-card">
-      <div class="relative aspect-[4/5] bg-[#1a1a1a]">
-        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80" class="w-full h-full object-cover" alt="">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-        <div class="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-          <div class="flex items-center gap-2">
-            <img src="https://i.pravatar.cc/48?u=sofia" class="w-8 h-8 rounded-full object-cover border border-white/20" alt="">
-            <div>
-              <p class="text-[13px] font-semibold text-white">София Беннетт</p>
-              <p class="text-[11px] text-white/60">Вчера</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <span class="text-[12px] font-medium text-white">89</span>
-            </button>
-            <button class="flex items-center gap-1.5 press">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span class="text-[12px] font-medium text-white">18</span>
-            </button>
-          </div>
+        <div class="absolute bottom-3.5 right-3.5 flex -space-x-2">
+          <img src="https://i.pravatar.cc/32?u=1" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
+          <img src="https://i.pravatar.cc/32?u=2" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
+          <img src="https://i.pravatar.cc/32?u=3" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
         </div>
       </div>
       <div class="px-4 py-3.5 bg-[#0f0f0f]">
@@ -207,11 +131,67 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-ap
       </div>
     </article>
 
+    <!-- Post 2 -->
+    <article class="post-card fade">
+      <div class="relative aspect-[4/5] max-h-[420px]">
+        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80" class="w-full h-full object-cover" alt="">
+        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
+          <img src="https://i.pravatar.cc/48?u=max" class="w-8 h-8 rounded-full object-cover border-2 border-white/20" alt="">
+          <span class="text-[13px] font-semibold text-white drop-shadow">Макс Уокер</span>
+        </div>
+        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
+          <button class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 press">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="text-[12px] font-medium text-white">42</span>
+          </button>
+        </div>
+        <div class="absolute bottom-3.5 right-3.5 flex -space-x-2">
+          <img src="https://i.pravatar.cc/32?u=4" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
+          <img src="https://i.pravatar.cc/32?u=5" class="w-6 h-6 rounded-full border-2 border-black object-cover" alt="">
+        </div>
+      </div>
+      <div class="px-4 py-3.5 bg-[#0f0f0f]">
+        <div class="flex items-center gap-2 mb-2">
+          <img src="https://i.pravatar.cc/48?u=max" class="w-6 h-6 rounded-full object-cover" alt="">
+          <span class="text-[13px] font-semibold">Макс Уокер</span>
+        </div>
+        <p class="text-[13.5px] leading-relaxed text-white/90">
+          Горы всегда знают, когда тебе нужно выдохнуть. #nature
+        </p>
+      </div>
+    </article>
+
+    <!-- Post 3 -->
+    <article class="post-card fade">
+      <div class="relative aspect-[4/5] max-h-[420px]">
+        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80" class="w-full h-full object-cover" alt="">
+        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
+          <img src="https://i.pravatar.cc/48?u=lena" class="w-8 h-8 rounded-full object-cover border-2 border-white/20" alt="">
+          <span class="text-[13px] font-semibold text-white drop-shadow">Лена Морозова</span>
+        </div>
+        <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
+          <button class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 press">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="text-[12px] font-medium text-white">9</span>
+          </button>
+        </div>
+      </div>
+      <div class="px-4 py-3.5 bg-[#0f0f0f]">
+        <div class="flex items-center gap-2 mb-2">
+          <img src="https://i.pravatar.cc/48?u=lena" class="w-6 h-6 rounded-full object-cover" alt="">
+          <span class="text-[13px] font-semibold">Лена Морозова</span>
+        </div>
+        <p class="text-[13.5px] leading-relaxed text-white/90">
+          Ночной город. Тишина между огнями.
+        </p>
+      </div>
+    </article>
+
   </main>
 
   <!-- Bottom Nav -->
-  <nav class="absolute bottom-0 left-0 right-0 px-6 pb-6 pt-3 bg-gradient-to-t from-black via-black/95 to-transparent">
-    <div class="flex items-center justify-between bg-[#1a1a1a]/90 backdrop-blur-xl rounded-full px-2 py-2 border border-white/5 max-w-[320px] mx-auto">
+  <nav class="absolute bottom-0 left-0 right-0 px-5 pt-2 bg-gradient-to-t from-black via-black/95 to-transparent" style="padding-bottom: max(10px, env(safe-area-inset-bottom));">
+    <div class="flex items-center justify-between bg-[#1a1a1a]/90 backdrop-blur-xl rounded-full px-1.5 py-1.5 border border-white/5 max-w-[300px] mx-auto">
       <!-- Home active -->
       <button class="nav-item active w-14 h-14 rounded-full flex items-center justify-center press">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -234,7 +214,7 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-ap
 </div>
 
 <!-- iOS Install Banner (only when not installed) -->
-<div id="ios-install" class="hidden fixed bottom-24 left-4 right-4 z-50 max-w-[400px] mx-auto">
+<div id="ios-install" class="hidden fixed bottom-28 left-4 right-4 z-50 max-w-[400px] mx-auto">
   <div class="bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-start gap-3">
     <div class="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-black flex items-center justify-center">
       <img src="/apple-touch-icon.png" alt="" class="w-full h-full object-cover">
@@ -243,40 +223,25 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,-ap
       <p class="text-[15px] font-semibold text-white leading-tight">Установить Atlantis</p>
       <p class="text-[13px] text-white/60 mt-0.5 leading-snug">Нажми <span class="inline-flex items-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-0.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> → «На экран «Домой»»</p>
     </div>
-    <button id="ios-install-close" class="text-white/40 hover:text-white p-1 -mt-1 -mr-1 press">
+    <button onclick="document.getElementById('ios-install').classList.add('hidden')" class="text-white/40 press p-1">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
   </div>
 </div>
 
 <script>
-// Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
 
-// iOS Add to Home Screen helper
 (function() {
   const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-  const banner = document.getElementById('ios-install');
-  const closeBtn = document.getElementById('ios-install-close');
-
-  if (isIos && !isStandalone && banner) {
-    // Show after short delay, only if not dismissed recently
-    const dismissed = localStorage.getItem('atlantis-ios-install-dismissed');
-    if (!dismissed || Date.now() - Number(dismissed) > 7 * 24 * 60 * 60 * 1000) {
-      setTimeout(() => banner.classList.remove('hidden'), 1800);
-    }
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      banner.classList.add('hidden');
-      localStorage.setItem('atlantis-ios-install-dismissed', String(Date.now()));
-    });
+  if (isIos && !isStandalone) {
+    const banner = document.getElementById('ios-install');
+    if (banner) banner.classList.remove('hidden');
   }
 })();
 </script>

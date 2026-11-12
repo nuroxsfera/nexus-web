@@ -3,13 +3,10 @@
   "short_name": "Atlantis",
   "description": "Presence over noise",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "fullscreen"],
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
-  "lang": "ru",
   "icons": [
     {
       "src": "/icon.svg",
@@ -32,8 +29,7 @@
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
