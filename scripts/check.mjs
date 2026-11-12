@@ -23,5 +23,7 @@ assert.ok(config.includes('SUPABASE_PUBLISHABLE_KEY'));
 assert.ok(config.includes('SUPABASE_ANON_KEY'));
 assert.ok(!config.includes('SUPABASE_SERVICE_ROLE_KEY'));
 assert.ok(health.includes('backendConfigured'));
+assert.ok(logic.includes('backend-status'));
+assert.ok(logic.includes("fetch('/api/health'"));
 assert.ok(!logic.includes('Заказ оформлен ✓'), 'Do not simulate a successful checkout without a backend');
 console.log('Nexus quality checks passed.');
