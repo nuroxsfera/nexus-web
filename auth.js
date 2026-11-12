@@ -46,7 +46,7 @@
     return readJson(response);
   }
   async function refreshSession(){
-    if(!session?.refresh_token)return null;
+    if(!session?.refresh_token){storeSession(null);return null}
     try{
       const next=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});
       storeSession({...next,expires_at:Date.now()/1000+Number(next.expires_in||3600)});
