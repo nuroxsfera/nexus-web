@@ -352,6 +352,7 @@ function renderSaved(){
 }
 async function messageProfile(key){
   const profile=DB.profiles[key];if(!profile)return;
+  if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.())await syncCloudChats({silent:true});
   if(DB.blocked?.[key]){toast('Сначала сними блокировку');return}
   let chat=DB.chats.find(item=>item.profileKey===key);
   if(!chat){
@@ -676,6 +677,7 @@ function openNewChat(){
 async function createChat(){
   const select=document.getElementById('chat-people');
   const keys=[...select.selectedOptions].map(option=>option.value);
+  if(window.NEXUS_AUTH?.hasSession?.())await syncCloudChats({silent:true});
   if(!keys.length){toast('Выбери хотя бы одного собеседника');return}
   const profiles=keys.map(key=>DB.profiles[key]).filter(Boolean);if(!profiles.length)return;
   if(keys.length===1){
