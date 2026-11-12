@@ -191,7 +191,7 @@ function renderFeed(){
         ${images.length>1?`<span class="absolute top-2.5 right-2.5 glass rounded-full px-2 py-1 text-[10px] font-semibold text-white">${images.length} фото · листайте</span>`:''}
         <div class="heart-burst"><svg width="72" height="72" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
         <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
-        <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${esc(p.author)}')`}">
+        <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" data-profile-key="${esc(p.authorKey||'')}" data-author-name="${esc(p.author)}" onclick="event.stopPropagation();if(this.dataset.profileKey)go('profile',{key:this.dataset.profileKey});else toast(this.dataset.authorName)">
           <img src="${esc(p.avatar)}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
           <span class="text-[12px] font-semibold text-white drop-shadow">${esc(p.author)}</span>
         </button>
