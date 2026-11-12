@@ -11,9 +11,11 @@ const app = fs.readFileSync('app.js', 'utf8');
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 const gitignore = fs.readFileSync('.gitignore', 'utf8');
 const migration = fs.readFileSync('supabase/migrations/202611120001_initial_schema.sql', 'utf8');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const vault = fs.readFileSync('health-vault.js', 'utf8');
 const auth = fs.readFileSync('auth.js', 'utf8');
 const cloud = fs.readFileSync('cloud-social.js', 'utf8');
+const cloudSmoke = fs.readFileSync('scripts/cloud-social-smoke.mjs', 'utf8');
 
 for (const id of ['feed','stories','compose-text','compose-visibility','compose-file-input','story-file-input','story-viewer','bnav','channel-create-sheet','shop-create-sheet','product-create-sheet','new-channel-name','channel-cover-preview','channel-cover-input','new-shop-name','new-product-name','product-create-title','product-save-btn','product-file-input','ch-new-post','ch-edit','sh-add-product','sh-edit-shop','channel-create-title','channel-save-btn','shop-create-title','shop-save-btn','privacy-sheet','blocks-sheet','privacy-profile-visibility','block-list','clip-create-sheet','clip-caption','me-avatar','me-hero','edit-avatar-preview','edit-cover-preview','edit-avatar-file','edit-cover-file','clip-file-input','clip-preview']) {
   assert.ok(html.includes(`id="${id}"`) || html.includes(`id='${id}'`), `Missing required UI element: ${id}`);
@@ -50,6 +52,9 @@ assert.ok(auth.includes('async function uploadMedia('));
 assert.ok(auth.includes('async function rest('));
 assert.ok(cloud.includes('async function createPost('));
 assert.ok(cloud.includes('async function fetchFeed('));
+assert.ok(cloud.includes('async function deletePost('));
+assert.ok(cloudSmoke.includes('Cloud social smoke checks passed'));
+assert.ok(pkg.scripts.test.includes('cloud-social-smoke.mjs'));
 assert.ok(logic.includes("document.getElementById('compose-visibility').value"));
 assert.ok(app.includes("load('/cloud-social.js')"));
 assert.ok(vercel.headers[0].headers.some(header=>header.key==='X-Content-Type-Options'));
