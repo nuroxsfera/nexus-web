@@ -20,7 +20,7 @@
 | Cinema | Movie/series watchlists and legal provider links | Local watchlists and items | Watchlists and watchlist items |
 | Fitness & nutrition | Training history, nutrition logs, body metrics | Basic local tracker: body metrics, workout logs, nutrition entries | Owner-only fitness, workout, nutrition and health tables |
 | Messaging | Private conversations and notifications | Local demo chats | Conversations, members, messages, notifications, RLS |
-| Organizations | Company identity, roles, linked channels and stores | Basic local organization creation and channel/shop linking; role management next | Organizations, members, spaces, channels, shops |
+| Organizations | Company identity, roles, linked channels and stores | Local organization creation, team roles, spaces, and channel/shop linking; invitations and fine-grained permissions next | Organizations, members, spaces, channels, shops |
 
 ## Delivery phases
 
