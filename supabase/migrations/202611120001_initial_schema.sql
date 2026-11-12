@@ -168,6 +168,24 @@ create table if not exists public.story_media (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.clips (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  caption text not null default '' check (char_length(caption) <= 1500),
+  storage_path text not null unique,
+  poster_path text,
+  visibility public.content_visibility not null default 'public',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.clip_likes (
+  clip_id uuid not null references public.clips(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (clip_id,user_id)
+);
+
 create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.posts(id) on delete cascade,
@@ -240,6 +258,9 @@ create index if not exists comments_post_created_idx on public.comments(post_id,
 create index if not exists messages_conversation_created_idx on public.messages(conversation_id,created_at);
 create index if not exists notifications_user_created_idx on public.notifications(user_id,created_at desc);
 create index if not exists products_shop_status_idx on public.products(shop_id,status);
+create index if not exists clips_author_created_idx on public.clips(author_id,created_at desc);
+create index if not exists clips_visibility_created_idx on public.clips(visibility,created_at desc);
+create index if not exists clip_likes_clip_idx on public.clip_likes(clip_id);
 
 create or replace function private.is_blocked_between(user_a uuid,user_b uuid)
 returns boolean language sql stable security definer set search_path=''
@@ -360,6 +381,8 @@ drop trigger if exists products_set_updated_at on public.products;
 create trigger products_set_updated_at before update on public.products for each row execute function public.set_updated_at();
 drop trigger if exists posts_set_updated_at on public.posts;
 create trigger posts_set_updated_at before update on public.posts for each row execute function public.set_updated_at();
+drop trigger if exists clips_set_updated_at on public.clips;
+create trigger clips_set_updated_at before update on public.clips for each row execute function public.set_updated_at();
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path=''
@@ -388,6 +411,8 @@ alter table public.posts enable row level security;
 alter table public.post_media enable row level security;
 alter table public.stories enable row level security;
 alter table public.story_media enable row level security;
+alter table public.clips enable row level security;
+alter table public.clip_likes enable row level security;
 alter table public.comments enable row level security;
 alter table public.post_likes enable row level security;
 alter table public.conversations enable row level security;
@@ -397,7 +422,7 @@ alter table public.notifications enable row level security;
 alter table public.reports enable row level security;
 
 revoke all on all tables in schema public from anon, authenticated;
-grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
+grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.clips,public.clip_likes,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
 
 create policy profiles_read on public.profiles for select to authenticated using (private.can_view_profile(id));
 create policy profiles_insert on public.profiles for insert to authenticated with check (id=(select auth.uid()));
@@ -512,6 +537,19 @@ create policy post_likes_insert_self on public.post_likes for insert to authenti
 );
 create policy post_likes_delete_self on public.post_likes for delete to authenticated using (user_id=(select auth.uid()));
 
+create policy clips_read_accessible on public.clips for select to authenticated using (private.can_view_post(author_id,visibility));
+create policy clips_insert_author on public.clips for insert to authenticated with check (author_id=(select auth.uid()));
+create policy clips_update_author on public.clips for update to authenticated using (author_id=(select auth.uid())) with check (author_id=(select auth.uid()));
+create policy clips_delete_author on public.clips for delete to authenticated using (author_id=(select auth.uid()));
+
+create policy clip_likes_read_accessible on public.clip_likes for select to authenticated using (
+  exists(select 1 from public.clips c where c.id=clip_id and private.can_view_post(c.author_id,c.visibility))
+);
+create policy clip_likes_insert_self on public.clip_likes for insert to authenticated with check (
+  user_id=(select auth.uid()) and exists(select 1 from public.clips c where c.id=clip_id and private.can_view_post(c.author_id,c.visibility))
+);
+create policy clip_likes_delete_self on public.clip_likes for delete to authenticated using (user_id=(select auth.uid()));
+
 create policy conversations_read_members on public.conversations for select to authenticated using (private.is_conversation_member(id) or created_by=(select auth.uid()));
 create policy conversations_insert_creator on public.conversations for insert to authenticated with check (created_by=(select auth.uid()));
 create policy conversations_delete_creator on public.conversations for delete to authenticated using (created_by=(select auth.uid()));
@@ -546,6 +584,7 @@ as $$
       then (
         split_part(target_name,'/',1)=(select auth.uid())::text
         or exists(select 1 from public.post_media pm where pm.storage_path=target_name and private.can_view_post_record(pm.post_id))
+        or exists(select 1 from public.clips c where (c.storage_path=target_name or c.poster_path=target_name) and private.can_view_post(c.author_id,c.visibility))
         or exists(
           select 1 from public.story_media sm
           join public.stories s on s.id=sm.story_id
@@ -566,7 +605,7 @@ $$;
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 values
   ('nexus-avatars','nexus-avatars',false,20971520,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif']),
-  ('nexus-media','nexus-media',false,52428800,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','video/mp4','video/quicktime'])
+  ('nexus-media','nexus-media',false,104857600,array['image/jpeg','image/png','image/webp','image/avif','image/heic','image/heif','video/mp4','video/quicktime'])
 on conflict (id) do nothing;
 
 drop policy if exists nexus_media_upload_own on storage.objects;
