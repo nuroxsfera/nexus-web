@@ -417,6 +417,26 @@ function renderNotifs(){
   document.getElementById('ndot').style.display=DB.notifications.some(n=>!n.read)?'':'none';
 }
 function markRead(){DB.notifications.forEach(n=>n.read=true);save();renderNotifs();toast('Прочитано')}
+function openNewChat(){
+  document.getElementById('chat-group-name').value='';
+  document.getElementById('chat-people').innerHTML=Object.entries(DB.profiles).map(([key,profile])=>`<option value="${esc(key)}">${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('new-chat-sheet').classList.add('open');setNav(false);
+}
+function createChat(){
+  const select=document.getElementById('chat-people');
+  const keys=[...select.selectedOptions].map(option=>option.value);
+  if(!keys.length){toast('Выбери хотя бы одного собеседника');return}
+  const profiles=keys.map(key=>DB.profiles[key]).filter(Boolean);if(!profiles.length)return;
+  if(keys.length===1){
+    const existing=DB.chats.find(chat=>chat.profileKey===keys[0]);
+    if(existing){closeSheet();go('chat',{chatId:existing.id});return}
+  }
+  const customName=document.getElementById('chat-group-name').value.trim();
+  const name=customName||(profiles.length===1?profiles[0].name:profiles.map(profile=>profile.name).join(', '));
+  const id='chat'+Date.now();
+  const chat={id,name,avatar:'https://i.pravatar.cc/128?u='+encodeURIComponent(keys.join('-')),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:keys.length===1?keys[0]:null,profileKeys:keys};
+  DB.chats.unshift(chat);save();closeSheet();go('chat',{chatId:id});toast('Чат создан локально');
+}
 function renderChats(){
   const q=(document.getElementById('csearch')?.value||'').toLowerCase();
   const list=DB.chats.filter(c=>!q||c.name.toLowerCase().includes(q));
