@@ -13,7 +13,7 @@ function openMediaDB(){
   });
   return mediaDbPromise;
 }
-async function saveMediaFile(file){
+async async function saveMediaFile(file){
   if(!file||!file.type.startsWith('image/'))throw new Error('Выберите изображение');
   if(file.size>20*1024*1024)throw new Error('Фото должно быть меньше 20 МБ');
   const db=await openMediaDB();
@@ -181,7 +181,7 @@ function openProfile(key){
   document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
 }
 function toggleFollow(key){DB.following[key]=!DB.following[key];save();toast(DB.following[key]?'Подписка':'Отписка');openProfile(key)}
-async function shareProfile(){
+async async function shareProfile(){
  const url=location.origin+location.pathname+'?profile='+encodeURIComponent(DB.me.handle.replace(/^@/,''));
  try{
   if(navigator.share){await navigator.share({title:DB.me.name,text:'Мой профиль',url});return}
