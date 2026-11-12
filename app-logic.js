@@ -37,10 +37,10 @@ async function resolveMediaURL(ref){
   const url=URL.createObjectURL(record.blob);mediaUrlCache.set(ref,url);return url;
 }
 async function hydrateMediaImages(root=document){
-  const nodes=[...root.querySelectorAll('img[data-media-ref]')];
-  await Promise.all(nodes.map(async img=>{
-    try{img.src=await resolveMediaURL(img.dataset.mediaRef)}
-    catch(e){img.alt='Фото недоступно';img.classList.add('opacity-40')}
+  const nodes=[...root.querySelectorAll('img[data-media-ref],video[data-media-ref]')];
+  await Promise.all(nodes.map(async media=>{
+    try{media.src=await resolveMediaURL(media.dataset.mediaRef);if(media.tagName==='VIDEO')media.load()}
+    catch(e){if(media.tagName==='IMG'){media.alt='Фото недоступно';media.classList.add('opacity-40')}else{media.poster='';media.dataset.unavailable='true'}}
   }));
 }
 
@@ -400,12 +400,45 @@ function renderChats(){
 }
 function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'bubble-me':'bubble-them'}">${esc(m.text)}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
 function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value.trim();if(!t||!DB.activeChat)return;const c=DB.chats.find(x=>x.id===DB.activeChat);c.messages.push({me:true,text:t});c.last=t;c.time='сейчас';inp.value='';save();openChat(c.id)}
+function openClipCreate(){
+  DB.pendingClipVideo=null;document.getElementById('clip-caption').value='';document.getElementById('clip-preview').hidden=true;
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('clip-create-sheet').classList.add('open');setNav(false);
+}
+function chooseClipVideo(){document.getElementById('clip-file-input').click()}
+async function handleClipVideo(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('video/')||file.size>100*1024*1024){toast('Выберите видео до 100 МБ');return}
+  try{
+    DB.pendingClipVideo=await saveMediaFile(file);
+    const preview=document.getElementById('clip-preview');preview.hidden=false;setMediaSource(preview,DB.pendingClipVideo);preview.controls=true;preview.muted=true;preview.playsInline=true;
+  }catch(e){toast(e.message||'Не удалось сохранить видео')}
+}
+function createClip(){
+  if(!DB.pendingClipVideo){toast('Сначала выберите видео');return}
+  const caption=document.getElementById('clip-caption').value.trim();
+  DB.clips.unshift({id:'clip'+Date.now(),author:DB.me.name,authorKey:null,video:DB.pendingClipVideo,caption,likes:0,liked:false,createdAt:Date.now()});
+  DB.pendingClipVideo=null;DB.etab='clips';save();closeSheet();go('explore');toast('Клип добавлен локально');
+}
+function renderClips(){
+  const clips=DB.clips.filter(clip=>!clip.authorKey||!DB.blocked?.[clip.authorKey]);
+  const box=document.getElementById('eres');
+  box.innerHTML=clips.length?clips.map(clip=>{
+    const video=clip.video.startsWith('idb:')?`data-media-ref="${esc(clip.video)}"`:`src="${esc(clip.video)}"`;
+    return `<article class="relative rounded-[24px] overflow-hidden bg-[#111113] border border-white/[0.06] mb-4 max-w-[430px] mx-auto"><video ${video} class="w-full aspect-[9/16] max-h-[520px] object-cover bg-black" playsinline muted loop controls preload="metadata"></video><div class="px-4 py-3 flex items-start gap-3"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold">${esc(clip.author)}</p><p class="text-[13px] text-white/65 mt-1 break-words">${esc(clip.caption)}</p></div><button onclick="toggleClipLike('${esc(clip.id)}')" class="flex flex-col items-center gap-1 press"><span class="text-[21px]">${clip.liked?'♥':'♡'}</span><span class="text-[11px] text-white/50">${fmt(clip.likes)}</span></button></div></article>`;
+  }).join(''):'<div class="empty"><div class="text-3xl mb-3">▶</div><p class="font-semibold text-white mb-1">Твоя лента коротких видео</p><p class="text-[12px] text-white/40 mb-4">Добавляй вертикальные ролики и открывай новые истории</p><button onclick="openClipCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Добавить первый клип</button></div>';
+  hydrateMediaImages(box);
+}
+function toggleClipLike(id){
+  const clip=DB.clips.find(item=>item.id===id);if(!clip)return;
+  clip.liked=!clip.liked;clip.likes=Math.max(0,clip.likes+(clip.liked?1:-1));save();renderClips();
+}
 function renderExplore(){
   const q=(document.getElementById('eq')?.value||'').toLowerCase();
   const tab=DB.etab;let h='';
   const people=Object.entries(DB.profiles).filter(([k,p])=>!DB.blocked?.[k]&&(!q||p.name.toLowerCase().includes(q)||p.handle.toLowerCase().includes(q)));
   const channels=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
   const shops=DB.shops.filter(shop=>!q||shop.name.toLowerCase().includes(q));
+  if(tab==='clips'){renderClips();return}
   if(tab==='all'||tab==='people'){
     if(people.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Люди</p>'+people.map(([key,p])=>`<button class="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-profile-key="${esc(key)}" onclick="go('profile',{key:this.dataset.profileKey})"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-11 h-11 rounded-full"><div class="text-left"><p class="text-[14px] font-semibold">${esc(p.name)}</p><p class="text-[12px] text-white/40">${esc(p.handle)}</p></div></button>`).join('');
   }
@@ -478,7 +511,8 @@ function openCreate(){
     ['Пост','В ленту','📝','post'],
     ['История','Атлас 24ч','✦','story'],
     ['Канал','Для аудитории','📡','ch'],
-    ['Магазин','Каталог','🛍','shop']
+    ['Магазин','Каталог','🛍','shop'],
+    ['Клип','Короткое видео','▶','clip']
   ].map(([t,d,i,a])=>`<button class="w-full flex items-center gap-3 px-2 py-3 rounded-2xl press text-left" data-a="${a}"><div class="w-10 h-10 rounded-xl bg-white/[0.07] flex items-center justify-center text-[16px]">${i}</div><div><p class="text-[14px] font-semibold">${t}</p><p class="text-[11.5px] text-white/40">${d}</p></div></button>`).join('');
   document.querySelectorAll('#create-opts [data-a]').forEach(b=>{
     b.onclick=()=>{
@@ -487,6 +521,7 @@ function openCreate(){
       else if(a==='story'){addMyStory()}
       else if(a==='ch'){openChannelCreate()}
       else if(a==='shop'){openShopCreate()}
+      else if(a==='clip'){openClipCreate()}
     };
   });
   document.getElementById('bd').classList.add('open');document.getElementById('create-sheet').classList.add('open');setNav(false);
@@ -549,7 +584,7 @@ function publishPost(){
   if(channelId)go('channel',{id:channelId});else go('home');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
