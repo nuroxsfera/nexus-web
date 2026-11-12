@@ -93,7 +93,7 @@
   }
   async function fetchConversations(){
     const client=auth(),user=await currentUser();if(!user?.id)return [];
-    const query='select=id,title,is_group,created_by,created_at,conversation_members(user_id,profiles(id,username,display_name,bio,avatar_path,cover_path,visibility)),messages(id,body,sender_id,created_at)&order=created_at.desc';
+    const query='select=id,title,is_group,created_by,created_at,conversation_members(user_id,profiles(id,username,display_name,bio,avatar_path,cover_path,visibility)),messages(id,body,sender_id,created_at)&messages.order=created_at.desc&messages.limit=1&order=created_at.desc';
     const rows=await client.rest('conversations',query);
     return Promise.all((rows||[]).map(async row=>{
       const members=(row.conversation_members||[]).filter(member=>member.user_id!==user.id);
