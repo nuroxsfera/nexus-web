@@ -80,5 +80,77 @@
     const rows=await client.rest('comments','',{method:'POST',body:{post_id:postId,author_id:user.id,body:String(body).slice(0,2000)}});
     return rows?.[0]||null;
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost};
+  async function uploadOwnerMedia(user,folder,item){
+    if(!item)return null;
+    const type=item.type||item.blob?.type||'image/jpeg';
+    const path=user.id+'/'+folder+'/'+uuid()+'.'+fileExtension(type,item.name);
+    await auth().uploadMedia('nexus-media',path,item.blob||item);
+    return path;
+  }
+  async function createChannel({title,description='',visibility='public',cover=null}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const id=uuid();let coverPath=null;
+    try{
+      coverPath=await uploadOwnerMedia(user,'channels',cover);
+      const slug='ch-'+id.replace(/-/g,'').slice(0,12);
+      await client.rest('channels','',{method:'POST',body:{id,owner_id:user.id,title:String(title).slice(0,80),slug,description:String(description).slice(0,1500),visibility,cover_path:coverPath}});
+      return {id,coverPath};
+    }catch(error){if(coverPath)try{await client.removeMedia('nexus-media',[coverPath])}catch{}throw error}
+  }
+  async function updateChannel(id,{title,description,visibility,cover=null}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const patch={};if(title!==undefined)patch.title=String(title).slice(0,80);if(description!==undefined)patch.description=String(description).slice(0,1500);if(visibility!==undefined)patch.visibility=visibility;
+    if(cover){patch.cover_path=await uploadOwnerMedia(user,'channels',cover)}
+    await client.rest('channels','id=eq.'+id+'&owner_id=eq.'+user.id,{method:'PATCH',body:patch});
+  }
+  async function createShop({title,description='',visibility='public',avatar=null}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const id=uuid();let avatarPath=null;
+    try{
+      avatarPath=await uploadOwnerMedia(user,'shops',avatar);
+      const slug='shop-'+id.replace(/-/g,'').slice(0,12);
+      await client.rest('shops','',{method:'POST',body:{id,owner_id:user.id,title:String(title).slice(0,80),slug,description:String(description).slice(0,1500),visibility,avatar_path:avatarPath}});
+      return {id,avatarPath};
+    }catch(error){if(avatarPath)try{await client.removeMedia('nexus-media',[avatarPath])}catch{}throw error}
+  }
+  async function createProduct({shopId,title,description='',price=0,currency='RUB',cover=null}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const coverPath=await uploadOwnerMedia(user,'products',cover);
+    try{
+      const rows=await client.rest('products','',{method:'POST',body:{shop_id:shopId,title:String(title).slice(0,120),description:String(description).slice(0,3000),price:Number(price)||0,currency,status:'published',cover_path:coverPath}});
+      return {...(rows?.[0]||{}),coverPath};
+    }catch(error){if(coverPath)try{await client.removeMedia('nexus-media',[coverPath])}catch{}throw error}
+  }
+  async function updateProduct(id,patch){
+    const client=auth();await currentUser();
+    return client.rest('products','id=eq.'+id,{method:'PATCH',body:patch});
+  }
+  async function deleteProduct(id){
+    const client=auth();await currentUser();
+    const rows=await client.rest('products','select=cover_path&id=eq.'+id);
+    await client.rest('products','id=eq.'+id,{method:'DELETE'});
+    const paths=(rows||[]).map(row=>row.cover_path).filter(Boolean);
+    if(paths.length)try{await client.removeMedia('nexus-media',paths)}catch{}
+  }
+  async function fetchResources(){
+    const client=auth(),user=await currentUser();if(!user?.id)return {channels:[],shops:[]};
+    const [channels,shops]=await Promise.all([
+      client.rest('channels','select=id,title,slug,description,visibility,avatar_path,cover_path,created_at&owner_id=eq.'+user.id+'&order=created_at.desc'),
+      client.rest('shops','select=id,title,slug,description,visibility,avatar_path,created_at,products(id,title,description,price,currency,status,cover_path)&owner_id=eq.'+user.id+'&order=created_at.desc')
+    ]);
+    const mappedChannels=await Promise.all((channels||[]).map(async row=>{
+      let cover=null;if(row.cover_path)try{cover=await client.signedMediaUrl('nexus-media',row.cover_path,3600)}catch{}
+      return {id:'cloud-channel-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:'me',members:0,avatar:null,cover,posts:[],createdAt:row.created_at};
+    }));
+    const mappedShops=await Promise.all((shops||[]).map(async row=>{
+      let avatar=null;if(row.avatar_path)try{avatar=await client.signedMediaUrl('nexus-media',row.avatar_path,3600)}catch{}
+      const products=await Promise.all((row.products||[]).map(async product=>{
+        let image=null;if(product.cover_path)try{image=await client.signedMediaUrl('nexus-media',product.cover_path,3600)}catch{}
+        return {id:'cloud-product-'+product.id,cloudId:product.id,name:product.title,desc:product.description||'',price:Number(product.price)||0,currency:product.currency||'RUB',image,shopId:'cloud-shop-'+row.id,status:product.status};
+      }));
+      return {id:'cloud-shop-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:'me',avatar,products,createdAt:row.created_at};
+    }));
+    return {channels:mappedChannels,shops:mappedShops};
+  }
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,createProduct,updateProduct,deleteProduct,fetchResources};
 })();
