@@ -127,7 +127,7 @@
   }
   async function getUser(){
     const current=await getSession();if(!current?.access_token)return null;
-    try{return await request('/auth/v1/user',{method:'GET'},current.access_token)}catch{storeSession(null);return null}
+    try{const user=await request('/auth/v1/user',{method:'GET'},current.access_token);storeSession({...current,user});return user}catch{storeSession(null);return null}
   }
   window.NEXUS_AUTH={initialize,isConfigured,hasSession:function(){return !!session},getSession,getUser,signUp,signIn,signOut,resetPassword,updatePassword,rest,uploadMedia,signedMediaUrl,removeMedia};
 })();
