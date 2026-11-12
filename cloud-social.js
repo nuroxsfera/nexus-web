@@ -30,7 +30,7 @@
         uploaded.push({storage_path:path,media_type:type.startsWith('video/')?'video':'image',sort_order:index});
       }
       const validChannel=typeof channelId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(channelId)?channelId:null;
-      await client.rest('posts','',{method:'POST',body:{id,author_id:user.id,body:String(body).slice(0,5000),visibility,channel_id:validChannel}});
+      await client.rest('posts','',{method:'POST',body:{id,author_id:user.id,body:String(body).slice(0,5000),visibility:['public','followers','private'].includes(visibility)?visibility:'public',channel_id:validChannel}});
       if(uploaded.length)await client.rest('post_media','',{method:'POST',body:uploaded.map(item=>({...item,post_id:id}))});
       return {id,media:uploaded};
     }catch(error){
@@ -45,7 +45,7 @@
     const rows=await client.rest('posts',query);
     return Promise.all((rows||[]).map(async row=>{
       const media=[...(row.post_media||[])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
-      const urls=await Promise.all(media.map(item=>client.signedMediaUrl('nexus-media',item.storage_path)));
+      const urls=(await Promise.all(media.map(async item=>{try{return await client.signedMediaUrl('nexus-media',item.storage_path)}catch{return null}}))).filter(Boolean);
       let avatar='https://i.pravatar.cc/64?u='+encodeURIComponent(row.profiles?.username||row.author_id);
       if(row.profiles?.avatar_path){try{avatar=await client.signedMediaUrl('nexus-avatars',row.profiles.avatar_path)}catch{}}
       const commentCount=Array.isArray(row.comments)?Number(row.comments[0]?.count||0):0;
