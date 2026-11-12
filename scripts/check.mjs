@@ -40,6 +40,7 @@ assert.ok(sql.includes("new.raw_user_meta_data->>'username'"));
 assert.ok(sql.includes('fallback_username'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
+assert.ok(auth.includes('hasSession:function()'));
 assert.ok(app.includes("load('/auth.js')"));
 assert.ok(logic.includes('function exportLocalData()'));
 assert.ok(logic.includes('async function importHealthVaultBackup(input)'));
