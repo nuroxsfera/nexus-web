@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "npx serve .",
     "build": "npm test",
-    "test": "node scripts/check.mjs"
+    "test": "node scripts/check.mjs && node scripts/rls-check.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16"
   }
 }
