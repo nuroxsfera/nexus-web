@@ -156,6 +156,14 @@ function nextStory(){
 }
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+async function syncCloudProfile(options={}){
+  if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
+  try{
+    const profile=await window.NEXUS_CLOUD_SOCIAL.fetchMyProfile();if(!profile)return false;
+    DB.me.cloudId=profile.cloudId;DB.me.name=profile.name||DB.me.name;DB.me.handle=profile.handle||DB.me.handle;DB.me.bio=profile.bio||'';DB.me.avatar=profile.avatar||DB.me.avatar;DB.me.cover=profile.cover||DB.me.cover;DB.me.visibility=profile.visibility||'public';
+    save();renderMe();return true;
+  }catch(error){if(!options.silent)toast('Не удалось синхронизировать профиль');return false}
+}
 let cloudResourcesSyncPromise=null;
 async function syncCloudResources(options={}){
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
@@ -342,13 +350,25 @@ function openEditProfile(){
   document.getElementById('edit-sheet').classList.add('open');
   setNav(false);
 }
-function saveProfile(){
-  DB.me.name=document.getElementById('edit-name').value.trim()||'Вы';
-  DB.me.handle=document.getElementById('edit-handle').value.trim()||'@you';
-  if(!DB.me.handle.startsWith('@'))DB.me.handle='@'+DB.me.handle;
-  DB.me.bio=document.getElementById('edit-bio').value.trim()||'';
-  DB.me.avatar=DB.pendingAvatar||DB.me.avatar||'https://i.pravatar.cc/300?u=me';DB.me.cover=DB.pendingCover||DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600';DB.pendingAvatar=null;DB.pendingCover=null;
-  save();closeSheet();renderMe();toast('Профиль сохранён');
+async function saveProfile(){
+  const name=document.getElementById('edit-name').value.trim()||'Вы';
+  let handle=document.getElementById('edit-handle').value.trim()||'@you';if(!handle.startsWith('@'))handle='@'+handle;
+  const bio=document.getElementById('edit-bio').value.trim()||'';
+  const avatarRef=DB.pendingAvatar,coverRef=DB.pendingCover;
+  let cloudError=null,cloudProfile=null;
+  if(window.NEXUS_AUTH?.hasSession?.()){
+    try{
+      const avatar=avatarRef?await getMediaBlob(avatarRef).catch(()=>null):null;
+      const cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
+      cloudProfile=await window.NEXUS_CLOUD_SOCIAL.updateMyProfile({name,username:handle.replace(/^@/,''),bio,avatar,cover,visibility:DB.me.visibility||'public'});
+    }catch(error){cloudError=error}
+  }
+  DB.me.name=name;DB.me.handle=handle;DB.me.bio=bio;
+  DB.me.avatar=avatarRef||cloudProfile?.avatar||DB.me.avatar||'https://i.pravatar.cc/300?u=me';
+  DB.me.cover=coverRef||cloudProfile?.cover||DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600';
+  if(cloudProfile){DB.me.cloudId=cloudProfile.cloudId;DB.me.visibility=cloudProfile.visibility}
+  DB.pendingAvatar=null;DB.pendingCover=null;save();closeSheet();renderMe();
+  toast(cloudError?'Профиль сохранён на устройстве: '+cloudError.message:cloudProfile?'Профиль обновлён и синхронизирован':'Профиль сохранён на устройстве');
 }
 function setMediaBackground(element,ref){
   if(!element)return;
@@ -966,7 +986,7 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudResources({silent:true});void syncCloudFeed({silent:true});
+      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
@@ -984,7 +1004,7 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
-  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
+  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
@@ -1186,7 +1206,7 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
-if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true});}
+if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudFeed({silent:true});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true})}});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
