@@ -7,9 +7,6 @@ const ASSETS = [
   '/app-data.js',
   '/health-vault.js',
   '/app-logic.js',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
   '/icon.svg'
 ];
 
