@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(22);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -23,11 +23,16 @@ insert into public.posts(id,author_id,body,visibility) values
 insert into public.posts(id,author_id,channel_id,body,visibility) values
 ('10000000-0000-4000-8000-000000000004','22222222-2222-4222-8222-222222222222','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Private channel post','public');
 
+insert into public.clips(id,author_id,caption,storage_path,visibility) values
+('60000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public clip','22222222-2222-4222-8222-222222222222/60000000-0000-4000-8000-000000000001/video.mp4','public'),
+('60000000-0000-4000-8000-000000000002','33333333-3333-4333-8333-333333333333','Followers-only clip','33333333-3333-4333-8333-333333333333/60000000-0000-4000-8000-000000000002/video.mp4','followers');
+
 insert into public.post_media(post_id,storage_path,media_type) values
 ('10000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg','image'),
 ('10000000-0000-4000-8000-000000000004','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg','image');
 
 insert into storage.objects(bucket_id,name) values
+('nexus-media','22222222-2222-4222-8222-222222222222/60000000-0000-4000-8000-000000000001/video.mp4'),
 ('nexus-media','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg'),
 ('nexus-media','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg');
 
@@ -53,6 +58,9 @@ select is((select count(*)::int from public.profiles where id='33333333-3333-433
 insert into public.follows(follower_id,followed_id,status) values ('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','pending');
 select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'pending follow does not unlock followers-only profile');
 select is((select count(*)::int from public.post_media where post_id='10000000-0000-4000-8000-000000000004'),0,'private channel media is hidden');
+select is((select count(*)::int from public.clips where id='60000000-0000-4000-8000-000000000001'),1,'public clip is visible');
+select is((select count(*)::int from public.clips where id='60000000-0000-4000-8000-000000000002'),0,'followers-only clip is hidden from non-followers');
+select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/60000000-0000-4000-8000-000000000001/video.mp4'),1,'public clip video is readable');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg'),1,'public post media can be read');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg'),0,'private channel media cannot be read');
 select is((select count(*)::int from public.messages),0,'direct messages are hidden from non-members');
@@ -68,8 +76,11 @@ reset role;
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),1,'accepted follower can view followers-only profile');
+select is((select count(*)::int from public.clips where id='60000000-0000-4000-8000-000000000002'),1,'accepted follower can view followers-only clip');
 insert into public.blocks(blocker_id,blocked_id) values ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222');
 select is((select count(*)::int from public.posts where author_id='22222222-2222-4222-8222-222222222222'),0,'blocking a user hides their posts');
+select is((select count(*)::int from public.clips where author_id='22222222-2222-4222-8222-222222222222'),0,'blocking a user hides their clips');
+select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/60000000-0000-4000-8000-000000000001/video.mp4'),0,'blocking a user hides their clip video');
 
 reset role;
 select * from finish();
