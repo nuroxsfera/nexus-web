@@ -90,7 +90,7 @@ try {
 
   window.openPrivacySheet();
   window.document.getElementById('privacy-profile-visibility').value='followers';
-  window.savePrivacySettings();
+  await window.savePrivacySettings();
   state=window.__getDB();
   assert.equal(state.me.visibility,'followers');
   window.openEditProfile();
@@ -98,7 +98,7 @@ try {
   window.document.getElementById('edit-handle').value='@nexus';
   window.document.getElementById('edit-bio').value='Creator';
   state.pendingAvatar='idb:smoke-avatar';state.pendingCover='idb:smoke-cover';
-  window.saveProfile();
+  await window.saveProfile();
   state=window.__getDB();
   assert.equal(state.me.name,'Nexus User');
   assert.equal(state.me.avatar,'idb:smoke-avatar');
@@ -109,14 +109,14 @@ try {
   const people=window.document.getElementById('chat-people');
   assert.equal([...people.options].some(option=>option.value==='marley'),false);
   people.options[0].selected=true;
-  window.createChat();
+  await window.createChat();
   state=window.__getDB();
   assert.equal(state.chats[0].profileKey,people.options[0].value);
   assert.equal(state.chats[0].messages.length,0);
   const createdChatId=state.chats[0].id,createdChatPerson=state.chats[0].profileKey;
   window.toggleBlock(createdChatPerson);
   window.document.getElementById('cinput').value='blocked message';
-  window.sendMsg();
+  await window.sendMsg();
   state=window.__getDB();
   assert.equal(state.chats.find(chat=>chat.id===createdChatId).messages.length,0);
   window.openReport('post','demo-post');
