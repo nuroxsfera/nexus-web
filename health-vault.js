@@ -49,7 +49,7 @@
     return writeQueue;
   }
   async function setup(passphrase,db){
-    if(typeof passphrase!=='string'||passphrase.length<10)throw new Error('Пароль должен содержать не менее 10 символов');
+    if(typeof passphrase!=='string'||passphrase.length<12)throw new Error('Парольная фраза должна содержать не менее 12 символов');
     const salt=window.crypto.getRandomValues(new Uint8Array(16));
     key=await deriveKey(passphrase,salt);
     record={id:'health',salt:salt.buffer};
@@ -72,17 +72,18 @@
       return true;
     }catch(error){key=null;throw new Error('Неверный пароль или повреждённое хранилище')}
   }
-  function lock(db){
+  async function lock(db){
+    if(key)await persist(db);
     key=null;
     db.healthVaultUnlocked=false;
     db.fitnessProfile={};db.workouts=[];db.nutritionEntries=[];db.healthMeasurements=[];
   }
-  async function initialize(){
+  async function initialize(db){
     try{record=await readRecord()}catch(error){window.NEXUS_HEALTH_VAULT.error=error}
     ready=true;
+    if(record&&db){db.fitnessProfile={};db.workouts=[];db.nutritionEntries=[];db.healthMeasurements=[];db.healthVaultUnlocked=false}
     window.dispatchEvent(new Event('nexus:health-vault-ready'));
     return !!record;
   }
   window.NEXUS_HEALTH_VAULT={initialize:initialize,setup:setup,unlock:unlock,lock:lock,persist:persist,hasVault:function(){return !!record},isReady:function(){return ready},isUnlocked:function(){return !!key}};
-  initialize();
 })();
