@@ -63,6 +63,13 @@
     if(liked)await client.rest('post_likes','',{method:'POST',body:{post_id:postId,user_id:user.id}});
     else await client.rest('post_likes','post_id=eq.'+postId+'&user_id=eq.'+user.id,{method:'DELETE'});
   }
+  async function deletePost(postId){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    let paths=[];
+    try{const rows=await client.rest('post_media','select=storage_path&post_id=eq.'+postId);paths=(rows||[]).map(row=>row.storage_path)}catch{}
+    await client.rest('posts','id=eq.'+postId,{method:'DELETE'});
+    if(paths.length)try{await client.removeMedia('nexus-media',paths)}catch(error){console.warn('Cloud media cleanup deferred:',error?.message||error)}
+  }
   async function fetchComments(postId){
     const client=auth();
     const rows=await client.rest('comments','select=id,body,created_at,profiles(display_name,username)&post_id=eq.'+postId+'&order=created_at.asc');
@@ -73,5 +80,5 @@
     const rows=await client.rest('comments','',{method:'POST',body:{post_id:postId,author_id:user.id,body:String(body).slice(0,2000)}});
     return rows?.[0]||null;
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost};
 })();
