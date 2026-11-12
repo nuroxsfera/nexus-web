@@ -69,6 +69,16 @@ try {
   window.savePrivacySettings();
   state=window.__getDB();
   assert.equal(state.me.visibility,'followers');
+  window.openEditProfile();
+  window.document.getElementById('edit-name').value='Nexus User';
+  window.document.getElementById('edit-handle').value='@nexus';
+  window.document.getElementById('edit-bio').value='Creator';
+  state.pendingAvatar='idb:smoke-avatar';state.pendingCover='idb:smoke-cover';
+  window.saveProfile();
+  state=window.__getDB();
+  assert.equal(state.me.name,'Nexus User');
+  assert.equal(state.me.avatar,'idb:smoke-avatar');
+  assert.equal(state.me.cover,'idb:smoke-cover');
 
   window.toggleBlock('marley');
   state=window.__getDB();
