@@ -94,6 +94,12 @@ try {
   state=window.__getDB();
   assert.equal(state.chats[0].profileKey,people.options[0].value);
   assert.equal(state.chats[0].messages.length,0);
+  const createdChatId=state.chats[0].id,createdChatPerson=state.chats[0].profileKey;
+  window.toggleBlock(createdChatPerson);
+  window.document.getElementById('cinput').value='blocked message';
+  window.sendMsg();
+  state=window.__getDB();
+  assert.equal(state.chats.find(chat=>chat.id===createdChatId).messages.length,0);
   window.openReport('post','demo-post');
   window.document.getElementById('report-reason').value='harassment';
   window.document.getElementById('report-details').value='Test report';
