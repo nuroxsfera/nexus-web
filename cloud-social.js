@@ -41,7 +41,7 @@
   }
   async function fetchFeed(limit=30){
     const client=auth(),user=await currentUser();if(!user?.id)return [];
-    const query='select=id,author_id,body,visibility,created_at,profiles(username,display_name,avatar_path),post_media(storage_path,media_type,sort_order),post_likes(user_id),comments(count)&order=created_at.desc&limit='+Math.min(50,Math.max(1,limit));
+    const query='select=id,author_id,body,visibility,channel_id,created_at,profiles(username,display_name,avatar_path),post_media(storage_path,media_type,sort_order),post_likes(user_id),comments(count)&order=created_at.desc&limit='+Math.min(50,Math.max(1,limit));
     const rows=await client.rest('posts',query);
     return Promise.all((rows||[]).map(async row=>{
       const media=[...(row.post_media||[])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
@@ -54,7 +54,7 @@
         authorKey:row.author_id===user.id?'me':null,avatar,image:urls[0]||null,images:urls,
         likes:(row.post_likes||[]).length,comments:commentCount,
         liked:(row.post_likes||[]).some(item=>item.user_id===user.id),saved:false,
-        text:row.body||'',commentList:[],createdAt:row.created_at,visibility:row.visibility
+        text:row.body||'',commentList:[],createdAt:row.created_at,visibility:row.visibility,channelId:row.channel_id||null
       };
     }));
   }
