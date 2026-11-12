@@ -21,6 +21,16 @@ try {
   window.closeSheet();
   assert.equal(window.document.getElementById('health-vault-sheet').classList.contains('open'),false);
   window.__vaultUnlocked=true;
+  window.openAuth('signup');
+  assert.equal(window.document.getElementById('auth-name-wrap').hidden,false);
+  window.document.getElementById('auth-name').value='Test User';
+  window.document.getElementById('auth-username').value='test_user';
+  window.document.getElementById('auth-email').value='test@example.com';
+  window.document.getElementById('auth-password').value='StrongPassphrase123';
+  window.document.getElementById('auth-confirm').value='StrongPassphrase123';
+  await window.submitAuth();
+  assert.ok(window.document.getElementById('auth-error').textContent.includes('Проверь почту'));
+  window.closeSheet();
   window.document.getElementById('new-channel-name').value='Nexus Creators';
   window.document.getElementById('new-channel-desc').value='Наше сообщество авторов';
   window.document.getElementById('new-channel-visibility').value='public';
