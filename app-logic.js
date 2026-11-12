@@ -332,8 +332,8 @@ async function openProfile(key){
   let pr=DB.profiles[key];if(!pr){toast('Профиль недоступен');return}
   if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
   if(pr.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
-    try{const fresh=await window.NEXUS_CLOUD_SOCIAL.fetchProfile(pr.cloudId);if(fresh){pr={...pr,...fresh};DB.profiles[key]=pr;save()}}
-    catch(error){toast('Не удалось обновить профиль')}
+    try{const fresh=await window.NEXUS_CLOUD_SOCIAL.fetchProfile(pr.cloudId);if(!fresh){delete DB.profiles[key];delete DB.following[key];save();toast('Этот профиль недоступен');go('explore');return}pr={...pr,...fresh};DB.profiles[key]=pr;save()}
+    catch(error){toast('Не удалось обновить профиль');return}
   }
   DB.activeProfile=key;
   document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero||'https://picsum.photos/seed/profile/1200/1600'}')`;
@@ -940,7 +940,7 @@ function renderExplore(){
       cloudPeopleCache.set(q,rows||[]);
       (rows||[]).forEach(profile=>{DB.profiles['cloud-user-'+profile.cloudId]=profile});
       renderExplore();
-    }).catch(()=>{}).finally(()=>cloudPeoplePending.delete(q));
+    }).catch(()=>{}).finally(()=>{if(searchEpoch===cloudSessionEpoch)cloudPeoplePending.delete(q)});
   }
   const people=Object.entries(DB.profiles).filter(([key,profile])=>!DB.blocked?.[key]&&(!q||(profile.name||'').toLowerCase().includes(q)||(profile.handle||'').toLowerCase().includes(q)));
   const channels=DB.channels.filter(channel=>!q||channel.name.toLowerCase().includes(q));
