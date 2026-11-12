@@ -8,7 +8,6 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 const config = fs.readFileSync('api/config.js', 'utf8');
 const health = fs.readFileSync('api/health.js', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
-const data = fs.readFileSync('app-data.js', 'utf8');
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 const gitignore = fs.readFileSync('.gitignore', 'utf8');
 const envExample = fs.readFileSync('.env.example', 'utf8');
