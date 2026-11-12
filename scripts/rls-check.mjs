@@ -91,6 +91,9 @@ try {
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
   await db.exec('reset role');
   console.log('Nexus RLS checks passed: profiles, posts, channels, media, shops, DMs, notifications, follows, immutable identities, blocks and anonymous access.');
+} catch (error) {
+  console.error('RLS check failed:', error?.message || error);
+  process.exitCode = 1;
 } finally {
   await db.close();
 }
