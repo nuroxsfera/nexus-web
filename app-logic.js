@@ -167,16 +167,16 @@ async function syncCloudResources(options={}){
       const existingShops=DB.shops.filter(item=>item.cloudId);
       const channels=remote.channels.map(item=>{
         const old=existingChannels.find(value=>value.cloudId===item.cloudId);
-        return {...item,id:old?.id||item.id,posts:old?.posts||item.posts||[]};
+        return {...item,id:old?.id||item.id,cover:item.cover||old?.cover||null,posts:old?.posts||item.posts||[]};
       });
       const shops=remote.shops.map(item=>{
         const old=existingShops.find(value=>value.cloudId===item.cloudId);
         const shopId=old?.id||item.id;
         const items=(item.products||[]).map(product=>{
           const previous=old?.items?.find(value=>value.cloudId===product.cloudId);
-          return {...product,id:previous?.id||product.id,shopId};
+          return {...product,id:previous?.id||product.id,image:product.image||previous?.image||null,shopId};
         });
-        return {...item,id:shopId,items,products:items.length};
+        return {...item,id:shopId,avatar:item.avatar||old?.avatar||null,items,products:items.length};
       });
       DB.channels=[...channels,...DB.channels.filter(item=>!item.cloudId)];
       DB.shops=[...shops,...DB.shops.filter(item=>!item.cloudId)];
