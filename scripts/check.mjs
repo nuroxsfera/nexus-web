@@ -21,6 +21,7 @@ assert.ok(logic.includes('async function shareProfile'));
 assert.ok(logic.includes('function esc('));
 assert.ok(data.includes('localStorage.getItem(LS)'));
 assert.ok(sw.includes("'/app-logic.js'"));
+assert.ok(sw.includes("'/health-vault.js'"));
 assert.ok(config.includes('SUPABASE_PUBLISHABLE_KEY'));
 assert.ok(config.includes('SUPABASE_ANON_KEY'));
 assert.ok(!config.includes('SUPABASE_SERVICE_ROLE_KEY'));
