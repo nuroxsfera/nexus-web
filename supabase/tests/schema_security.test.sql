@@ -1,8 +1,10 @@
 begin;
-select plan(52);
+select plan(56);
 select has_table('public','profiles','profiles table exists');
 select has_table('public','follows','follows table exists');
 select has_table('public','organizations','organizations table exists');
+select has_table('public','spaces','spaces table exists');
+select has_table('public','space_links','space_links table exists');
 select has_table('public','channels','channels table exists');
 select has_table('public','shops','shops table exists');
 select has_table('public','products','products table exists');
@@ -26,6 +28,8 @@ select ok((select relrowsecurity from pg_class where oid='public.profiles'::regc
 select ok((select relrowsecurity from pg_class where oid='public.follows'::regclass),'follows has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.blocks'::regclass),'blocks has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.organizations'::regclass),'organizations has RLS');
+select ok((select relrowsecurity from pg_class where oid='public.spaces'::regclass),'spaces has RLS');
+select ok((select relrowsecurity from pg_class where oid='public.space_links'::regclass),'space_links has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.organization_members'::regclass),'organization_members has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.channels'::regclass),'channels has RLS');
 select ok((select relrowsecurity from pg_class where oid='public.channel_members'::regclass),'channel_members has RLS');
