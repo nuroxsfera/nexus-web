@@ -53,4 +53,12 @@ let DB;
 try{DB=JSON.parse(localStorage.getItem(LS))||defaultDB()}catch(e){DB=defaultDB()}
 const def=defaultDB();
 for(const k of Object.keys(def)){if(DB[k]===undefined)DB[k]=def[k]}
-function save(){try{const snapshot={...DB,storyTimer:null};if(window.NEXUS_HEALTH_VAULT?.hasVault()){snapshot.fitnessProfile={};snapshot.workouts=[];snapshot.nutritionEntries=[];snapshot.healthMeasurements=[];snapshot.healthVaultUnlocked=false}localStorage.setItem(LS,JSON.stringify(snapshot));if(window.NEXUS_HEALTH_VAULT?.isUnlocked())void window.NEXUS_HEALTH_VAULT.persist(DB).catch(e=>console.warn('Health vault save failed:',e?.message||e))}catch(e){}}
+function save(){try{const snapshot={...DB,storyTimer:null};
+  snapshot.posts=(DB.posts||[]).filter(post=>!post.cloudId);
+  snapshot.channels=(DB.channels||[]).filter(channel=>!channel.cloudId);
+  snapshot.shops=(DB.shops||[]).filter(shop=>!shop.cloudId);
+  snapshot.chats=(DB.chats||[]).filter(chat=>!chat.cloudId);
+  snapshot.profiles=Object.fromEntries(Object.entries(DB.profiles||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  snapshot.following=Object.fromEntries(Object.entries(DB.following||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  snapshot.blocked=Object.fromEntries(Object.entries(DB.blocked||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  if(window.NEXUS_HEALTH_VAULT?.hasVault()){snapshot.fitnessProfile={};snapshot.workouts=[];snapshot.nutritionEntries=[];snapshot.healthMeasurements=[];snapshot.healthVaultUnlocked=false}localStorage.setItem(LS,JSON.stringify(snapshot));if(window.NEXUS_HEALTH_VAULT?.isUnlocked())void window.NEXUS_HEALTH_VAULT.persist(DB).catch(e=>console.warn('Health vault save failed:',e?.message||e))}catch(e){}}
