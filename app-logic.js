@@ -142,12 +142,13 @@ function renderFeed(){
       <div class="px-3.5 pt-1 pb-3.5">
         <p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p>
         <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${esc(p.text)}</p>
-        <button data-report-id="${esc(p.id)}" onclick="openReport('post',this.dataset.reportId)" class="mt-2 text-[10px] text-black/35 press">Пожаловаться</button>
+        ${p.authorKey==='me'?`<button data-post-id="${esc(p.id)}" onclick="deletePost(this.dataset.postId)" class="mt-2 text-[10px] text-red-400/70 press">Удалить публикацию</button>`:`<button data-report-id="${esc(p.id)}" onclick="openReport('post',this.dataset.reportId)" class="mt-2 text-[10px] text-black/35 press">Пожаловаться</button>`}
       </div>
     </article>`;
   }).join('');
   hydrateMediaImages(feed);
 }
+function deletePost(id){const post=DB.posts.find(item=>item.id===id);if(!post||post.authorKey!=='me')return;DB.posts=DB.posts.filter(item=>item.id!==id);save();renderFeed();toast('Публикация удалена локально')}
 function doubleLike(id){
  const p=DB.posts.find(x=>x.id===id);if(!p)return;
  if(!p.liked){p.liked=true;p.likes++}
@@ -462,7 +463,7 @@ async function handleClipVideo(input){
 function createClip(){
   if(!DB.pendingClipVideo){toast('Сначала выберите видео');return}
   const caption=document.getElementById('clip-caption').value.trim();
-  DB.clips.unshift({id:'clip'+Date.now(),author:DB.me.name,authorKey:null,video:DB.pendingClipVideo,caption,likes:0,liked:false,createdAt:Date.now()});
+  DB.clips.unshift({id:'clip'+Date.now(),author:DB.me.name,authorKey:'me',video:DB.pendingClipVideo,caption,likes:0,liked:false,createdAt:Date.now()});
   DB.pendingClipVideo=null;DB.etab='clips';save();closeSheet();go('explore');toast('Клип добавлен локально');
 }
 function renderClips(){
@@ -470,10 +471,11 @@ function renderClips(){
   const box=document.getElementById('eres');
   box.innerHTML=clips.length?clips.map(clip=>{
     const video=clip.video.startsWith('idb:')?`data-media-ref="${esc(clip.video)}"`:`src="${esc(clip.video)}"`;
-    return `<article class="relative rounded-[24px] overflow-hidden bg-[#111113] border border-white/[0.06] mb-4 max-w-[430px] mx-auto"><video ${video} class="w-full aspect-[9/16] max-h-[520px] object-cover bg-black" playsinline muted loop controls preload="metadata"></video><div class="px-4 py-3 flex items-start gap-3"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold">${esc(clip.author)}</p><p class="text-[13px] text-white/65 mt-1 break-words">${esc(clip.caption)}</p></div><button onclick="toggleClipLike('${esc(clip.id)}')" class="flex flex-col items-center gap-1 press"><span class="text-[21px]">${clip.liked?'♥':'♡'}</span><span class="text-[11px] text-white/50">${fmt(clip.likes)}</span></button></div></article>`;
+    return `<article class="relative rounded-[24px] overflow-hidden bg-[#111113] border border-white/[0.06] mb-4 max-w-[430px] mx-auto"><video ${video} class="w-full aspect-[9/16] max-h-[520px] object-cover bg-black" playsinline muted loop controls preload="metadata"></video><div class="px-4 py-3 flex items-start gap-3"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold">${esc(clip.author)}</p><p class="text-[13px] text-white/65 mt-1 break-words">${esc(clip.caption)}</p></div><div class="flex flex-col items-center gap-2"><button onclick="toggleClipLike('${esc(clip.id)}')" class="flex flex-col items-center gap-1 press"><span class="text-[21px]">${clip.liked?'♥':'♡'}</span><span class="text-[11px] text-white/50">${fmt(clip.likes)}</span></button>${clip.authorKey==='me'?`<button data-clip-id="${esc(clip.id)}" onclick="deleteClip(this.dataset.clipId)" class="text-[10px] text-red-300/70 press">Удалить</button>`:''}</div></div></article>`;
   }).join(''):'<div class="empty"><div class="text-3xl mb-3">▶</div><p class="font-semibold text-white mb-1">Твоя лента коротких видео</p><p class="text-[12px] text-white/40 mb-4">Добавляй вертикальные ролики и открывай новые истории</p><button onclick="openClipCreate()" class="px-5 py-2.5 rounded-full bg-white text-black text-[13px] font-semibold">Добавить первый клип</button></div>';
   hydrateMediaImages(box);
 }
+function deleteClip(id){const clip=DB.clips.find(item=>item.id===id);if(!clip||clip.authorKey!=='me')return;DB.clips=DB.clips.filter(item=>item.id!==id);save();renderClips();toast('Клип удалён локально')}
 function toggleClipLike(id){
   const clip=DB.clips.find(item=>item.id===id);if(!clip)return;
   clip.liked=!clip.liked;clip.likes=Math.max(0,clip.likes+(clip.liked?1:-1));save();renderClips();
@@ -757,7 +759,7 @@ function publishPost(){
   if(!text&&!DB.composeImgs.length){toast('Добавьте текст или фото');return}
   const images=[...DB.composeImgs],channelId=DB.composeChannelId||null;
   DB.posts.unshift({
-    id:'p'+Date.now(),author:DB.me.name,authorKey:null,avatar:'https://i.pravatar.cc/64?u=me',
+    id:'p'+Date.now(),author:DB.me.name,authorKey:'me',avatar:DB.me.avatar||'https://i.pravatar.cc/64?u=me',
     image:images[0]||null,images,channelId,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]
   });
   DB.composeImgs=[];DB.composeChannelId=null;save();toast('Опубликовано локально');
