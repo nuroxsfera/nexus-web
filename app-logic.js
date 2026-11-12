@@ -156,6 +156,37 @@ function nextStory(){
 }
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+let cloudResourcesSyncPromise=null;
+async function syncCloudResources(options={}){
+  if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
+  if(cloudResourcesSyncPromise)return cloudResourcesSyncPromise;
+  cloudResourcesSyncPromise=(async()=>{
+    try{
+      const remote=await window.NEXUS_CLOUD_SOCIAL.fetchResources();
+      const existingChannels=DB.channels.filter(item=>item.cloudId);
+      const existingShops=DB.shops.filter(item=>item.cloudId);
+      const channels=remote.channels.map(item=>{
+        const old=existingChannels.find(value=>value.cloudId===item.cloudId);
+        return {...item,id:old?.id||item.id,posts:old?.posts||item.posts||[]};
+      });
+      const shops=remote.shops.map(item=>{
+        const old=existingShops.find(value=>value.cloudId===item.cloudId);
+        const shopId=old?.id||item.id;
+        const items=(item.products||[]).map(product=>{
+          const previous=old?.items?.find(value=>value.cloudId===product.cloudId);
+          return {...product,id:previous?.id||product.id,shopId};
+        });
+        return {...item,id:shopId,items,products:items.length};
+      });
+      DB.channels=[...channels,...DB.channels.filter(item=>!item.cloudId)];
+      DB.shops=[...shops,...DB.shops.filter(item=>!item.cloudId)];
+      channels.forEach(channel=>{DB.channelSub[channel.id]=true});
+      save();renderMe();if(DB.view==='explore')renderExplore();return true;
+    }catch(error){if(!options.silent)toast('Не удалось синхронизировать каналы и магазины: '+(error.message||'ошибка'));return false}
+    finally{cloudResourcesSyncPromise=null}
+  })();
+  return cloudResourcesSyncPromise;
+}
 let cloudFeedSyncPromise=null;
 async function syncCloudFeed(options={}){
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
@@ -166,6 +197,7 @@ async function syncCloudFeed(options={}){
       const previous=new Map(DB.posts.filter(post=>post.cloudId).map(post=>[post.cloudId,post]));
       const local=DB.posts.filter(post=>!post.cloudId);
       DB.posts=[...remote.map(post=>({...post,saved:previous.get(post.cloudId)?.saved||false})),...local];
+      DB.channels.forEach(channel=>{channel.posts=remote.filter(post=>post.channelId===channel.cloudId)});
       save();renderFeed();return true;
     }catch(error){
       if(!options.silent)toast('Не удалось обновить облачную ленту: '+(error.message||'ошибка'));
@@ -378,61 +410,44 @@ function openChannelEdit(){
   document.getElementById('channel-create-title').textContent='Настройки канала';document.getElementById('channel-save-btn').textContent='Сохранить изменения';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
 }
-function createChannel(){
-  const name=document.getElementById('new-channel-name').value.trim();
-  const desc=document.getElementById('new-channel-desc').value.trim();
-  const visibility=document.getElementById('new-channel-visibility').value;
+async function createChannel(){
+  const name=document.getElementById('new-channel-name').value.trim(),desc=document.getElementById('new-channel-desc').value.trim(),visibility=document.getElementById('new-channel-visibility').value;
   if(name.length<2){toast('Название канала должно быть длиннее');return}
+  const coverRef=DB.pendingChannelCover||null,cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
   if(DB.editingChannelId){
     const channel=DB.channels.find(item=>item.id===DB.editingChannelId);if(!channel){toast('Канал не найден');return}
-    channel.name=name;channel.desc=desc;channel.visibility=visibility;channel.cover=DB.pendingChannelCover||channel.cover;
-    const id=channel.id;DB.editingChannelId=null;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});toast('Настройки канала сохранены локально');return;
+    let cloudError=null;
+    if(channel.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+      try{await window.NEXUS_CLOUD_SOCIAL.updateChannel(channel.cloudId,{title:name,description:desc,visibility,cover})}catch(error){cloudError=error}
+    }
+    channel.name=name;channel.desc=desc;channel.visibility=visibility;channel.cover=coverRef||channel.cover;
+    const id=channel.id;DB.editingChannelId=null;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});
+    toast(cloudError?'Изменения сохранены локально: '+cloudError.message:channel.cloudId?'Канал синхронизирован':'Настройки канала сохранены локально');return;
   }
-  const id='ch'+Date.now();
-  const channel={id,name,desc,visibility,members:'1',ownerKey:'me',cover:DB.pendingChannelCover||'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
-  DB.channels.unshift(channel);DB.channelSub[id]=true;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});toast('Канал создан · сохранён на устройстве');
+  const id='ch'+Date.now();let cloudResult=null,cloudError=null;
+  if(window.NEXUS_AUTH?.hasSession?.()){
+    try{cloudResult=await window.NEXUS_CLOUD_SOCIAL.createChannel({title:name,description:desc,visibility,cover})}catch(error){cloudError=error}
+  }
+  const channel={id,cloudId:cloudResult?.id||null,name,desc,visibility,members:'1',ownerKey:'me',cover:coverRef||'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
+  DB.channels.unshift(channel);DB.channelSub[id]=true;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});
+  toast(cloudResult?'Канал создан и синхронизирован':cloudError?'Канал сохранён локально: '+cloudError.message:'Канал создан · сохранён на устройстве');
+  if(cloudResult)void syncCloudResources({silent:true});
 }
-function openChannelPost(){if(!DB.activeChannel)return;go('compose',{channelId:DB.activeChannel})}
-function toggleChSub(){if(!DB.activeChannel)return;const ch=DB.channels.find(c=>c.id===DB.activeChannel);if(ch?.ownerKey==='me')return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
-function openShop(id){
-  const sh=DB.shops.find(s=>s.id===id);if(!sh)return;DB.activeShop=id;
-  document.getElementById('sh-name').textContent=sh.name;
-  document.getElementById('sh-meta').textContent=(sh.ownerKey==='me'?(sh.items.length+' товаров · ваш магазин'):(sh.products+' товаров'));
-  document.getElementById('sh-desc').textContent=sh.desc;
-  document.getElementById('sh-add-product').hidden=sh.ownerKey!=='me';
-  document.getElementById('sh-edit-shop').hidden=sh.ownerKey!=='me';
-  const grid=document.getElementById('sh-grid');
-  grid.innerHTML=sh.items.length?sh.items.map(i=>{
-    const source=i.image&&i.image.startsWith('idb:')?`data-media-ref="${esc(i.image)}"`:`src="${esc(i.image||'')}"`;
-    return `<button class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5 text-left press" onclick="openProduct('${esc(sh.id)}','${esc(i.id)}')"><img ${source} class="w-full aspect-square object-cover" alt="${esc(i.name)}"><div class="p-2.5"><p class="text-[12.5px] font-semibold truncate">${esc(i.name)}</p><p class="text-[13px] font-bold mt-0.5">${Number(i.price).toLocaleString('ru-RU')} ₽</p></div></button>`;
-  }).join(''):'<div class="empty col-span-2">В магазине пока нет товаров.</div>';
-  hydrateMediaImages(grid);updateCartBadge();
-}
-function openShopCreate(){
-  DB.editingShopId=null;document.getElementById('shop-create-title').textContent='Новый магазин';document.getElementById('shop-save-btn').textContent='Создать магазин';
-  document.getElementById('new-shop-name').value='';
-  document.getElementById('new-shop-desc').value='';
-  document.getElementById('new-shop-visibility').value='public';
-  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
-}
-function openShopEdit(){
-  const sh=DB.shops.find(shop=>shop.id===DB.activeShop);if(sh?.ownerKey!=='me')return;
-  DB.editingShopId=sh.id;document.getElementById('new-shop-name').value=sh.name;document.getElementById('new-shop-desc').value=sh.desc||'';document.getElementById('new-shop-visibility').value=sh.visibility||'public';
-  document.getElementById('shop-create-title').textContent='Настройки магазина';document.getElementById('shop-save-btn').textContent='Сохранить изменения';
-  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
-}
-function createShop(){
-  const name=document.getElementById('new-shop-name').value.trim();
-  const desc=document.getElementById('new-shop-desc').value.trim();
-  const visibility=document.getElementById('new-shop-visibility').value;
+async function createShop(){
+  const name=document.getElementById('new-shop-name').value.trim(),desc=document.getElementById('new-shop-desc').value.trim(),visibility=document.getElementById('new-shop-visibility').value;
   if(name.length<2){toast('Название магазина должно быть длиннее');return}
   if(DB.editingShopId){
     const shop=DB.shops.find(item=>item.id===DB.editingShopId);if(!shop){toast('Магазин не найден');return}
-    shop.name=name;shop.desc=desc;shop.visibility=visibility;const id=shop.id;DB.editingShopId=null;save();closeSheet();go('shop',{id});toast('Настройки магазина сохранены локально');return;
+    let cloudError=null;if(shop.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.updateShop(shop.cloudId,{title:name,description:desc,visibility})}catch(error){cloudError=error}
+    shop.name=name;shop.desc=desc;shop.visibility=visibility;const id=shop.id;DB.editingShopId=null;save();closeSheet();go('shop',{id});
+    toast(cloudError?'Изменения сохранены локально: '+cloudError.message:shop.cloudId?'Магазин синхронизирован':'Настройки магазина сохранены локально');return;
   }
-  const id='sh'+Date.now();
-  DB.shops.unshift({id,name,desc,visibility,ownerKey:'me',products:0,items:[]});
-  save();closeSheet();go('shop',{id});toast('Магазин создан · сохранён на устройстве');
+  const id='sh'+Date.now();let cloudResult=null,cloudError=null;
+  if(window.NEXUS_AUTH?.hasSession?.())try{cloudResult=await window.NEXUS_CLOUD_SOCIAL.createShop({title:name,description:desc,visibility})}catch(error){cloudError=error}
+  DB.shops.unshift({id,cloudId:cloudResult?.id||null,name,desc,visibility,ownerKey:'me',products:0,items:[]});
+  save();closeSheet();go('shop',{id});
+  toast(cloudResult?'Магазин создан и синхронизирован':cloudError?'Магазин сохранён локально: '+cloudError.message:'Магазин создан · сохранён на устройстве');
+  if(cloudResult)void syncCloudResources({silent:true});
 }
 function openProductCreate(){
   if(!DB.activeShop)return;
@@ -460,22 +475,33 @@ function openProductEdit(){
   document.getElementById('product-create-title').textContent='Редактировать товар';document.getElementById('product-save-btn').textContent='Сохранить изменения';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
 }
-function deleteProduct(){
+async function deleteProduct(){
   const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
+  if(active.item.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.deleteProduct(active.item.cloudId)}catch(error){toast(error.message||'Не удалось удалить товар в облаке');return}
   sh.items=sh.items.filter(item=>item.id!==active.item.id);sh.products=sh.items.length;DB.activeProduct=null;save();closeSheet();openShop(sh.id);toast('Товар удалён');
 }
-function createProduct(){
-  const sh=DB.shops.find(s=>s.id===DB.activeShop);
+async function createProduct(){
+  const sh=DB.shops.find(item=>item.id===DB.activeShop);
   if(!sh||sh.ownerKey!=='me'){toast('Магазин недоступен');return}
-  const name=document.getElementById('new-product-name').value.trim();
-  const price=Number(document.getElementById('new-product-price').value.replace(',','.'));
-  const desc=document.getElementById('new-product-desc').value.trim();
+  const name=document.getElementById('new-product-name').value.trim(),price=Number(document.getElementById('new-product-price').value.replace(',','.')),desc=document.getElementById('new-product-desc').value.trim();
   if(name.length<2||!Number.isFinite(price)||price<=0){toast('Проверьте название и цену');return}
+  const coverRef=DB.pendingProductImage||null,cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
+  let cloudError=null,cloudProduct=null;
+  if(sh.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{
+      if(DB.editingProductId){
+        const old=sh.items.find(product=>product.id===DB.editingProductId);
+        if(old?.cloudId)await window.NEXUS_CLOUD_SOCIAL.updateProduct(old.cloudId,{title:name,description:desc,price,cover});
+      }else cloudProduct=await window.NEXUS_CLOUD_SOCIAL.createProduct({shopId:sh.cloudId,title:name,description:desc,price,cover});
+    }catch(error){cloudError=error}
+  }
   if(DB.editingProductId){
     const item=sh.items.find(product=>product.id===DB.editingProductId);if(!item){toast('Товар не найден');return}
-    item.name=name;item.price=price;item.desc=desc;item.image=DB.pendingProductImage||item.image;
-  }else{sh.items.unshift({id:'item'+Date.now(),name,price,desc,image:DB.pendingProductImage||'https://picsum.photos/seed/new-product/600/600'})}
-  sh.products=sh.items.length;DB.pendingProductImage=null;DB.editingProductId=null;save();closeSheet();openShop(sh.id);toast('Изменения сохранены локально');
+    item.name=name;item.price=price;item.desc=desc;item.image=coverRef||item.image;
+  }else sh.items.unshift({id:'item'+Date.now(),cloudId:cloudProduct?.id||null,name,price,desc,image:coverRef||'https://picsum.photos/seed/new-product/600/600'});
+  sh.products=sh.items.length;DB.pendingProductImage=null;DB.editingProductId=null;save();closeSheet();openShop(sh.id);
+  toast(cloudError?'Сохранено локально: '+cloudError.message:cloudProduct?'Товар опубликован в магазине':'Изменения сохранены локально');
+  if(cloudProduct)void syncCloudResources({silent:true});
 }
 function openProduct(sid,iid){
   const sh=DB.shops.find(s=>s.id===sid);const item=sh?.items.find(i=>i.id===iid);if(!item)return;
@@ -907,7 +933,7 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
-  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
+  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
@@ -1109,7 +1135,7 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
-if(window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true});
+if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true})});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
