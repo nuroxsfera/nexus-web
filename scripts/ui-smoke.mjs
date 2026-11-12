@@ -27,6 +27,11 @@ try {
   window.publishPost();
   state=window.__getDB();
   assert.equal(state.posts[0].channelId,channel.id);
+  assert.equal(state.posts[0].authorKey,'me');
+  const ownedPostId=state.posts[0].id;
+  window.deletePost(ownedPostId);
+  state=window.__getDB();
+  assert.equal(state.posts.some(post=>post.id===ownedPostId),false);
   assert.equal(window.document.getElementById('view-channel').classList.contains('active'),true);
 
   window.document.getElementById('new-shop-name').value='Nexus Market';
@@ -101,6 +106,11 @@ try {
   window.createClip();
   state=window.__getDB();
   assert.equal(state.clips[0].caption,'Первый клип');
+  const ownedClipId=state.clips[0].id;
+  window.deleteClip(ownedClipId);
+  state=window.__getDB();
+  assert.equal(state.clips.some(clip=>clip.id===ownedClipId),false);
+  state.pendingClipVideo='idb:smoke-video-2';window.document.getElementById('clip-caption').value='Первый клип';window.createClip();state=window.__getDB();
   window.document.getElementById('playlist-name').value='Late Night';
   window.document.getElementById('playlist-desc').value='Музыка для дороги';
   window.createPlaylist();
