@@ -161,8 +161,7 @@ create table if not exists public.posts (
   body text not null default '' check (char_length(body) <= 5000),
   visibility public.content_visibility not null default 'public',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (char_length(body) > 0 or channel_id is not null)
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.post_media (
