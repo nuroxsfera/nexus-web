@@ -8,6 +8,8 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 const config = fs.readFileSync('api/config.js', 'utf8');
 const health = fs.readFileSync('api/health.js', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
+const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
+const gitignore = fs.readFileSync('.gitignore', 'utf8');
 const vault = fs.readFileSync('health-vault.js', 'utf8');
 const auth = fs.readFileSync('auth.js', 'utf8');
 
@@ -41,6 +43,9 @@ assert.ok(sql.includes('fallback_username'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
 assert.ok(auth.includes('hasSession:function()'));
+assert.ok(vercel.headers[0].headers.some(header=>header.key==='X-Content-Type-Options'));
+assert.ok(vercel.headers[0].headers.some(header=>header.key==='X-Frame-Options'));
+assert.ok(gitignore.includes('.env'));
 assert.ok(app.includes("load('/auth.js')"));
 assert.ok(logic.includes('function exportLocalData()'));
 assert.ok(logic.includes('async function importHealthVaultBackup(input)'));
