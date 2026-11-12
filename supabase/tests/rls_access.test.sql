@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(15);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -49,6 +49,9 @@ select is((select count(*)::int from public.posts where id='10000000-0000-4000-8
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000002'),0,'followers-only post is hidden from a non-follower');
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000003'),0,'private profile content is hidden');
 select is((select count(*)::int from public.posts where id='10000000-0000-4000-8000-000000000004'),0,'private channel post is hidden');
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'private profile is hidden from non-followers');
+insert into public.follows(follower_id,followed_id,status) values ('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333','pending');
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),0,'pending follow does not unlock private profile');
 select is((select count(*)::int from public.post_media where post_id='10000000-0000-4000-8000-000000000004'),0,'private channel media is hidden');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg'),1,'public post media can be read');
 select is((select count(*)::int from storage.objects where name='22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg'),0,'private channel media cannot be read');
@@ -56,6 +59,15 @@ select is((select count(*)::int from public.messages),0,'direct messages are hid
 select is((select count(*)::int from public.notifications),0,'notifications are private to their recipient');
 select is((select count(*)::int from public.shops),1,'private shops are hidden and public shops are visible');
 
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '33333333-3333-4333-8333-333333333333';
+update public.follows set status='accepted' where follower_id='11111111-1111-4111-8111-111111111111' and followed_id='33333333-3333-4333-8333-333333333333';
+select throws_ok($update public.follows set follower_id='22222222-2222-4222-8222-222222222222' where follower_id='11111111-1111-4111-8111-111111111111' and followed_id='33333333-3333-4333-8333-333333333333'$,'42501','Follow identity cannot be changed','follow identity is immutable');
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+select is((select count(*)::int from public.profiles where id='33333333-3333-4333-8333-333333333333'),1,'accepted follower can view private profile');
 insert into public.blocks(blocker_id,blocked_id) values ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222');
 select is((select count(*)::int from public.posts where author_id='22222222-2222-4222-8222-222222222222'),0,'blocking a user hides their posts');
 
