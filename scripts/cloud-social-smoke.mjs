@@ -25,6 +25,9 @@ const client={
     if(table==='post_media'&&query.startsWith('select='))return [{storage_path:user.id+'/posts/file.jpg'}];
     if(table==='comments'&&query.startsWith('select='))return [{id:'c1',body:'Nice',profiles:{display_name:'Tester'}}];
     if(table==='comments'&&options.method==='POST')return [{id:'c2'}];
+    if(table==='profiles'&&query.startsWith('or='))return [{id:'77777777-7777-4777-8777-777777777777',username:'tester2',display_name:'Tester Two',bio:'Bio',avatar_path:null,cover_path:null,visibility:'public'}];
+    if(table==='profiles'&&query.startsWith('select='))return [{id:user.id,username:'tester',display_name:'Tester',bio:'Hello',avatar_path:null,cover_path:null,visibility:'public'}];
+    if(table==='follows'&&query.startsWith('select='))return query.includes('following_id=')?[{follower_id:'x'}]:[];
     if(table==='products'&&options.method==='POST')return [{id:'33333333-3333-4333-8333-333333333333'}];
     if(table==='products'&&query.startsWith('select=cover_path'))return [{cover_path:'old-cover.jpg'}];
     if(table==='channels'&&query.startsWith('select=cover_path'))return [];
@@ -38,6 +41,17 @@ const context={window,crypto:webcrypto,console,Blob,Uint8Array,Promise,Date,Math
 vm.runInNewContext(fs.readFileSync('cloud-social.js','utf8'),context);
 const cloud=window.NEXUS_CLOUD_SOCIAL;
 assert.ok(await cloud.isReady());
+const myProfile=await cloud.fetchMyProfile();
+assert.equal(myProfile.handle,'@tester');
+await cloud.updateMyProfile({name:'Tester Updated',username:'tester',bio:'Updated bio',visibility:'private'});
+const remoteProfile=await cloud.fetchProfile('77777777-7777-4777-8777-777777777777');
+assert.equal(remoteProfile.name,'Tester');
+const matches=await cloud.searchProfiles('tester');
+assert.equal(matches.length,1);
+await cloud.followUser(remoteProfile.cloudId,true);
+await cloud.followUser(remoteProfile.cloudId,false);
+await cloud.blockUser(remoteProfile.cloudId,true);
+await cloud.blockUser(remoteProfile.cloudId,false);
 
 const media={blob:new Blob(['photo'],{type:'image/jpeg'}),type:'image/jpeg',name:'photo.jpg'};
 const created=await cloud.createPost({body:'Hello cloud',media:[media],visibility:'followers'});
@@ -80,4 +94,4 @@ assert.equal(resources.shops[0].products[0].name,'Item');
 assert.ok(calls.filter(call=>call[0]==='upload').length>=3);
 assert.ok(calls.some(call=>call[0]==='remove'&&call[1]==='nexus-media'));
 
-console.log('Cloud social smoke checks passed: auth, posts, media, feed, likes, comments, channels, shops, products and deletion.');
+console.log('Cloud social smoke checks passed: auth, profiles, follows, blocks, posts, media, feed, likes, comments, channels, shops, products and deletion.');
