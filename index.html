@@ -14,6 +14,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
 <title>Atlantis</title>
+<!-- build: v4-low-nav -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -109,7 +110,7 @@
   </section>
 
   <!-- Feed -->
-  <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))">
+  <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))">
 
     <!-- Post 1 -->
     <article class="post-card fade">
@@ -191,9 +192,9 @@
   </main>
 
   <!-- Bottom Nav -->
-  <nav class="absolute bottom-0 left-0 right-0 px-4 pt-1 bg-gradient-to-t from-black from-40% via-black/80 to-transparent"
-       style="padding-bottom:max(6px, env(safe-area-inset-bottom))">
-    <div class="flex items-center justify-between bg-[#1a1a1a]/95 backdrop-blur-xl rounded-full px-1 py-1 border border-white/5 max-w-[280px] mx-auto shadow-lg shadow-black/50">
+  <nav class="absolute bottom-0 left-0 right-0 px-4 pt-0 bg-gradient-to-t from-black from-50% via-black/70 to-transparent"
+       style="padding-bottom:max(4px, calc(env(safe-area-inset-bottom) * 0.55))">
+    <div class="flex items-center justify-between bg-[#1c1c1e]/95 backdrop-blur-xl rounded-full px-1 py-0.5 border border-white/8 max-w-[270px] mx-auto shadow-xl shadow-black/60">
       <button class="nav-item active w-12 h-12 rounded-full flex items-center justify-center press">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </button>
