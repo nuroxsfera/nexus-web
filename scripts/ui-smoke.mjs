@@ -10,7 +10,7 @@ window.fetch = async () => ({json:async()=>({backendConfigured:false})});
 window.console = console;
 
 try {
-  window.eval(fs.readFileSync('app-data.js','utf8')+'\n'+fs.readFileSync('health-vault.js','utf8')+'\nwindow.NEXUS_HEALTH_VAULT={hasVault:()=>true,isReady:()=>true,isUnlocked:()=>window.__vaultUnlocked!==false,setup:async()=>true,unlock:async()=>true,lock:async(db)=>{db.fitnessProfile={};db.workouts=[];db.nutritionEntries=[]},persist:async()=>true};\n'+fs.readFileSync('app-logic.js','utf8')+'\nwindow.__getDB=()=>DB;');
+  window.eval(fs.readFileSync('app-data.js','utf8')+'\n'+fs.readFileSync('health-vault.js','utf8')+'\n'+fs.readFileSync('auth.js','utf8')+'\nwindow.NEXUS_AUTH={isConfigured:()=>true,getSession:async()=>null,signUp:async()=>({needsEmailConfirmation:true}),signIn:async()=>({}),signOut:async()=>true,resetPassword:async()=>true,updatePassword:async()=>true};\nwindow.NEXUS_HEALTH_VAULT={hasVault:()=>true,isReady:()=>true,isUnlocked:()=>window.__vaultUnlocked!==false,setup:async()=>true,unlock:async()=>true,lock:async(db)=>{db.fitnessProfile={};db.workouts=[];db.nutritionEntries=[]},persist:async()=>true};\n'+fs.readFileSync('app-logic.js','utf8')+'\nwindow.__getDB=()=>DB;');
 
   window.__vaultUnlocked=false;
   window.renderFitness();
