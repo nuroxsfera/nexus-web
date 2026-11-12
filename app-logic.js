@@ -156,6 +156,16 @@ function nextStory(){
 }
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+async function syncCloudBlocks(options={}){
+  if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
+  try{
+    const rows=await window.NEXUS_CLOUD_SOCIAL.fetchBlocks();
+    DB.blocked=DB.blocked||{};
+    Object.keys(DB.blocked).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);
+    (rows||[]).forEach(row=>{DB.blocked['cloud-user-'+row.blocked_id]=true});
+    save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();return true;
+  }catch(error){if(!options.silent)toast('Не удалось обновить список блокировок');return false}
+}
 async function syncCloudProfile(options={}){
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
   try{
@@ -995,7 +1005,7 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudFeed({silent:true});
+      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
@@ -1013,7 +1023,7 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
-  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
+  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);Object.keys(DB.blocked||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
@@ -1046,10 +1056,15 @@ function renderBlockList(){
     return `<div class="flex items-center gap-3 py-3 border-b border-white/[0.06]"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-10 h-10 rounded-full"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(profile.name)}</p><p class="text-[11px] text-white/40">${esc(profile.handle)}</p></div><button data-profile-key="${esc(key)}" onclick="toggleBlock(this.dataset.profileKey)" class="px-3 py-2 rounded-full text-[11px] font-semibold ${blocked?'glass text-white':'bg-white text-black'}">${blocked?'Разблокировать':'Заблокировать'}</button></div>`;
   }).join('')||'<div class="empty">Список пуст</div>';
 }
-function toggleBlock(key){
+async function toggleBlock(key){
   DB.blocked=DB.blocked||{};
-  if(DB.blocked[key])delete DB.blocked[key];else DB.blocked[key]=true;
-  save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
+  const profile=DB.profiles[key],next=!DB.blocked[key];
+  if(profile?.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{await window.NEXUS_CLOUD_SOCIAL.blockUser(profile.cloudId,next)}
+    catch(error){toast(error.message||'Не удалось изменить блокировку');return}
+  }
+  if(next)DB.blocked[key]=true;else delete DB.blocked[key];
+  save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(next?'Профиль заблокирован':'Блокировка снята');
 }
 function refreshMediaCache(){
   for(const url of mediaUrlCache.values())URL.revokeObjectURL(url);
@@ -1215,7 +1230,7 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
-if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudFeed({silent:true});}
+if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true})}});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
