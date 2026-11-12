@@ -694,8 +694,24 @@ async function openChat(id){
     catch(error){toast('Не удалось загрузить сообщения')}
   }
   save();document.getElementById('cv-av').src=chat.avatar;document.getElementById('cv-name').textContent=chat.name;
-  const box=document.getElementById('cmsgs');box.innerHTML=chat.messages.map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
-  box.scrollTop=box.scrollHeight;renderChats();
+  renderChatMessages(chat);renderChats();
+}
+function renderChatMessages(chat){
+  const box=document.getElementById('cmsgs');box.innerHTML=(chat.messages||[]).map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+async function refreshActiveChat(){
+  if(DB.view!=='chat'||!DB.activeChat||!window.NEXUS_AUTH?.hasSession?.())return;
+  const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat?.cloudId)return;
+  const id=chat.id,previous=chat.messages?.[chat.messages.length-1]?.id;
+  try{
+    const messages=await window.NEXUS_CLOUD_SOCIAL.fetchMessages(chat.cloudId);
+    if(DB.activeChat!==id)return;
+    chat.messages=messages;
+    const latest=messages[messages.length-1];
+    chat.last=latest?.text||'Чат создан';
+    if(latest?.id!==previous){chat.time=latest?.createdAt?new Date(latest.createdAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'сейчас';save();renderChatMessages(chat);renderChats()}
+  }catch(error){console.warn('Chat refresh failed:',error?.message||error)}
 }
 async function sendMsg(){
   const input=document.getElementById('cinput'),textValue=input.value.trim();if(!textValue||!DB.activeChat)return;
@@ -1298,6 +1314,7 @@ function closeSheet(){
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
 if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});void syncCloudChats({silent:true});}
+setInterval(()=>{if(document.visibilityState!=='visible'||!window.NEXUS_AUTH?.hasSession?.())return;void syncCloudChats({silent:true});void refreshActiveChat()},15000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true})}});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
