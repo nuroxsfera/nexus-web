@@ -172,7 +172,7 @@ try {
   state=window.__getDB();
   assert.equal(state.channels.some(channel=>channel.organizationId===organization.id),true);
   assert.equal(state.shops.some(shop=>shop.organizationId===organization.id),true);
-  assert.equal(state.etab,'fitness');
+  assert.equal(state.etab,'business');
   state=window.__getDB();
   assert.equal(state.blocked.marley,true);
   assert.equal(window.document.getElementById('view-settings').classList.contains('active'),false);
