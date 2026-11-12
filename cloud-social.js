@@ -87,6 +87,13 @@
     await auth().uploadMedia('nexus-media',path,item.blob||item);
     return path;
   }
+  async function joinChannel(channelId,joined){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    if(joined){
+      try{await client.rest('channel_members','',{method:'POST',body:{channel_id:channelId,user_id:user.id,role:'member'}})}
+      catch(error){if(!String(error.message||'').toLowerCase().includes('duplicate'))throw error}
+    }else await client.rest('channel_members','channel_id=eq.'+channelId+'&user_id=eq.'+user.id,{method:'DELETE'});
+  }
   async function createChannel({title,description='',visibility='public',cover=null}){
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
     const id=uuid();let coverPath=null;
@@ -146,12 +153,12 @@
   async function fetchResources(){
     const client=auth(),user=await currentUser();if(!user?.id)return {channels:[],shops:[]};
     const [channels,shops]=await Promise.all([
-      client.rest('channels','select=id,title,slug,description,visibility,avatar_path,cover_path,created_at&owner_id=eq.'+user.id+'&order=created_at.desc'),
-      client.rest('shops','select=id,title,slug,description,visibility,avatar_path,created_at,products(id,title,description,price,currency,status,cover_path)&owner_id=eq.'+user.id+'&order=created_at.desc')
+      client.rest('channels','select=id,owner_id,title,slug,description,visibility,avatar_path,cover_path,created_at,channel_members(user_id)&order=created_at.desc'),
+      client.rest('shops','select=id,owner_id,title,slug,description,visibility,avatar_path,created_at,products(id,title,description,price,currency,status,cover_path)&order=created_at.desc')
     ]);
     const mappedChannels=await Promise.all((channels||[]).map(async row=>{
       let cover=null;if(row.cover_path)try{cover=await client.signedMediaUrl('nexus-media',row.cover_path,3600)}catch{}
-      return {id:'cloud-channel-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:'me',members:0,avatar:null,cover,posts:[],createdAt:row.created_at};
+      return {id:'cloud-channel-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:row.owner_id===user.id?'me':null,member:row.owner_id===user.id||(row.channel_members||[]).some(member=>member.user_id===user.id),members:0,avatar:null,cover,posts:[],createdAt:row.created_at};
     }));
     const mappedShops=await Promise.all((shops||[]).map(async row=>{
       let avatar=null;if(row.avatar_path)try{avatar=await client.signedMediaUrl('nexus-media',row.avatar_path,3600)}catch{}
@@ -159,9 +166,9 @@
         let image=null;if(product.cover_path)try{image=await client.signedMediaUrl('nexus-media',product.cover_path,3600)}catch{}
         return {id:'cloud-product-'+product.id,cloudId:product.id,name:product.title,desc:product.description||'',price:Number(product.price)||0,currency:product.currency||'RUB',image,shopId:'cloud-shop-'+row.id,status:product.status};
       }));
-      return {id:'cloud-shop-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:'me',avatar,products,createdAt:row.created_at};
+      return {id:'cloud-shop-'+row.id,cloudId:row.id,name:row.title,desc:row.description||'',visibility:row.visibility,ownerKey:row.owner_id===user.id?'me':null,avatar,products,createdAt:row.created_at};
     }));
     return {channels:mappedChannels,shops:mappedShops};
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel};
 })();
