@@ -815,7 +815,7 @@ as $$
       then (
         split_part(target_name,'/',1)=(select auth.uid())::text
         or exists(select 1 from public.post_media pm where pm.storage_path=target_name and private.can_view_post_record(pm.post_id))
-        or exists(select 1 from public.channels c where c.cover_path=target_name and private.can_view_channel(c.id))
+        or exists(select 1 from public.channels c where c.cover_path=target_name and (c.owner_id=(select auth.uid()) or (c.visibility='public' and not private.is_blocked_between((select auth.uid()),c.owner_id)) or private.is_channel_member(c.id)))
         or exists(select 1 from public.shops sh where sh.avatar_path=target_name and private.can_view_shop(sh.id))
         or exists(select 1 from public.products p where p.cover_path=target_name and private.can_view_shop(p.shop_id))
         or exists(select 1 from public.clips c where (c.storage_path=target_name or c.poster_path=target_name) and private.can_view_post(c.author_id,c.visibility))
