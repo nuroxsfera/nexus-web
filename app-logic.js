@@ -242,14 +242,23 @@ function openChannel(id){
   box.innerHTML=[...local,...seeded].join('')||'<div class="empty">Пока нет публикаций. Создайте первую.</div>';
   hydrateMediaImages(box);
 }
+function chooseChannelCover(){document.getElementById('channel-cover-input').click()}
+async function handleChannelCover(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите изображение до 20 МБ');return}
+  try{
+    DB.pendingChannelCover=await saveMediaFile(file);
+    const preview=document.getElementById('channel-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingChannelCover);
+  }catch(e){toast(e.message||'Не удалось сохранить обложку')}
+}
 function createChannel(){
   const name=document.getElementById('new-channel-name').value.trim();
   const desc=document.getElementById('new-channel-desc').value.trim();
   const visibility=document.getElementById('new-channel-visibility').value;
   if(name.length<2){toast('Название канала должно быть длиннее');return}
   const id='ch'+Date.now();
-  const channel={id,name,desc,visibility,members:'1',ownerKey:'me',cover:'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
-  DB.channels.unshift(channel);DB.channelSub[id]=true;save();closeSheet();go('channel',{id});toast('Канал создан · сохранён на устройстве');
+  const channel={id,name,desc,visibility,members:'1',ownerKey:'me',cover:DB.pendingChannelCover||'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
+  DB.channels.unshift(channel);DB.channelSub[id]=true;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});toast('Канал создан · сохранён на устройстве');
 }
 function openChannelPost(){if(!DB.activeChannel)return;go('compose',{channelId:DB.activeChannel})}
 function toggleChSub(){if(!DB.activeChannel)return;const ch=DB.channels.find(c=>c.id===DB.activeChannel);if(ch?.ownerKey==='me')return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
@@ -444,6 +453,7 @@ function openChannelCreate(){
   document.getElementById('new-channel-name').value='';
   document.getElementById('new-channel-desc').value='';
   document.getElementById('new-channel-visibility').value='public';
+  DB.pendingChannelCover=null;document.getElementById('channel-cover-preview').hidden=true;
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
 }
 function addMyStory(){
