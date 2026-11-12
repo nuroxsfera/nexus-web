@@ -20,13 +20,13 @@
 | Cinema | Movie/series watchlists and legal provider links | Local watchlists and items | Watchlists and watchlist items |
 | Fitness & nutrition | Training history, nutrition logs, body metrics | Basic local tracker: body metrics, workout logs, nutrition entries | Owner-only fitness, workout, nutrition and health tables |
 | Messaging | Private conversations and notifications | Local demo chats | Conversations, members, messages, notifications, RLS |
-| Organizations | Company identity, roles, linked channels and stores | UI management still to be built | Organizations, members, spaces, channels, shops |
+| Organizations | Company identity, roles, linked channels and stores | Basic local organization creation and channel/shop linking; role management next | Organizations, members, spaces, channels, shops |
 
 ## Delivery phases
 
 ### Phase 1 — Usable product prototype
 - Finish consistent design language, responsive iPhone layouts, animations, empty states, loading states and accessibility.
-- Complete local CRUD flows for profiles, channels, shops, products, clips, playlists, watchlists, workouts and nutrition.
+- Complete local CRUD flows for profiles, channels, shops, products, clips, playlists, watchlists, workouts, nutrition and organization linking.
 - Make all demo-only behavior clearly labeled.
 
 ### Phase 2 — Real accounts and cloud data
