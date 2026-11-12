@@ -156,10 +156,13 @@ function nextStory(){
 }
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+let cloudSessionEpoch=0;
 async function syncCloudBlocks(options={}){
+  const epoch=cloudSessionEpoch;
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
   try{
     const rows=await window.NEXUS_CLOUD_SOCIAL.fetchBlocks();
+    if(epoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.())return false;
     DB.blocked=DB.blocked||{};
     Object.keys(DB.blocked).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);
     (rows||[]).forEach(row=>{DB.blocked['cloud-user-'+row.blocked_id]=true});
@@ -167,9 +170,10 @@ async function syncCloudBlocks(options={}){
   }catch(error){if(!options.silent)toast('Не удалось обновить список блокировок');return false}
 }
 async function syncCloudProfile(options={}){
+  const epoch=cloudSessionEpoch;
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
   try{
-    const profile=await window.NEXUS_CLOUD_SOCIAL.fetchMyProfile();if(!profile)return false;
+    const profile=await window.NEXUS_CLOUD_SOCIAL.fetchMyProfile();if(epoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.()||!profile)return false;
     DB.me.cloudId=profile.cloudId;DB.me.name=profile.name||DB.me.name;DB.me.handle=profile.handle||DB.me.handle;DB.me.bio=profile.bio||'';DB.me.avatar=profile.avatar||DB.me.avatar;DB.me.cover=profile.cover||DB.me.cover;DB.me.visibility=profile.visibility||'public';
     save();renderMe();return true;
   }catch(error){if(!options.silent)toast('Не удалось синхронизировать профиль');return false}
@@ -177,10 +181,13 @@ async function syncCloudProfile(options={}){
 let cloudResourcesSyncPromise=null;
 async function syncCloudResources(options={}){
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
-  if(cloudResourcesSyncPromise)return cloudResourcesSyncPromise;
-  cloudResourcesSyncPromise=(async()=>{
+  const epoch=cloudSessionEpoch;
+  if(cloudResourcesSyncPromise?.epoch===epoch)return cloudResourcesSyncPromise.promise;
+  let task;
+  task=(async()=>{
     try{
       const remote=await window.NEXUS_CLOUD_SOCIAL.fetchResources();
+      if(epoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.())return false;
       const existingChannels=DB.channels.filter(item=>item.cloudId);
       const existingShops=DB.shops.filter(item=>item.cloudId);
       const channels=remote.channels.map(item=>{
@@ -200,18 +207,21 @@ async function syncCloudResources(options={}){
       DB.shops=[...shops,...DB.shops.filter(item=>!item.cloudId)];
       channels.forEach(channel=>{DB.channelSub[channel.id]=!!channel.member;channel.posts=DB.posts.filter(post=>post.channelId===channel.cloudId)});
       save();renderMe();if(DB.view==='explore')renderExplore();return true;
-    }catch(error){if(!options.silent)toast('Не удалось синхронизировать каналы и магазины: '+(error.message||'ошибка'));return false}
-    finally{cloudResourcesSyncPromise=null}
+    }catch(error){if(epoch===cloudSessionEpoch&&!options.silent)toast('Не удалось синхронизировать каналы и магазины: '+(error.message||'ошибка'));return false}
   })();
-  return cloudResourcesSyncPromise;
+  cloudResourcesSyncPromise={epoch,promise:task};
+  try{return await task}finally{if(cloudResourcesSyncPromise?.promise===task)cloudResourcesSyncPromise=null}
 }
 let cloudFeedSyncPromise=null;
 async function syncCloudFeed(options={}){
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
-  if(cloudFeedSyncPromise)return cloudFeedSyncPromise;
-  cloudFeedSyncPromise=(async()=>{
+  const epoch=cloudSessionEpoch;
+  if(cloudFeedSyncPromise?.epoch===epoch)return cloudFeedSyncPromise.promise;
+  let task;
+  task=(async()=>{
     try{
       const remote=await window.NEXUS_CLOUD_SOCIAL.fetchFeed(30);
+      if(epoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.())return false;
       const previous=new Map(DB.posts.filter(post=>post.cloudId).map(post=>[post.cloudId,post]));
       DB.profiles=DB.profiles||{};
       remote.forEach(post=>{if(post.authorKey&&post.authorKey!=='me'&&post.profileData)DB.profiles[post.authorKey]={...post.profileData,followers:0,following:0,posts:0}});
@@ -220,12 +230,14 @@ async function syncCloudFeed(options={}){
       DB.channels.forEach(channel=>{channel.posts=remote.filter(post=>post.channelId===channel.cloudId)});
       save();renderFeed();return true;
     }catch(error){
-      if(!options.silent)toast('Не удалось обновить облачную ленту: '+(error.message||'ошибка'));
+      if(epoch===cloudSessionEpoch&&!options.silent)toast('Не удалось обновить облачную ленту: '+(error.message||'ошибка'));
       return false;
-    }finally{cloudFeedSyncPromise=null}
+    }
   })();
-  return cloudFeedSyncPromise;
+  cloudFeedSyncPromise={epoch,promise:task};
+  try{return await task}finally{if(cloudFeedSyncPromise?.promise===task)cloudFeedSyncPromise=null}
 }
+
 function renderFeed(){
   const feed=document.getElementById('feed');
   const visiblePosts=DB.posts.filter(p=>!p.authorKey||!DB.blocked?.[p.authorKey]);
@@ -922,7 +934,9 @@ function renderExplore(){
   const tab=DB.etab;let h='';
   if(q.length>=2&&window.NEXUS_AUTH?.hasSession?.()&&window.NEXUS_CLOUD_SOCIAL&&!cloudPeopleCache.has(q)&&!cloudPeoplePending.has(q)){
     cloudPeoplePending.add(q);
+    const searchEpoch=cloudSessionEpoch;
     window.NEXUS_CLOUD_SOCIAL.searchProfiles(q).then(rows=>{
+      if(searchEpoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.())return;
       cloudPeopleCache.set(q,rows||[]);
       (rows||[]).forEach(profile=>{DB.profiles['cloud-user-'+profile.cloudId]=profile});
       renderExplore();
@@ -1005,14 +1019,14 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});
+      await api.signIn({email,password});cloudSessionEpoch++;closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
       if(password!==confirm){error.textContent='Пароли не совпадают.';return}
       const result=await api.signUp({email,password,name,username});
       if(result.needsEmailConfirmation){error.textContent='Проверь почту и подтверди адрес, затем войди в аккаунт.';return}
-      closeSheet();toast('Аккаунт создан');
+      cloudSessionEpoch++;closeSheet();toast('Аккаунт создан');void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='reset'){
       await api.resetPassword(email);error.textContent='Если аккаунт существует, письмо для восстановления отправлено.';
     }else if(AUTH_MODE==='recovery'){
@@ -1023,6 +1037,7 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
+  cloudSessionEpoch++;cloudFeedSyncPromise=null;cloudResourcesSyncPromise=null;cloudPeopleCache?.clear?.();cloudPeoplePending?.clear?.();
   try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);Object.keys(DB.blocked||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
