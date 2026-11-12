@@ -777,7 +777,7 @@ function renderSettings(){
     ['Аккаунт',['Профиль','Конфиденциальность','Блокировки']],
     ['Уведомления',['Push','Категории']],
     ['Безопасность',['2FA','Сессии']],
-    ['Данные',['Очистить кэш','Сбросить демо']]
+    ['Данные',['Экспорт данных','Резервная копия сейфа','Импорт сейфа','Очистить кэш','Сбросить демо']]
   ];
   document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
   checkBackendStatus();
@@ -817,7 +817,44 @@ function toggleBlock(key){
   if(DB.blocked[key])delete DB.blocked[key];else DB.blocked[key]=true;
   save();renderBlockList();renderFeed();renderStories();renderExplore();renderChats();toast(DB.blocked[key]?'Профиль заблокирован на этом устройстве':'Блокировка снята');
 }
+function downloadJsonFile(filename,payload){
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportLocalData(){
+  const payload={
+    format:'nexus-local-export',version:1,exportedAt:new Date().toISOString(),
+    note:'Personal health data is stored separately in the encrypted health vault and is not included in this export.',
+    profile:DB.me,posts:DB.posts,stories:DB.stories,channels:DB.channels,shops:DB.shops,
+    clips:DB.clips,playlists:DB.playlists,watchlists:DB.watchlists,chats:DB.chats,
+    organizations:DB.organizations,spaces:DB.spaces,notifications:DB.notifications
+  };
+  downloadJsonFile('nexus-data-'+new Date().toISOString().slice(0,10)+'.json',payload);
+  toast('Экспорт подготовлен');
+}
+async function exportHealthVaultBackup(){
+  try{
+    const bundle=await window.NEXUS_HEALTH_VAULT.exportEncrypted();
+    downloadJsonFile('nexus-health-vault-backup.json',bundle);
+    toast('Зашифрованная копия сейфа скачана');
+  }catch(e){toast(e.message||'Не удалось создать копию сейфа')}
+}
+async function importHealthVaultBackup(input){
+  const file=input.files?.[0];input.value='';if(!file)return;
+  if(file.size>30*1024*1024){toast('Файл слишком большой');return}
+  try{
+    const bundle=JSON.parse(await file.text());
+    await window.NEXUS_HEALTH_VAULT.importEncrypted(bundle);
+    DB.fitnessProfile={};DB.workouts=[];DB.nutritionEntries=[];DB.healthMeasurements=[];DB.healthVaultUnlocked=false;
+    save();openHealthVault();toast('Резервная копия импортирована. Введи пароль для разблокировки.');
+  }catch(e){toast(e.message||'Не удалось импортировать сейф')}
+}
 function settingAction(i){
+  if(i==='Экспорт данных'){exportLocalData();return}
+  if(i==='Резервная копия сейфа'){exportHealthVaultBackup();return}
+  if(i==='Импорт сейфа'){document.getElementById('health-vault-import-file').click();return}
   if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
   if(i==='Очистить кэш'){toast('Кэш очищен');return}
   if(i==='Профиль'){go('me');return}
