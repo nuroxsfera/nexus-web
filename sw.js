@@ -1,10 +1,11 @@
-const CACHE = 'atlantis-v6';
+const CACHE = 'atlantis-v7';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/app.js',
   '/app-data.js',
+  '/health-vault.js',
   '/app-logic.js',
   '/icon-192.png',
   '/icon-512.png',
