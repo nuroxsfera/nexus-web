@@ -508,7 +508,7 @@ create policy reports_read_reporter on public.reports for select to authenticate
 
 create or replace function private.can_read_media_object(target_bucket text,target_name text)
 returns boolean language sql stable security definer set search_path=''
-as $
+as $$
   select case
     when target_bucket='nexus-avatars'
       and split_part(target_name,'/',1) ~* '^[0-9a-f-]{36} Cross-user delivery will use
@@ -577,7 +577,7 @@ grant execute on function private.can_view_shop(uuid) to authenticated;
       )
     else false
   end
-$;
+$$;
 
 -- Private media buckets: no public listing or anonymous reads. Cross-user delivery will use
 -- short-lived signed URLs only after server-side authorization checks.
