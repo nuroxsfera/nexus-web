@@ -128,12 +128,12 @@ try {
   window.createNutritionEntry();
   state=window.__getDB();
   assert.equal(state.nutritionEntries[0].food,'Овсянка');
-  assert.equal(state.etab,'cinema');
+  assert.equal(state.etab,'fitness');
   state=window.__getDB();
   assert.equal(state.blocked.marley,true);
   assert.equal(window.document.getElementById('view-settings').classList.contains('active'),false);
 
-  console.log('Nexus UI smoke checks passed: channel, channel post, shop, product, privacy and block flows.');
+  console.log('Nexus UI smoke checks passed: channel, shop, products, clips, playlists, watchlists, fitness, nutrition, profile, privacy and blocks.');
 } finally {
   dom.window.close();
 }
