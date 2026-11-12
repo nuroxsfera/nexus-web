@@ -1086,17 +1086,17 @@ async function handleComposeFiles(input){
 async function publishPost(){
   const text=document.getElementById('compose-text').value.trim();
   if(!text&&!DB.composeImgs.length){toast('Добавьте текст или фото');return}
-  const images=[...DB.composeImgs],channelId=DB.composeChannelId||null;
+  const images=[...DB.composeImgs],channelId=DB.composeChannelId||null,visibility=document.getElementById('compose-visibility').value;
   let cloudId=null,cloudError=null;
   if(window.NEXUS_AUTH?.hasSession?.()&&window.NEXUS_CLOUD_SOCIAL){
     try{
       const media=await Promise.all(images.map(getMediaBlob));
       const channel=channelId?DB.channels.find(item=>item.id===channelId):null;
-      const result=await window.NEXUS_CLOUD_SOCIAL.createPost({body:text,media,channelId:channel?.cloudId||null});
+      const result=await window.NEXUS_CLOUD_SOCIAL.createPost({body:text,media,channelId:channel?.cloudId||null,visibility});
       cloudId=result.id;
     }catch(error){cloudError=error}
   }
-  const post={id:'p'+Date.now(),cloudId,author:DB.me.name,authorKey:'me',avatar:DB.me.avatar||'https://i.pravatar.cc/64?u=me',image:images[0]||null,images,channelId,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]};
+  const post={id:'p'+Date.now(),cloudId,author:DB.me.name,authorKey:'me',avatar:DB.me.avatar||'https://i.pravatar.cc/64?u=me',image:images[0]||null,images,channelId,visibility,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]};
   DB.posts.unshift(post);DB.composeImgs=[];DB.composeChannelId=null;save();
   if(cloudId)toast('Опубликовано и синхронизировано');else if(cloudError)toast('Сохранено локально. Облако: '+(cloudError.message||'ошибка'));else toast('Опубликовано локально');
   if(channelId)go('channel',{id:channelId});else go('home');
