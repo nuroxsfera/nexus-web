@@ -37,6 +37,11 @@ try {
   const shop=state.shops[0];
   assert.equal(shop.name,'Nexus Market');
   assert.equal(shop.ownerKey,'me');
+  window.openShopEdit();
+  window.document.getElementById('new-shop-name').value='Nexus Market Plus';
+  window.createShop();
+  state=window.__getDB();
+  assert.equal(state.shops[0].name,'Nexus Market Plus');
 
   window.openProductCreate();
   window.document.getElementById('new-product-name').value='Nexus Hoodie';
