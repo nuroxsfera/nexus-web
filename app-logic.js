@@ -180,7 +180,7 @@ async function syncCloudResources(options={}){
       });
       DB.channels=[...channels,...DB.channels.filter(item=>!item.cloudId)];
       DB.shops=[...shops,...DB.shops.filter(item=>!item.cloudId)];
-      channels.forEach(channel=>{DB.channelSub[channel.id]=true;channel.posts=DB.posts.filter(post=>post.channelId===channel.cloudId)});
+      channels.forEach(channel=>{DB.channelSub[channel.id]=!!channel.member;channel.posts=DB.posts.filter(post=>post.channelId===channel.cloudId)});
       save();renderMe();if(DB.view==='explore')renderExplore();return true;
     }catch(error){if(!options.silent)toast('Не удалось синхронизировать каналы и магазины: '+(error.message||'ошибка'));return false}
     finally{cloudResourcesSyncPromise=null}
@@ -367,6 +367,15 @@ function setMediaSource(img,ref){
     img.removeAttribute('src');img.dataset.mediaRef=ref;
     resolveMediaURL(ref).then(url=>{img.src=url}).catch(()=>{img.alt='Изображение недоступно'});
   }else{delete img.dataset.mediaRef;img.src=ref||''}
+}
+async function toggleChSub(){
+  const channel=DB.channels.find(item=>item.id===DB.activeChannel);if(!channel||channel.ownerKey==='me')return;
+  const joined=!DB.channelSub[channel.id];
+  if(channel.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{await window.NEXUS_CLOUD_SOCIAL.joinChannel(channel.cloudId,joined)}
+    catch(error){toast(error.message||'Не удалось изменить подписку');return}
+  }
+  DB.channelSub[channel.id]=joined;save();openChannel(channel.id);toast(joined?'Вы подписались на канал':'Вы отписались от канала');
 }
 function openChannel(id){
   const ch=DB.channels.find(c=>c.id===id);if(!ch)return;DB.activeChannel=id;
