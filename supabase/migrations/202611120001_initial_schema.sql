@@ -315,10 +315,39 @@ as $$
   ))
 $$;
 
+create or replace function public.prevent_follow_identity_change()
+returns trigger language plpgsql set search_path=''
+as $
+begin
+  if new.follower_id is distinct from old.follower_id or new.followed_id is distinct from old.followed_id then
+    raise exception using errcode='42501', message='Follow identity cannot be changed';
+  end if;
+  return new;
+end
+$;
+
+create or replace function public.prevent_message_identity_change()
+returns trigger language plpgsql set search_path=''
+as $
+begin
+  if new.id is distinct from old.id
+    or new.conversation_id is distinct from old.conversation_id
+    or new.sender_id is distinct from old.sender_id
+    or new.created_at is distinct from old.created_at then
+    raise exception using errcode='42501', message='Message identity cannot be changed';
+  end if;
+  return new;
+end
+$;
+
 create or replace function public.set_updated_at()
 returns trigger language plpgsql set search_path=''
 as $$ begin new.updated_at=now(); return new; end $$;
 
+drop trigger if exists follows_identity_immutable on public.follows;
+create trigger follows_identity_immutable before update on public.follows for each row execute function public.prevent_follow_identity_change();
+drop trigger if exists messages_identity_immutable on public.messages;
+create trigger messages_identity_immutable before update on public.messages for each row execute function public.prevent_message_identity_change();
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 drop trigger if exists organizations_set_updated_at on public.organizations;
