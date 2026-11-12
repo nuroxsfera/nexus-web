@@ -534,10 +534,26 @@ create trigger fitness_profiles_set_updated_at before update on public.fitness_p
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path=''
 as $$
+declare
+  candidate_username text;
+  fallback_username text;
+  display_name_value text;
 begin
-  insert into public.profiles(id,username,display_name)
-  values(new.id,'u_'||replace(substr(new.id::text,1,12),'-',''),left(coalesce(nullif(new.raw_user_meta_data->>'name',''),'Новый пользователь'),60))
-  on conflict (id) do nothing;
+  candidate_username := regexp_replace(lower(coalesce(new.raw_user_meta_data->>'username','')), '[^a-z0-9_]', '', 'g');
+  fallback_username := 'u_' || replace(substr(new.id::text,1,12),'-','');
+  if char_length(candidate_username)<3 then
+    candidate_username := fallback_username;
+  end if;
+  display_name_value := left(coalesce(nullif(new.raw_user_meta_data->>'name',''),'Новый пользователь'),60);
+  begin
+    insert into public.profiles(id,username,display_name)
+    values(new.id,left(candidate_username,30),display_name_value)
+    on conflict (id) do nothing;
+  exception when unique_violation then
+    insert into public.profiles(id,username,display_name)
+    values(new.id,fallback_username,display_name_value)
+    on conflict (id) do nothing;
+  end;
   return new;
 end
 $$;
@@ -852,6 +868,7 @@ revoke all on function private.is_channel_member(uuid) from public,anon;
 revoke all on function private.is_channel_admin(uuid) from public,anon;
 revoke all on function private.is_conversation_member(uuid) from public,anon;
 revoke all on function private.can_view_shop(uuid) from public,anon;
+revoke all on function private.can_view_space(uuid) from public,anon;
 grant execute on function private.is_blocked_between(uuid,uuid) to authenticated;
 grant execute on function private.is_following(uuid) to authenticated;
 grant execute on function private.can_view_profile(uuid) to authenticated;
