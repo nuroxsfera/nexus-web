@@ -80,6 +80,52 @@
     const rows=await client.rest('comments','',{method:'POST',body:{post_id:postId,author_id:user.id,body:String(body).slice(0,2000)}});
     return rows?.[0]||null;
   }
+  async function createConversation({participantIds=[],title=''}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const ids=[...new Set(participantIds.filter(id=>id&&id!==user.id))];
+    if(!ids.length)throw new Error('Выбери собеседника');
+    const id=uuid(),isGroup=ids.length>1;
+    try{
+      await client.rest('conversations','',{method:'POST',body:{id,created_by:user.id,title:isGroup?String(title||'Групповой чат').slice(0,80):null,is_group:isGroup}});
+      await client.rest('conversation_members','',{method:'POST',body:[user.id,...ids].map(user_id=>({conversation_id:id,user_id}))});
+      return {id};
+    }catch(error){try{await client.rest('conversations','id=eq.'+id,{method:'DELETE'})}catch{}throw error}
+  }
+  async function fetchConversations(){
+    const client=auth(),user=await currentUser();if(!user?.id)return [];
+    const query='select=id,title,is_group,created_by,created_at,conversation_members(user_id,profiles(id,username,display_name,bio,avatar_path,cover_path,visibility)),messages(id,body,sender_id,created_at)&order=created_at.desc';
+    const rows=await client.rest('conversations',query);
+    return Promise.all((rows||[]).map(async row=>{
+      const members=(row.conversation_members||[]).filter(member=>member.user_id!==user.id);
+      const profiles=await Promise.all(members.map(async member=>{
+        const profile=await profileWithMedia(member.profiles?{...member.profiles,id:member.profiles.id||member.user_id}:null);
+        return {userId:member.user_id,profile};
+      }));
+      const names=profiles.map(item=>item.profile?.name||'Пользователь');
+      const latest=[...(row.messages||[])].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+      const single=members.length===1,other=profiles[0]?.profile;
+      return {
+        id:'cloud-chat-'+row.id,cloudId:row.id,name:row.title||(single?other?.name||'Диалог':names.join(', ')),
+        avatar:single?(other?.avatar||'https://i.pravatar.cc/128?u='+row.id):'https://i.pravatar.cc/128?u=group-'+row.id,
+        last:latest?.body||'Чат создан',time:latest?.created_at?new Date(latest.created_at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'',
+        unread:0,messages:[],profileKey:single?'cloud-user-'+members[0].user_id:null,
+        profileKeys:members.map(member=>'cloud-user-'+member.user_id),
+        participants:profiles.map(item=>({userId:item.userId,profile:item.profile}))
+      };
+    }));
+  }
+  async function fetchMessages(conversationId){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const rows=await client.rest('messages','select=id,body,sender_id,created_at&conversation_id=eq.'+conversationId+'&order=created_at.asc&limit=100');
+    try{await client.rest('conversation_members','conversation_id=eq.'+conversationId+'&user_id=eq.'+user.id,{method:'PATCH',body:{last_read_at:new Date().toISOString()}})}catch{}
+    return (rows||[]).map(row=>({id:row.id,me:row.sender_id===user.id,text:row.body,createdAt:row.created_at}));
+  }
+  async function sendMessage(conversationId,body){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const text=String(body||'').trim();if(!text||text.length>10000)throw new Error('Сообщение должно содержать от 1 до 10 000 символов');
+    const rows=await client.rest('messages','',{method:'POST',body:{conversation_id:conversationId,sender_id:user.id,body:text}});
+    return rows?.[0]||null;
+  }
   async function profileWithMedia(row){
     if(!row)return null;
     const client=auth();let avatar=null,cover=null;
@@ -230,5 +276,5 @@
     }));
     return {channels:mappedChannels,shops:mappedShops};
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel,fetchMyProfile,updateMyProfile,fetchProfile,searchProfiles,followUser,blockUser,fetchBlocks};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel,fetchMyProfile,updateMyProfile,fetchProfile,searchProfiles,followUser,blockUser,fetchBlocks,createConversation,fetchConversations,fetchMessages,sendMessage};
 })();
