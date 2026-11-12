@@ -5,6 +5,7 @@ Supabase Free for the first live backend: PostgreSQL, Auth, private object stora
 
 ## Product boundaries
 - Profiles, channels, shops and organizations are separate entities.
+- Profile visibility has three explicit states: public, followers-only (accepted followers), and private (owner only).
 - A company/organization may own multiple channels and shops.
 - A shop is a catalog and order surface, not a channel disguised as a shop.
 - Posts may belong to a profile or channel; media is stored separately.
@@ -21,7 +22,7 @@ Supabase Free for the first live backend: PostgreSQL, Auth, private object stora
 - Media buckets are private. Storage RLS checks the owning user or the visibility of the parent post/story before allowing reads; the authenticated client can request short-lived signed URLs under that same policy.
 - Never expose a Supabase service-role/secret key in browser code, GitHub, or client environment variables. The Vercel /api/config endpoint returns only the URL and publishable/anon key; the service-role key is never returned.
 - Do not treat a publishable key as a substitute for RLS. Test both allowed and denied cases before production.
-- The local PGlite suite checks the core row-isolation rules; the Supabase pgTAP suite checks the deployed Postgres schema and access behavior.
+- The local PGlite suite checks the core row-isolation rules, follow approval, immutable follow/message identity, blocks, and anonymous access; the Supabase pgTAP suite checks the deployed Postgres schema and access behavior.
 
 ## Migration
 Set Vercel environment variables SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY), then apply files in `supabase/migrations` using the Supabase CLI after a project is created and linked. Run `npm test` for local RLS simulation and `supabase test db` against the linked Supabase database before connecting the UI.
