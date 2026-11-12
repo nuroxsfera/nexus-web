@@ -77,7 +77,17 @@ async function resolveMediaURL(ref){
   });
   if(!record?.blob)throw new Error('Фотография не найдена на устройстве');
   const url=URL.createObjectURL(record.blob);mediaUrlCache.set(ref,url);return url;
+}async function getMediaBlob(ref){
+  if(!ref||!ref.startsWith('idb:'))throw new Error('Выбранное медиа недоступно для облачной загрузки');
+  const db=await openMediaDB(),id=ref.slice(4);
+  const record=await new Promise((resolve,reject)=>{
+    const req=db.transaction('files','readonly').objectStore('files').get(id);
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  if(!record?.blob)throw new Error('Файл не найден на устройстве');
+  return {blob:record.blob,type:record.type||record.blob.type,name:record.originalName||'media'};
 }
+
 async function hydrateMediaImages(root=document){
   const nodes=[...root.querySelectorAll('img[data-media-ref],video[data-media-ref]')];
   await Promise.all(nodes.map(async media=>{
@@ -146,6 +156,24 @@ function nextStory(){
 }
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+let cloudFeedSyncPromise=null;
+async function syncCloudFeed(options={}){
+  if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
+  if(cloudFeedSyncPromise)return cloudFeedSyncPromise;
+  cloudFeedSyncPromise=(async()=>{
+    try{
+      const remote=await window.NEXUS_CLOUD_SOCIAL.fetchFeed(30);
+      const previous=new Map(DB.posts.filter(post=>post.cloudId).map(post=>[post.cloudId,post]));
+      const local=DB.posts.filter(post=>!post.cloudId);
+      DB.posts=[...remote.map(post=>({...post,saved:previous.get(post.cloudId)?.saved||false})),...local];
+      save();renderFeed();return true;
+    }catch(error){
+      if(!options.silent)toast('Не удалось обновить облачную ленту: '+(error.message||'ошибка'));
+      return false;
+    }finally{cloudFeedSyncPromise=null}
+  })();
+  return cloudFeedSyncPromise;
+}
 function renderFeed(){
   const feed=document.getElementById('feed');
   const visiblePosts=DB.posts.filter(p=>!p.authorKey||!DB.blocked?.[p.authorKey]);
@@ -190,7 +218,7 @@ function renderFeed(){
   }).join('');
   hydrateMediaImages(feed);
 }
-function deletePost(id){const post=DB.posts.find(item=>item.id===id);if(!post||post.authorKey!=='me')return;const refs=[...(post.images||[]),post.image].filter(Boolean);DB.posts=DB.posts.filter(item=>item.id!==id);DB.channels.forEach(channel=>{channel.posts=(channel.posts||[]).filter(item=>item.id!==id)});save();refs.forEach(ref=>void cleanupMedia(ref));renderFeed();toast('Публикация удалена локально')}
+async function deletePost(id){const post=DB.posts.find(item=>item.id===id);if(!post||post.authorKey!=='me')return;if(post.cloudId&&window.NEXUS_AUTH?.hasSession?.()){try{await window.NEXUS_CLOUD_SOCIAL.deletePost(post.cloudId)}catch(error){toast(error.message||'Не удалось удалить публикацию в облаке');return}}const refs=[...(post.images||[]),post.image].filter(Boolean);DB.posts=DB.posts.filter(item=>item.id!==id);DB.channels.forEach(channel=>{channel.posts=(channel.posts||[]).filter(item=>item.id!==id)});save();refs.forEach(ref=>void cleanupMedia(ref));renderFeed();toast(post.cloudId?'Публикация удалена':'Публикация удалена локально')}
 function doubleLike(id){
  const p=DB.posts.find(x=>x.id===id);if(!p)return;
  if(!p.liked){p.liked=true;p.likes++}
@@ -199,10 +227,31 @@ function doubleLike(id){
  const burst=card&&card.querySelector('.heart-burst');
  if(burst){burst.classList.remove('show');void burst.offsetWidth;burst.classList.add('show')}
 }
-function toggleLike(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.liked=!p.liked;p.likes+=p.liked?1:-1;save();renderFeed()}
+async function toggleLike(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;const next=!p.liked;if(p.cloudId&&window.NEXUS_AUTH?.hasSession?.()){try{await window.NEXUS_CLOUD_SOCIAL.toggleLike(p.cloudId,next)}catch(e){toast(e.message||'Не удалось обновить отметку');return}}p.liked=next;p.likes+=p.liked?1:-1;save();renderFeed()}
 function toggleSave(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.saved=!p.saved;save();toast(p.saved?'Сохранено':'Убрано');renderFeed()}
-function openComments(id){DB.activePost=id;const p=DB.posts.find(x=>x.id===id);document.getElementById('clist-c').innerHTML=(p.commentList||[]).map(c=>`<div class="flex gap-2.5"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[12px] font-semibold">${c.user[0]}</div><div><p class="text-[12.5px] font-semibold">${esc(c.user)}</p><p class="text-[13px] text-white/65">${esc(c.text)}</p></div></div>`).join('')||'<p class="empty">Нет комментариев — будьте первым</p>';document.getElementById('bd').classList.add('open');document.getElementById('comments-sheet').classList.add('open');setNav(false)}
-function addCm(){const inp=document.getElementById('cminput');const t=inp.value.trim();if(!t||!DB.activePost)return;const p=DB.posts.find(x=>x.id===DB.activePost);p.commentList.push({user:'Вы',text:t});p.comments++;inp.value='';save();openComments(p.id);renderFeed()}
+function renderCommentList(post){
+  document.getElementById('clist-c').innerHTML=(post.commentList||[]).map(comment=>`<div class="flex gap-2.5"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[12px] font-semibold">${esc((comment.user||'?')[0])}</div><div><p class="text-[12.5px] font-semibold">${esc(comment.user||'Пользователь')}</p><p class="text-[13px] text-white/65">${esc(comment.text)}</p></div></div>`).join('')||'<p class="empty">Нет комментариев — будьте первым</p>';
+}
+async function openComments(id){
+  DB.activePost=id;const post=DB.posts.find(item=>item.id===id);if(!post)return;
+  document.getElementById('bd').classList.add('open');document.getElementById('comments-sheet').classList.add('open');setNav(false);
+  renderCommentList(post);
+  if(post.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{post.commentList=await window.NEXUS_CLOUD_SOCIAL.fetchComments(post.cloudId);post.comments=post.commentList.length;renderCommentList(post);renderFeed()}
+    catch(error){toast('Не удалось загрузить комментарии')}
+  }
+}
+async function addCm(){
+  const input=document.getElementById('cminput'),textValue=input.value.trim();if(!textValue||!DB.activePost)return;
+  const post=DB.posts.find(item=>item.id===DB.activePost);if(!post)return;
+  if(post.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{await window.NEXUS_CLOUD_SOCIAL.addComment(post.cloudId,textValue)}
+    catch(error){toast(error.message||'Не удалось отправить комментарий');return}
+  }
+  post.commentList=post.commentList||[];post.commentList.push({user:'Вы',text:textValue});post.comments=(post.comments||0)+1;
+  input.value='';save();renderCommentList(post);renderFeed();
+}
+
 function renderSaved(){
   const list=DB.posts.filter(p=>p.saved);
   const box=document.getElementById('saved-list');
@@ -840,7 +889,7 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();
+      await api.signIn({email,password});closeSheet();toast('Вход выполнен');renderSettings();void syncCloudFeed({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
@@ -858,7 +907,7 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
-  try{await window.NEXUS_AUTH.signOut();toast('Вы вышли из аккаунта');renderSettings()}
+  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
@@ -1034,16 +1083,24 @@ async function handleComposeFiles(input){
     renderComposeImgs();
   }catch(e){console.error(e);toast(e.message||'Не удалось сохранить фото')}
 }
-function publishPost(){
+async function publishPost(){
   const text=document.getElementById('compose-text').value.trim();
   if(!text&&!DB.composeImgs.length){toast('Добавьте текст или фото');return}
   const images=[...DB.composeImgs],channelId=DB.composeChannelId||null;
-  DB.posts.unshift({
-    id:'p'+Date.now(),author:DB.me.name,authorKey:'me',avatar:DB.me.avatar||'https://i.pravatar.cc/64?u=me',
-    image:images[0]||null,images,channelId,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]
-  });
-  DB.composeImgs=[];DB.composeChannelId=null;save();toast('Опубликовано локально');
+  let cloudId=null,cloudError=null;
+  if(window.NEXUS_AUTH?.hasSession?.()&&window.NEXUS_CLOUD_SOCIAL){
+    try{
+      const media=await Promise.all(images.map(getMediaBlob));
+      const channel=channelId?DB.channels.find(item=>item.id===channelId):null;
+      const result=await window.NEXUS_CLOUD_SOCIAL.createPost({body:text,media,channelId:channel?.cloudId||null});
+      cloudId=result.id;
+    }catch(error){cloudError=error}
+  }
+  const post={id:'p'+Date.now(),cloudId,author:DB.me.name,authorKey:'me',avatar:DB.me.avatar||'https://i.pravatar.cc/64?u=me',image:images[0]||null,images,channelId,likes:0,comments:0,liked:false,saved:false,text:text||'',commentList:[]};
+  DB.posts.unshift(post);DB.composeImgs=[];DB.composeChannelId=null;save();
+  if(cloudId)toast('Опубликовано и синхронизировано');else if(cloudError)toast('Сохранено локально. Облако: '+(cloudError.message||'ошибка'));else toast('Опубликовано локально');
   if(channelId)go('channel',{id:channelId});else go('home');
+  if(cloudId)void syncCloudFeed({silent:true});
 }
 function closeSheet(){
   ['auth-sheet','bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
@@ -1051,5 +1108,6 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
+if(window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
