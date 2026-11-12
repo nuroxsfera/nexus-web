@@ -1,5 +1,5 @@
 begin;
-select plan(23);
+select plan(33);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -49,6 +49,12 @@ insert into public.shops(id,owner_id,title,slug,visibility) values
 ('50000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Private shop','nexus-private-test','private'),
 ('50000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Public shop','nexus-public-test','public');
 
+insert into public.fitness_profiles(user_id,height_cm,weight_kg,goal) values ('22222222-2222-4222-8222-222222222222',180,75,'Strength');
+insert into public.workout_sessions(user_id,workout_type,duration_minutes) values ('22222222-2222-4222-8222-222222222222','Strength training',60);
+insert into public.nutrition_entries(user_id,food_name,serving_grams,calories_kcal) values ('22222222-2222-4222-8222-222222222222','Oatmeal',100,370);
+insert into public.health_measurements(user_id,metric,value,unit) values ('22222222-2222-4222-8222-222222222222','resting_heart_rate',62,'bpm');
+insert into storage.objects(bucket_id,name) values ('nexus-health','22222222-2222-4222-8222-222222222222/reports/lab.pdf');
+
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
@@ -69,6 +75,24 @@ select is((select count(*)::int from storage.objects where name='22222222-2222-4
 select is((select count(*)::int from public.messages),0,'direct messages are hidden from non-members');
 select is((select count(*)::int from public.notifications),0,'notifications are private to their recipient');
 select is((select count(*)::int from public.shops),1,'private shops are hidden and public shops are visible');
+select is((select count(*)::int from public.fitness_profiles),0,'fitness profile is hidden from other users');
+select is((select count(*)::int from public.workout_sessions),0,'workout history is hidden from other users');
+select is((select count(*)::int from public.nutrition_entries),0,'nutrition entries are hidden from other users');
+select is((select count(*)::int from public.health_measurements),0,'health measurements are hidden from other users');
+select is((select count(*)::int from storage.objects where bucket_id='nexus-health'),0,'private health files are hidden from other users');
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+select is((select count(*)::int from public.fitness_profiles),1,'owner can read their fitness profile');
+select is((select count(*)::int from public.workout_sessions),1,'owner can read their workout history');
+select is((select count(*)::int from public.nutrition_entries),1,'owner can read their nutrition entries');
+select is((select count(*)::int from public.health_measurements),1,'owner can read their health measurements');
+select is((select count(*)::int from storage.objects where bucket_id='nexus-health'),1,'owner can read their private health files');
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
 reset role;
 set local role authenticated;
