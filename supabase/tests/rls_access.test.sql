@@ -1,5 +1,5 @@
 begin;
-select plan(33);
+select plan(41);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -49,6 +49,20 @@ insert into public.shops(id,owner_id,title,slug,visibility) values
 ('50000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Private shop','nexus-private-test','private'),
 ('50000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Public shop','nexus-public-test','public');
 
+insert into public.playlists(id,owner_id,title,visibility) values
+('70000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public mix','public'),
+('70000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Private mix','private');
+insert into public.playlist_tracks(playlist_id,title,artist,provider,provider_url) values
+('70000000-0000-4000-8000-000000000001','Track A','Artist A','spotify','https://open.spotify.com/track/example'),
+('70000000-0000-4000-8000-000000000002','Secret track','Artist B','apple_music','https://music.apple.com/track/example');
+
+insert into public.watchlists(id,owner_id,title,visibility) values
+('71000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public watchlist','public'),
+('71000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222','Private watchlist','private');
+insert into public.watchlist_items(watchlist_id,title,media_type,provider,provider_url) values
+('71000000-0000-4000-8000-000000000001','Example film','movie','kinopoisk','https://www.kinopoisk.ru/film/1/'),
+('71000000-0000-4000-8000-000000000002','Private series','series','ivi','https://www.ivi.ru/watch/example');
+
 insert into public.fitness_profiles(user_id,height_cm,weight_kg,goal) values ('22222222-2222-4222-8222-222222222222',180,75,'Strength');
 insert into public.workout_sessions(user_id,workout_type,duration_minutes) values ('22222222-2222-4222-8222-222222222222','Strength training',60);
 insert into public.nutrition_entries(user_id,food_name,serving_grams,calories_kcal) values ('22222222-2222-4222-8222-222222222222','Oatmeal',100,370);
@@ -75,6 +89,15 @@ select is((select count(*)::int from storage.objects where name='22222222-2222-4
 select is((select count(*)::int from public.messages),0,'direct messages are hidden from non-members');
 select is((select count(*)::int from public.notifications),0,'notifications are private to their recipient');
 select is((select count(*)::int from public.shops),1,'private shops are hidden and public shops are visible');
+select is((select count(*)::int from public.playlists),1,'only public playlists are visible');
+select is((select count(*)::int from public.playlist_tracks),1,'tracks inherit playlist visibility');
+select is((select count(*)::int from public.watchlists),1,'only public watchlists are visible');
+select is((select count(*)::int from public.watchlist_items),1,'watchlist items inherit parent visibility');
+select is((select count(*)::int from public.playlists where id='70000000-0000-4000-8000-000000000002'),0,'private playlists are hidden');
+select is((select count(*)::int from public.playlist_tracks where title='Secret track'),0,'private tracks are hidden');
+select is((select count(*)::int from public.watchlists where id='71000000-0000-4000-8000-000000000002'),0,'private watchlists are hidden');
+select is((select count(*)::int from public.watchlist_items where title='Private series'),0,'private watchlist items are hidden');
+
 select is((select count(*)::int from public.fitness_profiles),0,'fitness profile is hidden from other users');
 select is((select count(*)::int from public.workout_sessions),0,'workout history is hidden from other users');
 select is((select count(*)::int from public.nutrition_entries),0,'nutrition entries are hidden from other users');
