@@ -620,7 +620,7 @@ function openSpaceCreate(){
 function createSpace(){
   const name=document.getElementById('space-name').value.trim(),desc=document.getElementById('space-desc').value.trim(),type=document.getElementById('space-type').value,visibility=document.getElementById('space-visibility').value;
   if(name.length<2){toast('Добавь название пространства');return}
-  const id='space'+Date.now();DB.spaces.unshift({id,organizationId:DB.activeOrganization,name,desc,type,visibility,ownerKey:'me',links:[],createdAt:Date.now()});save();closeSheet();openOrganization(DB.activeOrganization);toast('Пространство создано локально');
+  const id='space'+Date.now();DB.spaces.unshift({id,organizationId:DB.activeOrganization,name,desc,type,visibility,ownerKey:'me',links:[],createdAt:Date.now()});DB.activeSpace=id;save();closeSheet();openSpace(id);toast('Пространство создано локально');
 }
 function openSpace(id){
   const space=DB.spaces.find(item=>item.id===id);if(!space)return;DB.activeSpace=id;
