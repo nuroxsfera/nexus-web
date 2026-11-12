@@ -1,0 +1,316 @@
+const LS='atlantis_v1';
+const defaultDB=()=>({
+  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊'},
+  following:{},channelSub:{},cart:[],seenStories:{},
+  stories:[
+    {id:'add',type:'add',name:'Добавить'},
+    {id:'s1',name:'Альфредо',avatar:'https://i.pravatar.cc/140?u=alfredo',images:['https://picsum.photos/seed/st1/900/1600','https://picsum.photos/seed/st1b/900/1600']},
+    {id:'s2',name:'Корсгард',avatar:'https://i.pravatar.cc/140?u=cors',images:['https://picsum.photos/seed/st2/900/1600']},
+    {id:'s3',name:'Эшлинн',avatar:'https://i.pravatar.cc/140?u=ash',images:['https://picsum.photos/seed/st3/900/1600']},
+    {id:'s4',name:'Адамс',avatar:'https://i.pravatar.cc/140?u=adams',images:['https://picsum.photos/seed/st4/900/1600']}
+  ],
+  posts:[
+    {id:'p1',author:'Марли Корсгард',avatar:'https://i.pravatar.cc/64?u=marley',image:'https://picsum.photos/seed/atl1/900/700',likes:12100,comments:2,liked:false,saved:false,text:'Каждое большое достижение начинается с маленького шага. 🔥',commentList:[{user:'София',text:'Очень вовремя 💫'},{user:'Макс',text:'В точку'}]},
+    {id:'p2',author:'София Беннетт',avatar:'https://i.pravatar.cc/64?u=sofia',image:'https://picsum.photos/seed/atl2/900/700',likes:18,comments:0,liked:false,saved:false,text:'Просто хороший день. Солнце и ничего лишнего.',commentList:[]},
+    {id:'p3',author:'Альфредо',avatar:'https://i.pravatar.cc/64?u=alfredo',image:'https://picsum.photos/seed/atl3/900/700',likes:890,comments:1,liked:false,saved:false,text:'Новый проект почти готов. Скоро покажу.',commentList:[{user:'Вы',text:'Жду!'}]}
+  ],
+  notifications:[
+    {id:1,read:false,title:'Марли',body:'оценила ваш пост',time:'2м',avatar:'https://i.pravatar.cc/64?u=marley'},
+    {id:2,read:false,title:'Альфредо',body:'подписался на вас',time:'15м',avatar:'https://i.pravatar.cc/64?u=alfredo'},
+    {id:3,read:false,title:'Заказ #1042',body:'передан в доставку',time:'3ч',avatar:null}
+  ],
+  chats:[
+    {id:'c1',name:'Марли Корсгард',avatar:'https://i.pravatar.cc/64?u=marley',last:'Увидимся на съёмке?',time:'12:40',unread:1,messages:[{me:false,text:'Привет! Как дела?'},{me:true,text:'Почти готово'},{me:false,text:'Увидимся на съёмке?'}]},
+    {id:'c2',name:'Альфредо',avatar:'https://i.pravatar.cc/64?u=alfredo',last:'Ок, скину файлы',time:'Вчера',unread:1,messages:[{me:true,text:'Нужны исходники'},{me:false,text:'Ок, скину файлы'}]}
+  ],
+  channels:[
+    {id:'ch1',name:'Design Daily',members:'12.4K',desc:'UI и дизайн каждый день.',cover:'https://picsum.photos/seed/chc1/800/400',avatar:'https://picsum.photos/seed/cha1/200/200',posts:[{title:'Системы отступов',text:'Ритм в интерфейсе.',image:'https://picsum.photos/seed/chp1/800/500',likes:342},{title:'Цвет и a11y',text:'Контраст обязателен.',image:'https://picsum.photos/seed/chp2/800/500',likes:189}]},
+    {id:'ch2',name:'Atlantis Lab',members:'3.1K',desc:'Новости продукта.',cover:'https://picsum.photos/seed/chc2/800/400',avatar:'https://picsum.photos/seed/cha2/200/200',posts:[{title:'Новый профиль',text:'Immersive hero.',image:'https://picsum.photos/seed/chp3/800/500',likes:520}]}
+  ],
+  shops:[{id:'sh1',name:'Nord Studio',products:48,desc:'Объекты и ассеты.',items:[
+    {id:'i1',name:'Poster Atlas',price:2400,image:'https://picsum.photos/seed/prod1/400/400',desc:'Постер 50×70.'},
+    {id:'i2',name:'UI Kit Night',price:3900,image:'https://picsum.photos/seed/prod2/400/400',desc:'Figma-kit 120 компонентов.'},
+    {id:'i3',name:'Type Sample',price:900,image:'https://picsum.photos/seed/prod3/400/400',desc:'Сэмплы шрифтов.'},
+    {id:'i4',name:'Desk Card',price:1200,image:'https://picsum.photos/seed/prod4/400/400',desc:'Металл. карточка.'}
+  ]}],
+  profiles:{
+    marley:{name:'Марли Корсгард',handle:'@marley',bio:'Фотограф и режиссёр.',hero:'https://picsum.photos/seed/marleyh/1200/1600',posts:42,followers:'24K',following:252},
+    sofia:{name:'София Беннетт',handle:'@sofia',bio:'Дизайн и путешествия.',hero:'https://picsum.photos/seed/sofiah/1200/1600',posts:18,followers:'8.2K',following:190},
+    alfredo:{name:'Альфредо',handle:'@alfredo',bio:'Product design.',hero:'https://picsum.photos/seed/alfh/1200/1600',posts:67,followers:'11K',following:340}
+  },
+  activeChat:null,activePost:null,activeChannel:null,activeShop:null,activeProduct:null,etab:'all',
+  composeImgs:[],storyIdx:0,storyUser:null,storyTimer:null
+});
+
+let DB;
+try{DB=JSON.parse(localStorage.getItem(LS))||defaultDB()}catch(e){DB=defaultDB()}
+const def=defaultDB();
+for(const k of Object.keys(def)){if(DB[k]===undefined)DB[k]=def[k]}
+function save(){try{localStorage.setItem(LS,JSON.stringify({...DB,storyTimer:null}))}catch(e){}}
+
+const VIEWS=['home','profile','me','notifications','messages','chat','explore','settings','channel','shop','compose'];
+function go(r,p){
+  closeSheet();closeStory();
+  VIEWS.forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.classList.toggle('active',v===r)});
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    const route=b.getAttribute('data-r');
+    const on=route===r||(r==='chat'&&route==='messages')||((r==='channel'||r==='shop')&&route==='explore')||(r==='settings'&&route==='me');
+    b.classList.toggle('active',on);
+  });
+  if(r==='chat'&&p?.chatId)openChat(p.chatId);
+  if(r==='channel'&&p?.id)openChannel(p.id);
+  if(r==='shop'&&p?.id)openShop(p.id);
+  if(r==='profile'&&p?.key)openProfile(p.key);
+  if(r==='notifications')renderNotifs();
+  if(r==='messages')renderChats();
+  if(r==='explore')renderExplore();
+  if(r==='settings')renderSettings();
+  if(r==='me')renderMe();
+  if(r==='compose'){document.getElementById('compose-text').value='';DB.composeImgs=[];renderComposeImgs()}
+  if(r==='home'){renderStories();renderFeed()}
+}
+function setNav(v){document.getElementById('bnav').classList.toggle('hide',!v)}
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>t.classList.remove('show'),2000)}
+function fmt(n){return n>=1000?(n/1000).toFixed(1).replace('.0','')+' тыс.':String(n)}
+
+function renderStories(){
+  document.getElementById('stories').innerHTML=DB.stories.map(s=>{
+    if(s.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
+    const seen=DB.seenStories[s.id];
+    const av=s.avatar?`<img src="${s.avatar}" class="w-full h-full rounded-full object-cover border-[2.5px] border-black">`:`<div class="w-full h-full rounded-full bg-[#222] border-[2.5px] border-black"></div>`;
+    return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openStory('${s.id}')"><div class="w-[66px] h-[66px] ${seen?'story-ring seen':'story-ring'}">${av}</div><span class="text-[10px] text-white/75">${s.name}</span></button>`;
+  }).join('');
+}
+
+function openStory(id){
+  const s=DB.stories.find(x=>x.id===id);if(!s||!s.images)return;
+  DB.storyUser=s;DB.storyIdx=0;
+  document.getElementById('story-viewer').classList.add('on');
+  showStoryFrame();
+}
+function showStoryFrame(){
+  const s=DB.storyUser;if(!s)return;
+  clearTimeout(DB.storyTimer);
+  document.getElementById('sv-av').src=s.avatar||'';
+  document.getElementById('sv-name').textContent=s.name;
+  document.getElementById('sv-img').src=s.images[DB.storyIdx];
+  document.getElementById('sv-bars').innerHTML=s.images.map((_,i)=>`<div class="sv-bar"><div class="sv-fill" id="sf${i}" style="width:${i<DB.storyIdx?'100%':'0%'}"></div></div>`).join('');
+  requestAnimationFrame(()=>{const f=document.getElementById('sf'+DB.storyIdx);if(f){f.style.transition='width 4s linear';f.style.width='100%'}});
+  DB.storyTimer=setTimeout(nextStory,4000);
+}
+function nextStory(){
+  const s=DB.storyUser;if(!s)return;
+  if(DB.storyIdx<s.images.length-1){DB.storyIdx++;showStoryFrame()}
+  else{DB.seenStories[s.id]=true;save();closeStory();renderStories()}
+}
+function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
+
+function renderFeed(){
+  document.getElementById('feed').innerHTML=DB.posts.map(p=>`
+  <article class="post-card" ondblclick="toggleLike('${p.id}')">
+    <div class="p-1.5"><div class="relative rounded-[22px] overflow-hidden bg-[#e4e4e8]">
+      <img src="${p.image}" class="w-full h-[250px] object-cover" loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
+      <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+        <img src="${p.avatar}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50">
+        <span class="text-[12px] font-semibold text-white drop-shadow">${p.author}</span>
+      </div>
+      <div class="absolute bottom-2.5 left-2.5 flex gap-1.5">
+        <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="toggleLike('${p.id}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="${p.liked?'#ef4444':'none'}" stroke="${p.liked?'#ef4444':'#fff'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="text-[11px] font-semibold text-white">${fmt(p.likes)}</span>
+        </button>
+        <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="openComments('${p.id}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="text-[11px] font-semibold text-white">${p.comments}</span>
+        </button>
+      </div>
+      <button class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full glass flex items-center justify-center press" onclick="toggleSave('${p.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="${p.saved?'#fff':'none'}" stroke="#fff" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div></div>
+    <div class="px-3.5 pt-1 pb-3.5">
+      <p class="text-[12.5px] font-semibold text-black">${p.author}</p>
+      <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${p.text}</p>
+    </div>
+  </article>`).join('');
+}
+function toggleLike(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.liked=!p.liked;p.likes+=p.liked?1:-1;save();renderFeed()}
+function toggleSave(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.saved=!p.saved;save();toast(p.saved?'Сохранено':'Убрано');renderFeed()}
+function openComments(id){DB.activePost=id;const p=DB.posts.find(x=>x.id===id);document.getElementById('clist-c').innerHTML=(p.commentList||[]).map(c=>`<div class="flex gap-2.5"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[12px] font-semibold">${c.user[0]}</div><div><p class="text-[12.5px] font-semibold">${c.user}</p><p class="text-[13px] text-white/65">${c.text}</p></div></div>`).join('')||'<p class="text-center text-white/35 py-6 text-[13px]">Нет комментариев</p>';document.getElementById('bd').classList.add('open');document.getElementById('comments-sheet').classList.add('open');setNav(false)}
+function addCm(){const inp=document.getElementById('cminput');const t=inp.value.trim();if(!t||!DB.activePost)return;const p=DB.posts.find(x=>x.id===DB.activePost);p.commentList.push({user:'Вы',text:t});p.comments++;inp.value='';save();openComments(p.id);renderFeed()}
+
+function openProfile(key){
+  const pr=DB.profiles[key];if(!pr)return;
+  document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero}')`;
+  document.getElementById('prof-name').textContent=pr.name;
+  document.getElementById('prof-handle').textContent=pr.handle;
+  document.getElementById('prof-bio').textContent=pr.bio;
+  document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${pr.following}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.followers}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.posts}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
+  const fol=!!DB.following[key];
+  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
+}
+function toggleFollow(key){DB.following[key]=!DB.following[key];save();toast(DB.following[key]?'Подписка':'Отписка');openProfile(key)}
+function renderMe(){
+  document.getElementById('me-name').textContent=DB.me.name;
+  document.getElementById('me-handle').textContent=DB.me.handle;
+  document.getElementById('me-bio').textContent=DB.me.bio;
+  document.getElementById('me-posts').textContent=DB.posts.filter(p=>p.author==='Вы'||p.author===DB.me.name).length;
+}
+function openEditProfile(){
+  document.getElementById('edit-name').value=DB.me.name;
+  document.getElementById('edit-handle').value=DB.me.handle;
+  document.getElementById('edit-bio').value=DB.me.bio;
+  document.getElementById('bd').classList.add('open');
+  document.getElementById('edit-sheet').classList.add('open');
+  setNav(false);
+}
+function saveProfile(){
+  DB.me.name=document.getElementById('edit-name').value.trim()||'Вы';
+  DB.me.handle=document.getElementById('edit-handle').value.trim()||'@you';
+  DB.me.bio=document.getElementById('edit-bio').value.trim()||'';
+  save();closeSheet();renderMe();toast('Профиль сохранён');
+}
+
+function openChannel(id){
+  const ch=DB.channels.find(c=>c.id===id);if(!ch)return;DB.activeChannel=id;
+  document.getElementById('ch-cover').src=ch.cover;
+  document.getElementById('ch-av').src=ch.avatar;
+  document.getElementById('ch-name').textContent=ch.name;
+  document.getElementById('ch-meta').textContent=ch.members+' подписчиков';
+  document.getElementById('ch-desc').textContent=ch.desc;
+  const sub=!!DB.channelSub[id];
+  const btn=document.getElementById('ch-sub');
+  btn.textContent=sub?'Вы подписаны':'Подписаться';
+  btn.className=sub?'w-full h-10 rounded-full glass text-white font-semibold text-[14px] press mb-3':'w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3';
+  document.getElementById('ch-posts').innerHTML=ch.posts.map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${p.image}" class="w-full h-[160px] object-cover"><div class="p-3.5"><h3 class="text-[15px] font-semibold">${p.title}</h3><p class="text-[12.5px] text-white/50 mt-1">${p.text}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`).join('');
+}
+function toggleChSub(){if(!DB.activeChannel)return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
+
+function openShop(id){
+  const sh=DB.shops.find(s=>s.id===id);if(!sh)return;DB.activeShop=id;
+  document.getElementById('sh-name').textContent=sh.name;
+  document.getElementById('sh-meta').textContent=sh.products+' товаров';
+  document.getElementById('sh-desc').textContent=sh.desc;
+  document.getElementById('sh-grid').innerHTML=sh.items.map(i=>`<button class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5 text-left press" onclick="openProduct('${sh.id}','${i.id}')"><img src="${i.image}" class="w-full aspect-square object-cover"><div class="p-2.5"><p class="text-[12.5px] font-semibold truncate">${i.name}</p><p class="text-[13px] font-bold mt-0.5">${i.price.toLocaleString('ru-RU')} ₽</p></div></button>`).join('');
+  updateCartBadge();
+}
+function openProduct(sid,iid){
+  const sh=DB.shops.find(s=>s.id===sid);const item=sh?.items.find(i=>i.id===iid);if(!item)return;
+  DB.activeProduct={shopId:sid,item};
+  document.getElementById('pdetail').innerHTML=`<img src="${item.image}" class="w-full aspect-square object-cover rounded-2xl mb-3"><h3 class="text-[20px] font-bold">${item.name}</h3><p class="text-[18px] font-bold mt-1 gt">${item.price.toLocaleString('ru-RU')} ₽</p><p class="text-[13px] text-white/55 mt-2">${item.desc}</p>`;
+  document.getElementById('pfoot').innerHTML=`<button onclick="addToCart()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">В корзину</button>`;
+  document.getElementById('bd').classList.add('open');document.getElementById('product-sheet').classList.add('open');setNav(false);
+}
+function addToCart(){if(!DB.activeProduct)return;const {item}=DB.activeProduct;const ex=DB.cart.find(c=>c.id===item.id);if(ex)ex.qty++;else DB.cart.push({...item,qty:1});save();updateCartBadge();toast('В корзине');closeSheet()}
+function updateCartBadge(){const n=DB.cart.reduce((s,c)=>s+c.qty,0);const b=document.getElementById('cart-n');if(n){b.textContent=n;b.classList.remove('hidden')}else b.classList.add('hidden')}
+function openCart(){
+  const list=document.getElementById('cart-list');
+  if(!DB.cart.length){list.innerHTML='<p class="text-center text-white/35 py-8 text-[13px]">Корзина пуста</p>';document.getElementById('cart-foot').innerHTML=''}
+  else{
+    list.innerHTML=DB.cart.map(c=>`<div class="flex gap-2.5 items-center"><img src="${c.image}" class="w-14 h-14 rounded-xl object-cover"><div class="flex-1"><p class="text-[13px] font-semibold">${c.name}</p><p class="text-[12px] text-white/50">${c.price.toLocaleString('ru-RU')} ₽ × ${c.qty}</p></div><button class="text-white/40 text-[11px] press" onclick="rmCart('${c.id}')">✕</button></div>`).join('');
+    const total=DB.cart.reduce((s,c)=>s+c.price*c.qty,0);
+    document.getElementById('cart-foot').innerHTML=`<div class="flex justify-between mb-2.5"><span class="text-white/50 text-[13px]">Итого</span><span class="font-bold">${total.toLocaleString('ru-RU')} ₽</span></div><button onclick="checkout()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Оформить</button>`;
+  }
+  document.getElementById('bd').classList.add('open');document.getElementById('cart-sheet').classList.add('open');setNav(false);
+}
+function rmCart(id){DB.cart=DB.cart.filter(c=>c.id!==id);save();updateCartBadge();openCart()}
+function checkout(){DB.cart=[];save();updateCartBadge();closeSheet();toast('Заказ оформлен ✓');DB.notifications.unshift({id:Date.now(),read:false,title:'Заказ',body:'принят в обработку',time:'сейчас',avatar:null});save()}
+
+function renderNotifs(){
+  document.getElementById('nlist').innerHTML=DB.notifications.map(n=>`<div class="flex gap-3 p-3 rounded-2xl ${n.read?'bg-white/[0.03]':'bg-white/[0.07]'} border border-white/[0.04]"><div class="w-11 h-11 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">${n.avatar?`<img src="${n.avatar}" class="w-full h-full object-cover">`:'🔔'}</div><div class="flex-1"><p class="text-[13px]"><span class="font-semibold">${n.title}</span> <span class="text-white/55">${n.body}</span></p><p class="text-[11px] text-white/35 mt-0.5">${n.time}</p></div></div>`).join('');
+  document.getElementById('ndot').style.display=DB.notifications.some(n=>!n.read)?'':'none';
+}
+function markRead(){DB.notifications.forEach(n=>n.read=true);save();renderNotifs();toast('Прочитано')}
+
+function renderChats(){
+  const q=(document.getElementById('csearch')?.value||'').toLowerCase();
+  const list=DB.chats.filter(c=>!q||c.name.toLowerCase().includes(q));
+  document.getElementById('clist').innerHTML=list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" onclick="go('chat',{chatId:'${c.id}'})"><img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${c.name}</p><span class="text-[10px] text-white/35">${c.time}</span></div><p class="text-[12.5px] text-white/45 truncate">${c.last}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${c.unread}</span>`:''}</button>`).join('');
+  const u=DB.chats.reduce((s,c)=>s+c.unread,0);const b=document.getElementById('mbadge');if(u){b.textContent=u;b.classList.remove('hidden')}else b.classList.add('hidden');
+}
+function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'me':'them'}">${m.text}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
+function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value.trim();if(!t||!DB.activeChat)return;const c=DB.chats.find(x=>x.id===DB.activeChat);c.messages.push({me:true,text:t});c.last=t;c.time='сейчас';inp.value='';save();openChat(c.id)}
+
+function renderExplore(){
+  const q=(document.getElementById('eq')?.value||'').toLowerCase();
+  const tab=DB.etab;let h='';
+  const ch=DB.channels.filter(c=>!q||c.name.toLowerCase().includes(q));
+  const sh=DB.shops.filter(s=>!q||s.name.toLowerCase().includes(q));
+  if(tab==='all'||tab==='channels'){if(ch.length)h+=`<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Каналы</p>`+ch.map(c=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" onclick="go('channel',{id:'${c.id}'})"><p class="text-[14px] font-semibold">${c.name}</p><p class="text-[12px] text-white/40 mt-0.5">${c.desc} · ${c.members}</p></button>`).join('')}
+  if(tab==='all'||tab==='shops'){if(sh.length)h+=`<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>`+sh.map(s=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" onclick="go('shop',{id:'${s.id}'})"><p class="text-[14px] font-semibold">${s.name}</p><p class="text-[12px] text-white/40 mt-0.5">${s.desc} · ${s.products} товаров</p></button>`).join('')}
+  document.getElementById('eres').innerHTML=h||'<p class="text-center text-white/35 py-10 text-[13px]">Ничего не найдено</p>';
+}
+document.getElementById('etabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;DB.etab=b.dataset.t;document.querySelectorAll('.etab').forEach(x=>{const on=x.dataset.t===DB.etab;x.className='etab px-3.5 py-1.5 rounded-full text-[12px] '+(on?'font-semibold bg-white text-black':'font-medium glass text-white/70')});renderExplore()});
+
+function renderSettings(){
+  document.getElementById('sbody').innerHTML=[
+    ['Аккаунт',['Профиль','Конфиденциальность','Блокировки']],
+    ['Безопасность',['2FA','Сессии']],
+    ['Данные',['Очистить кэш','Сбросить демо']]
+  ].map(([t,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${t}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(i=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press" onclick="settingAction('${i}')">${i}</button>`).join('')}</div></div>`).join('');
+}
+function settingAction(i){
+  if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
+  if(i==='Очистить кэш'){toast('Кэш очищен');return}
+  if(i==='Профиль'){go('me');return}
+  toast(i);
+}
+
+function openCreate(){
+  document.getElementById('create-opts').innerHTML=[
+    ['Пост','В ленту','📝','post'],
+    ['История','Атлас 24ч','✦','story'],
+    ['Канал','Для аудитории','📡','ch'],
+    ['Магазин','Каталог','🛍','shop']
+  ].map(([t,d,i,a])=>`<button class="w-full flex items-center gap-3 px-2 py-3 rounded-2xl press text-left" data-a="${a}"><div class="w-10 h-10 rounded-xl bg-white/[0.07] flex items-center justify-center text-[16px]">${i}</div><div><p class="text-[14px] font-semibold">${t}</p><p class="text-[11.5px] text-white/40">${d}</p></div></button>`).join('');
+  document.querySelectorAll('#create-opts [data-a]').forEach(b=>{
+    b.onclick=()=>{
+      const a=b.dataset.a;
+      if(a==='post'){closeSheet();go('compose')}
+      else if(a==='story'){addMyStory()}
+      else if(a==='ch'){closeSheet();go('channel',{id:'ch1'})}
+      else if(a==='shop'){closeSheet();go('shop',{id:'sh1'})}
+    };
+  });
+  document.getElementById('bd').classList.add('open');
+  document.getElementById('create-sheet').classList.add('open');
+  setNav(false);
+}
+function addMyStory(){
+  closeSheet();
+  const img='https://picsum.photos/seed/mystory'+Date.now()+'/900/1600';
+  let mine=DB.stories.find(s=>s.id==='me');
+  if(!mine){mine={id:'me',name:'Вы',avatar:'https://i.pravatar.cc/140?u=me',images:[]};DB.stories.splice(1,0,mine)}
+  mine.images.push(img);
+  delete DB.seenStories.me;
+  save();renderStories();toast('История добавлена');
+  openStory('me');
+}
+function renderComposeImgs(){
+  document.getElementById('compose-imgs').innerHTML=DB.composeImgs.map((src,i)=>`<div class="relative w-20 h-20 rounded-xl overflow-hidden"><img src="${src}" class="w-full h-full object-cover"><button onclick="DB.composeImgs.splice(${i},1);renderComposeImgs()" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-[10px] flex items-center justify-center">✕</button></div>`).join('');
+}
+function addComposeImg(){
+  if(DB.composeImgs.length>=4){toast('Макс. 4 фото');return}
+  DB.composeImgs.push('https://picsum.photos/seed/post'+Date.now()+'/900/700');
+  renderComposeImgs();
+}
+function publishPost(){
+  const text=document.getElementById('compose-text').value.trim();
+  if(!text&&!DB.composeImgs.length){toast('Напишите что-нибудь');return}
+  const img=DB.composeImgs[0]||'https://picsum.photos/seed/newpost'+Date.now()+'/900/700';
+  DB.posts.unshift({
+    id:'p'+Date.now(),author:DB.me.name,avatar:'https://i.pravatar.cc/64?u=me',
+    image:img,likes:0,comments:0,liked:false,saved:false,text:text||'Новый пост',commentList:[]
+  });
+  save();toast('Опубликовано');go('home');
+}
+
+function closeSheet(){
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  setNav(true);
+}
+
+renderStories();renderFeed();renderNotifs();renderChats();renderMe();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
