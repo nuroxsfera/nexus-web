@@ -34,7 +34,7 @@ assert.ok(data.includes('HEALTH_VAULT.persist(DB)'));
 assert.ok(data.includes('snapshot.healthVaultUnlocked=false'));
 assert.ok(logic.includes('Личный сейф здоровья'));
 assert.ok(logic.includes('lockHealthVault'));
-const closeSheetBlock=logic.slice(logic.indexOf('function closeSheet'),logic.indexOf('\\n}',logic.indexOf('function closeSheet')));
+const closeSheetBlock=logic.slice(logic.indexOf('function closeSheet'),logic.indexOf('\n}',logic.indexOf('function closeSheet')));
 for(const match of html.matchAll(/<div id=\"([^\"]+)\" class=\"sheet\"/g))assert.ok(closeSheetBlock.includes(match[1]),`Sheet is missing from closeSheet(): ${match[1]}`);
 assert.ok(logic.includes('backend-status'));
 assert.ok(logic.includes("fetch('/api/health'"));
