@@ -232,6 +232,7 @@ function openChannel(id){
   btn.textContent=sub?'Вы подписаны':'Подписаться';
   btn.className=sub?'w-full h-10 rounded-full glass text-white font-semibold text-[14px] press mb-3':'w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3';
   document.getElementById('ch-new-post').hidden=!owner;
+  document.getElementById('ch-edit').hidden=!owner;
   const local=DB.posts.filter(p=>p.channelId===id).map(p=>{
     const ref=(p.images&&p.images[0])||p.image||'';
     const image=ref?(ref.startsWith('idb:')?`<img data-media-ref="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`:`<img src="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`):'';
@@ -251,11 +252,24 @@ async function handleChannelCover(input){
     const preview=document.getElementById('channel-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingChannelCover);
   }catch(e){toast(e.message||'Не удалось сохранить обложку')}
 }
+function openChannelEdit(){
+  const ch=DB.channels.find(channel=>channel.id===DB.activeChannel);if(ch?.ownerKey!=='me')return;
+  DB.editingChannelId=ch.id;DB.pendingChannelCover=ch.cover||null;
+  document.getElementById('new-channel-name').value=ch.name;document.getElementById('new-channel-desc').value=ch.desc||'';document.getElementById('new-channel-visibility').value=ch.visibility||'public';
+  const preview=document.getElementById('channel-cover-preview');preview.hidden=!ch.cover;if(ch.cover)setMediaSource(preview,ch.cover);
+  document.getElementById('channel-create-title').textContent='Настройки канала';document.getElementById('channel-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
+}
 function createChannel(){
   const name=document.getElementById('new-channel-name').value.trim();
   const desc=document.getElementById('new-channel-desc').value.trim();
   const visibility=document.getElementById('new-channel-visibility').value;
   if(name.length<2){toast('Название канала должно быть длиннее');return}
+  if(DB.editingChannelId){
+    const channel=DB.channels.find(item=>item.id===DB.editingChannelId);if(!channel){toast('Канал не найден');return}
+    channel.name=name;channel.desc=desc;channel.visibility=visibility;channel.cover=DB.pendingChannelCover||channel.cover;
+    const id=channel.id;DB.editingChannelId=null;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});toast('Настройки канала сохранены локально');return;
+  }
   const id='ch'+Date.now();
   const channel={id,name,desc,visibility,members:'1',ownerKey:'me',cover:DB.pendingChannelCover||'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
   DB.channels.unshift(channel);DB.channelSub[id]=true;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});toast('Канал создан · сохранён на устройстве');
@@ -268,6 +282,7 @@ function openShop(id){
   document.getElementById('sh-meta').textContent=(sh.ownerKey==='me'?(sh.items.length+' товаров · ваш магазин'):(sh.products+' товаров'));
   document.getElementById('sh-desc').textContent=sh.desc;
   document.getElementById('sh-add-product').hidden=sh.ownerKey!=='me';
+  document.getElementById('sh-edit-shop').hidden=sh.ownerKey!=='me';
   const grid=document.getElementById('sh-grid');
   grid.innerHTML=sh.items.length?sh.items.map(i=>{
     const source=i.image&&i.image.startsWith('idb:')?`data-media-ref="${esc(i.image)}"`:`src="${esc(i.image||'')}"`;
@@ -276,9 +291,16 @@ function openShop(id){
   hydrateMediaImages(grid);updateCartBadge();
 }
 function openShopCreate(){
+  DB.editingShopId=null;document.getElementById('shop-create-title').textContent='Новый магазин';document.getElementById('shop-save-btn').textContent='Создать магазин';
   document.getElementById('new-shop-name').value='';
   document.getElementById('new-shop-desc').value='';
   document.getElementById('new-shop-visibility').value='public';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
+}
+function openShopEdit(){
+  const sh=DB.shops.find(shop=>shop.id===DB.activeShop);if(sh?.ownerKey!=='me')return;
+  DB.editingShopId=sh.id;document.getElementById('new-shop-name').value=sh.name;document.getElementById('new-shop-desc').value=sh.desc||'';document.getElementById('new-shop-visibility').value=sh.visibility||'public';
+  document.getElementById('shop-create-title').textContent='Настройки магазина';document.getElementById('shop-save-btn').textContent='Сохранить изменения';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
 }
 function createShop(){
@@ -286,6 +308,10 @@ function createShop(){
   const desc=document.getElementById('new-shop-desc').value.trim();
   const visibility=document.getElementById('new-shop-visibility').value;
   if(name.length<2){toast('Название магазина должно быть длиннее');return}
+  if(DB.editingShopId){
+    const shop=DB.shops.find(item=>item.id===DB.editingShopId);if(!shop){toast('Магазин не найден');return}
+    shop.name=name;shop.desc=desc;shop.visibility=visibility;const id=shop.id;DB.editingShopId=null;save();closeSheet();go('shop',{id});toast('Настройки магазина сохранены локально');return;
+  }
   const id='sh'+Date.now();
   DB.shops.unshift({id,name,desc,visibility,ownerKey:'me',products:0,items:[]});
   save();closeSheet();go('shop',{id});toast('Магазин создан · сохранён на устройстве');
@@ -469,7 +495,8 @@ function openChannelCreate(){
   document.getElementById('new-channel-name').value='';
   document.getElementById('new-channel-desc').value='';
   document.getElementById('new-channel-visibility').value='public';
-  DB.pendingChannelCover=null;document.getElementById('channel-cover-preview').hidden=true;
+  DB.pendingChannelCover=null;DB.editingChannelId=null;document.getElementById('channel-cover-preview').hidden=true;
+  document.getElementById('channel-create-title').textContent='Новый канал';document.getElementById('channel-save-btn').textContent='Создать канал';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
 }
 function addMyStory(){
