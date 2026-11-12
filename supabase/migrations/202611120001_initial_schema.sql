@@ -169,6 +169,52 @@ create table if not exists public.story_media (
 );
 
 -- Personal fitness and nutrition records are owner-only by default.
+-- Music playlists and watchlists store metadata and licensed provider links only.
+create table if not exists public.playlists (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 120),
+  description text not null default '' check (char_length(description) <= 1000),
+  visibility public.content_visibility not null default 'private',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.playlist_tracks (
+  id uuid primary key default gen_random_uuid(),
+  playlist_id uuid not null references public.playlists(id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 200),
+  artist text not null default '' check (char_length(artist) <= 200),
+  provider text not null default 'other' check (provider in ('spotify','apple_music','youtube_music','youtube','other')),
+  provider_url text not null check (provider_url ~* '^https://'),
+  external_id text,
+  position integer not null default 0 check (position >= 0),
+  added_at timestamptz not null default now()
+);
+
+create table if not exists public.watchlists (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 120),
+  description text not null default '' check (char_length(description) <= 1000),
+  visibility public.content_visibility not null default 'private',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.watchlist_items (
+  id uuid primary key default gen_random_uuid(),
+  watchlist_id uuid not null references public.watchlists(id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 240),
+  media_type text not null check (media_type in ('movie','series','documentary','live_event')),
+  provider text not null default 'other' check (provider in ('netflix','prime_video','disney_plus','kinopoisk','ivi','youtube','other')),
+  provider_url text not null check (provider_url ~* '^https://'),
+  poster_url text check (poster_url is null or poster_url ~* '^https://'),
+  status text not null default 'want_to_watch' check (status in ('want_to_watch','watching','watched')),
+  position integer not null default 0 check (position >= 0),
+  added_at timestamptz not null default now()
+);
+
 create table if not exists public.fitness_profiles (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   height_cm numeric(5,2) check (height_cm is null or height_cm between 50 and 260),
@@ -308,6 +354,10 @@ create index if not exists workout_sessions_user_date_idx on public.workout_sess
 create index if not exists nutrition_entries_user_date_idx on public.nutrition_entries(user_id,consumed_at desc);
 create index if not exists health_measurements_user_date_idx on public.health_measurements(user_id,measured_at desc);
 create index if not exists clips_visibility_created_idx on public.clips(visibility,created_at desc);
+create index if not exists playlists_owner_created_idx on public.playlists(owner_id,created_at desc);
+create index if not exists playlist_tracks_playlist_position_idx on public.playlist_tracks(playlist_id,position);
+create index if not exists watchlists_owner_created_idx on public.watchlists(owner_id,created_at desc);
+create index if not exists watchlist_items_list_position_idx on public.watchlist_items(watchlist_id,position);
 create index if not exists clip_likes_clip_idx on public.clip_likes(clip_id);
 
 create or replace function private.is_blocked_between(user_a uuid,user_b uuid)
@@ -431,6 +481,10 @@ drop trigger if exists posts_set_updated_at on public.posts;
 create trigger posts_set_updated_at before update on public.posts for each row execute function public.set_updated_at();
 drop trigger if exists clips_set_updated_at on public.clips;
 create trigger clips_set_updated_at before update on public.clips for each row execute function public.set_updated_at();
+drop trigger if exists playlists_set_updated_at on public.playlists;
+create trigger playlists_set_updated_at before update on public.playlists for each row execute function public.set_updated_at();
+drop trigger if exists watchlists_set_updated_at on public.watchlists;
+create trigger watchlists_set_updated_at before update on public.watchlists for each row execute function public.set_updated_at();
 drop trigger if exists fitness_profiles_set_updated_at on public.fitness_profiles;
 create trigger fitness_profiles_set_updated_at before update on public.fitness_profiles for each row execute function public.set_updated_at();
 
@@ -467,6 +521,10 @@ alter table public.fitness_profiles enable row level security;
 alter table public.workout_sessions enable row level security;
 alter table public.nutrition_entries enable row level security;
 alter table public.health_measurements enable row level security;
+alter table public.playlists enable row level security;
+alter table public.playlist_tracks enable row level security;
+alter table public.watchlists enable row level security;
+alter table public.watchlist_items enable row level security;
 alter table public.comments enable row level security;
 alter table public.post_likes enable row level security;
 alter table public.conversations enable row level security;
@@ -476,7 +534,7 @@ alter table public.notifications enable row level security;
 alter table public.reports enable row level security;
 
 revoke all on all tables in schema public from anon, authenticated;
-grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.clips,public.clip_likes,public.fitness_profiles,public.workout_sessions,public.nutrition_entries,public.health_measurements,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
+grant select,insert,update,delete on public.profiles,public.follows,public.blocks,public.organizations,public.organization_members,public.channels,public.channel_members,public.shops,public.products,public.posts,public.post_media,public.stories,public.story_media,public.comments,public.post_likes,public.clips,public.clip_likes,public.fitness_profiles,public.workout_sessions,public.nutrition_entries,public.health_measurements,public.playlists,public.playlist_tracks,public.watchlists,public.watchlist_items,public.conversations,public.conversation_members,public.messages,public.notifications,public.reports to authenticated;
 
 create policy profiles_read on public.profiles for select to authenticated using (private.can_view_profile(id));
 create policy profiles_insert on public.profiles for insert to authenticated with check (id=(select auth.uid()));
@@ -613,6 +671,46 @@ create policy nutrition_entries_owner_all on public.nutrition_entries for all to
 using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
 create policy health_measurements_owner_all on public.health_measurements for all to authenticated
 using (user_id=(select auth.uid())) with check (user_id=(select auth.uid()));
+
+create policy playlists_read_accessible on public.playlists for select to authenticated using (private.can_view_post(owner_id,visibility));
+create policy playlists_insert_owner on public.playlists for insert to authenticated with check (owner_id=(select auth.uid()));
+create policy playlists_update_owner on public.playlists for update to authenticated using (owner_id=(select auth.uid())) with check (owner_id=(select auth.uid()));
+create policy playlists_delete_owner on public.playlists for delete to authenticated using (owner_id=(select auth.uid()));
+
+create policy playlist_tracks_read_accessible on public.playlist_tracks for select to authenticated using (
+  exists(select 1 from public.playlists p where p.id=playlist_id and private.can_view_post(p.owner_id,p.visibility))
+);
+create policy playlist_tracks_insert_owner on public.playlist_tracks for insert to authenticated with check (
+  exists(select 1 from public.playlists p where p.id=playlist_id and p.owner_id=(select auth.uid()))
+);
+create policy playlist_tracks_update_owner on public.playlist_tracks for update to authenticated using (
+  exists(select 1 from public.playlists p where p.id=playlist_id and p.owner_id=(select auth.uid()))
+) with check (
+  exists(select 1 from public.playlists p where p.id=playlist_id and p.owner_id=(select auth.uid()))
+);
+create policy playlist_tracks_delete_owner on public.playlist_tracks for delete to authenticated using (
+  exists(select 1 from public.playlists p where p.id=playlist_id and p.owner_id=(select auth.uid()))
+);
+
+create policy watchlists_read_accessible on public.watchlists for select to authenticated using (private.can_view_post(owner_id,visibility));
+create policy watchlists_insert_owner on public.watchlists for insert to authenticated with check (owner_id=(select auth.uid()));
+create policy watchlists_update_owner on public.watchlists for update to authenticated using (owner_id=(select auth.uid())) with check (owner_id=(select auth.uid()));
+create policy watchlists_delete_owner on public.watchlists for delete to authenticated using (owner_id=(select auth.uid()));
+
+create policy watchlist_items_read_accessible on public.watchlist_items for select to authenticated using (
+  exists(select 1 from public.watchlists w where w.id=watchlist_id and private.can_view_post(w.owner_id,w.visibility))
+);
+create policy watchlist_items_insert_owner on public.watchlist_items for insert to authenticated with check (
+  exists(select 1 from public.watchlists w where w.id=watchlist_id and w.owner_id=(select auth.uid()))
+);
+create policy watchlist_items_update_owner on public.watchlist_items for update to authenticated using (
+  exists(select 1 from public.watchlists w where w.id=watchlist_id and w.owner_id=(select auth.uid()))
+) with check (
+  exists(select 1 from public.watchlists w where w.id=watchlist_id and w.owner_id=(select auth.uid()))
+);
+create policy watchlist_items_delete_owner on public.watchlist_items for delete to authenticated using (
+  exists(select 1 from public.watchlists w where w.id=watchlist_id and w.owner_id=(select auth.uid()))
+);
 
 create policy conversations_read_members on public.conversations for select to authenticated using (private.is_conversation_member(id) or created_by=(select auth.uid()));
 create policy conversations_insert_creator on public.conversations for insert to authenticated with check (created_by=(select auth.uid()));
