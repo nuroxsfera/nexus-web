@@ -3,6 +3,7 @@ const defaultDB=()=>({
   onboarded:false,
   me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊',visibility:'public'},
   blocked:{},
+  clips:[],pendingClipVideo:null,
   following:{},channelSub:{},cart:[],seenStories:{},
   stories:[
     {id:'add',type:'add',name:'Добавить'},
