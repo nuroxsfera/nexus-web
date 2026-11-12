@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(16);
 
 -- Fixtures are created as the database owner; all assertions below run as user A.
 insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
@@ -31,10 +31,10 @@ insert into storage.objects(bucket_id,name) values
 ('nexus-media','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000001/public.jpg'),
 ('nexus-media','22222222-2222-4222-8222-222222222222/10000000-0000-4000-8000-000000000004/private.jpg');
 
-insert into public.conversations(id,created_by) values ('40000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222');
+insert into public.conversations(id,created_by) values ('40000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222'),('40000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222');
 insert into public.conversation_members(conversation_id,user_id) values
 ('40000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222'),
-('40000000-0000-4000-8000-000000000001','33333333-3333-4333-8333-333333333333');
+('40000000-0000-4000-8000-000000000001','33333333-3333-4333-8333-333333333333'),('40000000-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222'),('40000000-0000-4000-8000-000000000002','11111111-1111-4111-8111-111111111111');
 insert into public.messages(conversation_id,sender_id,body) values
 ('40000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Secret message');
 insert into public.notifications(user_id,kind) values ('22222222-2222-4222-8222-222222222222','system');
