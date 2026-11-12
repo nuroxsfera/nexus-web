@@ -272,6 +272,20 @@ as $$
   )
 $$;
 
+create or replace function private.can_view_post_record(target_post uuid)
+returns boolean language sql stable security definer set search_path=''
+as $
+  select exists(
+    select 1 from public.posts p
+    where p.id=target_post
+      and private.can_view_post(p.author_id,p.visibility)
+      and (p.channel_id is null or exists(
+        select 1 from public.channels c
+        where c.id=p.channel_id and (c.visibility='public' or private.is_channel_member(c.id))
+      ))
+  )
+$;
+
 create or replace function private.is_org_member(target_org uuid)
 returns boolean language sql stable security definer set search_path=''
 as $$ select exists(select 1 from public.organization_members m where m.organization_id=target_org and m.user_id=(select auth.uid())) $$;
@@ -323,7 +337,7 @@ returns trigger language plpgsql security definer set search_path=''
 as $$
 begin
   insert into public.profiles(id,username,display_name)
-  values(new.id,'u_'||replace(substr(new.id::text,1,12),'-',''),coalesce(nullif(new.raw_user_meta_data->>'name',''),'Новый пользователь'))
+  values(new.id,'u_'||replace(substr(new.id::text,1,12),'-',''),left(coalesce(nullif(new.raw_user_meta_data->>'name',''),'Новый пользователь'),60))
   on conflict (id) do nothing;
   return new;
 end
@@ -413,7 +427,7 @@ create policy products_delete_shop_admin on public.products for delete to authen
   exists(select 1 from public.shops s where s.id=shop_id and (s.owner_id=(select auth.uid()) or (s.organization_id is not null and private.is_org_admin(s.organization_id))))
 );
 
-create policy posts_read_accessible on public.posts for select to authenticated using (private.can_view_post(author_id,visibility));
+create policy posts_read_accessible on public.posts for select to authenticated using (private.can_view_post_record(id));
 create policy posts_insert_author on public.posts for insert to authenticated with check (
   author_id=(select auth.uid()) and (channel_id is null or private.is_channel_admin(channel_id))
 );
@@ -421,7 +435,7 @@ create policy posts_update_author on public.posts for update to authenticated us
 create policy posts_delete_author on public.posts for delete to authenticated using (author_id=(select auth.uid()));
 
 create policy post_media_read_accessible on public.post_media for select to authenticated using (
-  exists(select 1 from public.posts p where p.id=post_id and private.can_view_post(p.author_id,p.visibility))
+  private.can_view_post_record(post_id)
 );
 create policy post_media_insert_author on public.post_media for insert to authenticated with check (
   exists(select 1 from public.posts p where p.id=post_id and p.author_id=(select auth.uid()))
@@ -475,7 +489,7 @@ create policy conversations_delete_creator on public.conversations for delete to
 
 create policy conversation_members_read_members on public.conversation_members for select to authenticated using (user_id=(select auth.uid()) or private.is_conversation_member(conversation_id));
 create policy conversation_members_insert_creator_or_self on public.conversation_members for insert to authenticated with check (
-  user_id=(select auth.uid()) or exists(select 1 from public.conversations c where c.id=conversation_id and c.created_by=(select auth.uid()))
+  exists(select 1 from public.conversations c where c.id=conversation_id and c.created_by=(select auth.uid()))
 );
 create policy conversation_members_delete_self_or_creator on public.conversation_members for delete to authenticated using (
   user_id=(select auth.uid()) or exists(select 1 from public.conversations c where c.id=conversation_id and c.created_by=(select auth.uid()))
@@ -518,6 +532,7 @@ revoke all on function private.is_blocked_between(uuid,uuid) from public,anon;
 revoke all on function private.is_following(uuid) from public,anon;
 revoke all on function private.can_view_profile(uuid) from public,anon;
 revoke all on function private.can_view_post(uuid,public.content_visibility) from public,anon;
+revoke all on function private.can_view_post_record(uuid) from public,anon;
 revoke all on function private.is_org_member(uuid) from public,anon;
 revoke all on function private.is_org_admin(uuid) from public,anon;
 revoke all on function private.is_channel_member(uuid) from public,anon;
@@ -528,6 +543,7 @@ grant execute on function private.is_blocked_between(uuid,uuid) to authenticated
 grant execute on function private.is_following(uuid) to authenticated;
 grant execute on function private.can_view_profile(uuid) to authenticated;
 grant execute on function private.can_view_post(uuid,public.content_visibility) to authenticated;
+grant execute on function private.can_view_post_record(uuid) to authenticated;
 grant execute on function private.is_org_member(uuid) to authenticated;
 grant execute on function private.is_org_admin(uuid) to authenticated;
 grant execute on function private.is_channel_member(uuid) to authenticated;
