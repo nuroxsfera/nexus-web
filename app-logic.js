@@ -36,7 +36,7 @@ function mediaRefInUse(ref){
     ||DB.shops.some(shop=>shop.items?.some(item=>item.image===ref));
 }
 async function cleanupMedia(ref){
-  if(!ref||!ref.startsWith('idb:')||mediaRefInUse(ref))return;
+  if(!ref||!ref.startsWith('idb:')||mediaRefInUse(ref)||!('indexedDB' in window))return;
   try{
     const db=await openMediaDB(),id=ref.slice(4);
     await new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});
