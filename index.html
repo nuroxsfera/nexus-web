@@ -45,7 +45,7 @@
 <div id="app">
 
   <!-- Header -->
-  <header class="px-5 pt-4 pb-3 flex items-center justify-between shrink-0" style="padding-top:max(16px,env(safe-area-inset-top))">
+  <header class="px-5 pt-4 pb-3 flex items-center justify-between shrink-0" style="padding-top:max(12px,env(safe-area-inset-top))">
     <h1 class="text-[28px] font-bold tracking-tight">
       <span class="bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#f97316] bg-clip-text text-transparent">Atlantis</span>
     </h1>
@@ -109,7 +109,7 @@
   </section>
 
   <!-- Feed -->
-  <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))">
+  <main class="flex-1 overflow-y-auto ns px-4 space-y-4" style="padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))">
 
     <!-- Post 1 -->
     <article class="post-card fade">
@@ -121,7 +121,7 @@
         </div>
         <div class="absolute bottom-3.5 left-3.5 flex items-center gap-2">
           <div class="flex items-center gap-1.5 bg-black/40 backdrop-blur-md rounded-full px-2.5 py-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0-7.78z"/></svg>
             <span class="text-[12px] font-medium text-white">18</span>
           </div>
         </div>
@@ -191,20 +191,20 @@
   </main>
 
   <!-- Bottom Nav -->
-  <nav class="absolute bottom-0 left-0 right-0 px-5 pt-2 bg-gradient-to-t from-black via-black/95 to-transparent"
-       style="padding-bottom:max(12px, env(safe-area-inset-bottom))">
-    <div class="flex items-center justify-between bg-[#1a1a1a]/90 backdrop-blur-xl rounded-full px-1.5 py-1.5 border border-white/5 max-w-[300px] mx-auto">
-      <button class="nav-item active w-14 h-14 rounded-full flex items-center justify-center press">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+  <nav class="absolute bottom-0 left-0 right-0 px-4 pt-1 bg-gradient-to-t from-black from-40% via-black/80 to-transparent"
+       style="padding-bottom:max(6px, env(safe-area-inset-bottom))">
+    <div class="flex items-center justify-between bg-[#1a1a1a]/95 backdrop-blur-xl rounded-full px-1 py-1 border border-white/5 max-w-[280px] mx-auto shadow-lg shadow-black/50">
+      <button class="nav-item active w-12 h-12 rounded-full flex items-center justify-center press">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </button>
-      <button class="nav-item w-14 h-14 rounded-full flex items-center justify-center text-white/50 press">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <button class="nav-item w-12 h-12 rounded-full flex items-center justify-center text-white/50 press">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       </button>
-      <button class="nav-item w-14 h-14 rounded-full flex items-center justify-center text-white/50 press">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <button class="nav-item w-12 h-12 rounded-full flex items-center justify-center text-white/50 press">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
-      <button class="nav-item w-14 h-14 rounded-full flex items-center justify-center text-white/50 press">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <button class="nav-item w-12 h-12 rounded-full flex items-center justify-center text-white/50 press">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </button>
     </div>
   </nav>
