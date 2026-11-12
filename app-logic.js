@@ -366,13 +366,28 @@ function renderExplore(){
   document.getElementById('eres').innerHTML=h||'<div class="empty">Ничего не найдено</div>';
 }
 document.getElementById('etabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;DB.etab=b.dataset.t;document.querySelectorAll('.etab').forEach(x=>{const on=x.dataset.t===DB.etab;x.className='etab px-3.5 py-1.5 rounded-full text-[12px] '+(on?'font-semibold bg-white text-black':'font-medium glass text-white/70')});renderExplore()});
+async function checkBackendStatus(){
+  const box=document.getElementById('backend-status');if(!box)return;
+  try{
+    const response=await fetch('/api/health',{cache:'no-store'});
+    const state=await response.json();
+    box.textContent=state.backendConfigured
+      ?'Параметры Supabase заданы. Базу данных подключим после применения миграции.'
+      :'Серверная часть ещё не подключена. Сейчас данные прототипа сохраняются на этом устройстве.';
+  }catch(e){
+    box.textContent='Не удалось проверить сервер. Локальные функции приложения остаются доступны.';
+  }
+}
 function renderSettings(){
-  document.getElementById('sbody').innerHTML=[
+  const status='<div id="backend-status" class="mb-3 p-3.5 rounded-2xl bg-white/[0.05] border border-white/[0.06] text-[12px] leading-relaxed text-white/55">Проверяем серверную конфигурацию…</div>';
+  const groups=[
     ['Аккаунт',['Профиль','Конфиденциальность','Блокировки']],
     ['Уведомления',['Push','Категории']],
     ['Безопасность',['2FA','Сессии']],
     ['Данные',['Очистить кэш','Сбросить демо']]
-  ].map(([t,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${t}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(i=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${i}')"><span>${i}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+`<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · демо v2 · данные на устройстве</p>`;
+  ];
+  document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
+  checkBackendStatus();
 }
 function settingAction(i){
   if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
