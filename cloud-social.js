@@ -131,6 +131,10 @@
     if(follow)await client.rest('follows','',{method:'POST',body:{follower_id:user.id,following_id:userId}});
     else await client.rest('follows','follower_id=eq.'+user.id+'&following_id=eq.'+userId,{method:'DELETE'});
   }
+  async function fetchBlocks(){
+    const client=auth(),user=await currentUser();if(!user?.id)return [];
+    return client.rest('blocks','select=blocked_id&blocker_id=eq.'+user.id);
+  }
   async function blockUser(userId,blocked){
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
     if(blocked)await client.rest('blocks','',{method:'POST',body:{blocker_id:user.id,blocked_id:userId}});
@@ -226,5 +230,5 @@
     }));
     return {channels:mappedChannels,shops:mappedShops};
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel,fetchMyProfile,updateMyProfile,fetchProfile,searchProfiles,followUser,blockUser};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources,joinChannel,fetchMyProfile,updateMyProfile,fetchProfile,searchProfiles,followUser,blockUser,fetchBlocks};
 })();
