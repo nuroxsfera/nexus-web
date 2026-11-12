@@ -83,6 +83,7 @@ try {
   window.toggleBlock('marley');
   window.openNewChat();
   const people=window.document.getElementById('chat-people');
+  assert.equal([...people.options].some(option=>option.value==='marley'),false);
   people.options[0].selected=true;
   window.createChat();
   state=window.__getDB();
