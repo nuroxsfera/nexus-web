@@ -157,6 +157,28 @@ function nextStory(){
 function prevStory(){const s=DB.storyUser;if(!s)return;if(DB.storyIdx>0){DB.storyIdx--;showStoryFrame()}}
 function closeStory(){clearTimeout(DB.storyTimer);document.getElementById('story-viewer').classList.remove('on');DB.storyUser=null}
 let cloudSessionEpoch=0;
+let cloudChatsSyncTask=null;
+async function syncCloudChats(options={}){
+  if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
+  const epoch=cloudSessionEpoch;
+  if(cloudChatsSyncTask?.epoch===epoch)return cloudChatsSyncTask.promise;
+  let task;
+  task=(async()=>{
+    try{
+      const remote=await window.NEXUS_CLOUD_SOCIAL.fetchConversations();
+      if(epoch!==cloudSessionEpoch||!window.NEXUS_AUTH?.hasSession?.())return false;
+      DB.profiles=DB.profiles||{};
+      remote.forEach(chat=>(chat.participants||[]).forEach(member=>{if(member.profile)DB.profiles['cloud-user-'+member.userId]={...member.profile,followers:0,following:0,posts:0}}));
+      const previous=new Map(DB.chats.filter(chat=>chat.cloudId).map(chat=>[chat.cloudId,chat]));
+      const chats=remote.map(chat=>({...chat,id:previous.get(chat.cloudId)?.id||chat.id}));
+      DB.chats=[...chats,...DB.chats.filter(chat=>!chat.cloudId)];
+      save();renderChats();return true;
+    }catch(error){if(epoch===cloudSessionEpoch&&!options.silent)toast('Не удалось синхронизировать чаты');return false}
+  })();
+  cloudChatsSyncTask={epoch,promise:task};
+  try{return await task}finally{if(cloudChatsSyncTask?.promise===task)cloudChatsSyncTask=null}
+}
+
 async function syncCloudBlocks(options={}){
   const epoch=cloudSessionEpoch;
   if(!window.NEXUS_AUTH?.hasSession?.()||!window.NEXUS_CLOUD_SOCIAL)return false;
@@ -634,7 +656,7 @@ function openNewChat(){
   document.getElementById('chat-people').innerHTML=Object.entries(DB.profiles).filter(([key])=>!DB.blocked?.[key]).map(([key,profile])=>`<option value="${esc(key)}">${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('new-chat-sheet').classList.add('open');setNav(false);
 }
-function createChat(){
+async function createChat(){
   const select=document.getElementById('chat-people');
   const keys=[...select.selectedOptions].map(option=>option.value);
   if(!keys.length){toast('Выбери хотя бы одного собеседника');return}
@@ -645,9 +667,17 @@ function createChat(){
   }
   const customName=document.getElementById('chat-group-name').value.trim();
   const name=customName||(profiles.length===1?profiles[0].name:profiles.map(profile=>profile.name).join(', '));
+  let cloudId=null,cloudError=null;
+  const participantIds=profiles.map(profile=>profile.cloudId).filter(Boolean);
+  if(participantIds.length===profiles.length&&window.NEXUS_AUTH?.hasSession?.()){
+    try{const result=await window.NEXUS_CLOUD_SOCIAL.createConversation({participantIds,title:name});cloudId=result.id}
+    catch(error){cloudError=error}
+  }
   const id='chat'+Date.now();
-  const chat={id,name,avatar:'https://i.pravatar.cc/128?u='+encodeURIComponent(keys.join('-')),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:keys.length===1?keys[0]:null,profileKeys:keys};
-  DB.chats.unshift(chat);save();closeSheet();go('chat',{chatId:id});toast('Чат создан локально');
+  const chat={id,cloudId,name,avatar:'https://i.pravatar.cc/128?u='+encodeURIComponent(keys.join('-')),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:keys.length===1?keys[0]:null,profileKeys:keys};
+  DB.chats.unshift(chat);save();closeSheet();go('chat',{chatId:id});
+  toast(cloudId?'Чат создан и синхронизирован':cloudError?'Чат создан локально: '+cloudError.message:'Чат создан на устройстве');
+  if(cloudId)void syncCloudChats({silent:true});
 }
 function renderChats(){
   const q=(document.getElementById('csearch')?.value||'').toLowerCase();
@@ -655,8 +685,29 @@ function renderChats(){
   document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" data-chat-id="${esc(c.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(c.avatar)}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${esc(c.name)}</p><span class="text-[10px] text-white/35">${esc(c.time)}</span></div><p class="text-[12.5px] text-white/45 truncate">${esc(c.last)}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${Number(c.unread)}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
   const unread=DB.chats.reduce((sum,c)=>sum+Number(c.unread||0),0);const badge=document.getElementById('mbadge');if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden');
 }
-function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;if((c.profileKey&&DB.blocked?.[c.profileKey])||(c.profileKeys||[]).some(key=>DB.blocked?.[key])){toast('Чат недоступен из-за блокировки');go('messages');return}DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'bubble-me':'bubble-them'}">${esc(m.text)}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
-function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value.trim();if(!t||!DB.activeChat)return;const c=DB.chats.find(x=>x.id===DB.activeChat);if(!c)return;if((c.profileKey&&DB.blocked?.[c.profileKey])||(c.profileKeys||[]).some(key=>DB.blocked?.[key])){toast('Нельзя отправить сообщение заблокированному пользователю');return}c.messages.push({me:true,text:t});c.last=t;c.time='сейчас';inp.value='';save();openChat(c.id)}
+async function openChat(id){
+  const chat=DB.chats.find(item=>item.id===id);if(!chat)return;
+  if((chat.profileKey&&DB.blocked?.[chat.profileKey])||(chat.profileKeys||[]).some(key=>DB.blocked?.[key])){toast('Чат недоступен из-за блокировки');go('messages');return}
+  DB.activeChat=id;chat.unread=0;
+  if(chat.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{const messages=await window.NEXUS_CLOUD_SOCIAL.fetchMessages(chat.cloudId);if(DB.activeChat!==id)return;chat.messages=messages}
+    catch(error){toast('Не удалось загрузить сообщения')}
+  }
+  save();document.getElementById('cv-av').src=chat.avatar;document.getElementById('cv-name').textContent=chat.name;
+  const box=document.getElementById('cmsgs');box.innerHTML=chat.messages.map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
+  box.scrollTop=box.scrollHeight;renderChats();
+}
+async function sendMsg(){
+  const input=document.getElementById('cinput'),textValue=input.value.trim();if(!textValue||!DB.activeChat)return;
+  const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat)return;
+  if((chat.profileKey&&DB.blocked?.[chat.profileKey])||(chat.profileKeys||[]).some(key=>DB.blocked?.[key])){toast('Нельзя отправить сообщение заблокированному пользователю');return}
+  if(chat.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{await window.NEXUS_CLOUD_SOCIAL.sendMessage(chat.cloudId,textValue)}
+    catch(error){toast(error.message||'Не удалось отправить сообщение');return}
+  }
+  chat.messages.push({me:true,text:textValue});chat.last=textValue;chat.time='сейчас';input.value='';save();await openChat(chat.id);
+}
+
 function openClipCreate(){
   DB.pendingClipVideo=null;document.getElementById('clip-caption').value='';document.getElementById('clip-preview').hidden=true;
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('clip-create-sheet').classList.add('open');setNav(false);
@@ -1019,7 +1070,7 @@ async function submitAuth(){
   try{
     if(AUTH_MODE==='login'){
       if(!password){error.textContent='Введи пароль.';return}
-      await api.signIn({email,password});cloudSessionEpoch++;closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});
+      await api.signIn({email,password});cloudSessionEpoch++;closeSheet();toast('Вход выполнен');renderSettings();void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});void syncCloudChats({silent:true});
     }else if(AUTH_MODE==='signup'){
       const name=document.getElementById('auth-name').value.trim(),username=document.getElementById('auth-username').value.trim();
       if(name.length<2){error.textContent='Укажи имя.';return}
@@ -1037,8 +1088,8 @@ async function submitAuth(){
   finally{button.disabled=false;button.textContent={login:'Войти',signup:'Создать аккаунт',reset:'Отправить ссылку',recovery:'Сохранить пароль'}[AUTH_MODE]||'Продолжить'}
 }
 async function logoutAuth(){
-  cloudSessionEpoch++;cloudFeedSyncPromise=null;cloudResourcesSyncPromise=null;cloudPeopleCache?.clear?.();cloudPeoplePending?.clear?.();
-  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);Object.keys(DB.blocked||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
+  cloudSessionEpoch++;cloudFeedSyncPromise=null;cloudResourcesSyncPromise=null;cloudChatsSyncTask=null;cloudPeopleCache?.clear?.();cloudPeoplePending?.clear?.();
+  try{await window.NEXUS_AUTH.signOut();DB.posts=DB.posts.filter(post=>!post.cloudId);DB.channels=DB.channels.filter(channel=>!channel.cloudId);DB.shops=DB.shops.filter(shop=>!shop.cloudId);DB.chats=DB.chats.filter(chat=>!chat.cloudId);Object.keys(DB.profiles||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.profiles[key]);Object.keys(DB.following||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.following[key]);Object.keys(DB.blocked||{}).filter(key=>key.startsWith('cloud-user-')).forEach(key=>delete DB.blocked[key]);save();renderFeed();toast('Вы вышли из аккаунта');renderSettings()}
   catch(e){toast(e.message||'Не удалось выйти')}
 }
 function openReport(type,id){
@@ -1246,7 +1297,7 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
-if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});}
+if(window.NEXUS_AUTH?.hasSession?.()){void syncCloudProfile({silent:true});void syncCloudResources({silent:true});void syncCloudBlocks({silent:true});void syncCloudFeed({silent:true});void syncCloudChats({silent:true});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.()){void syncCloudResources({silent:true});void syncCloudFeed({silent:true})}});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
