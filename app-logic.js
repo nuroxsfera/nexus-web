@@ -898,7 +898,7 @@ function openFitnessProfileEdit(){
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('fitness-profile-sheet').classList.add('open');setNav(false);
 }
 function saveFitnessProfile(){
-  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   const height=Number(document.getElementById('fitness-height').value),weight=Number(document.getElementById('fitness-weight').value),goal=document.getElementById('fitness-goal').value.trim();
   if(document.getElementById('fitness-height').value&&(!Number.isFinite(height)||height<50||height>260)){toast('Проверь рост');return}
   if(document.getElementById('fitness-weight').value&&(!Number.isFinite(weight)||weight<10||weight>500)){toast('Проверь вес');return}
@@ -910,7 +910,7 @@ function openWorkoutCreate(){
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('workout-create-sheet').classList.add('open');setNav(false);
 }
 function createWorkout(){
-  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   const type=document.getElementById('workout-type').value.trim(),duration=Number(document.getElementById('workout-duration').value),notes=document.getElementById('workout-notes').value.trim();
   if(!type||!Number.isInteger(duration)||duration<1||duration>1440){toast('Проверь тип и длительность тренировки');return}
   DB.workouts.unshift({id:'wo'+Date.now(),type,duration,notes,date:new Date().toLocaleString('ru-RU'),createdAt:Date.now()});save();closeSheet();DB.etab='fitness';go('explore');toast('Тренировка сохранена');
@@ -921,7 +921,7 @@ function openNutritionCreate(){
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('nutrition-create-sheet').classList.add('open');setNav(false);
 }
 function createNutritionEntry(){
-  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   const food=document.getElementById('nutrition-food').value.trim();
   const number=id=>{const raw=document.getElementById(id).value.trim();return raw===''?null:Number(raw.replace(',','.'))};
   const grams=number('nutrition-grams'),calories=number('nutrition-calories'),protein=number('nutrition-protein'),carbs=number('nutrition-carbs'),fat=number('nutrition-fat');
