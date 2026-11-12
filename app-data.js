@@ -41,7 +41,7 @@ const defaultDB=()=>({
     alfredo:{name:'Альфредо',handle:'@alfredo',bio:'Product design.',hero:'https://picsum.photos/seed/alfh/1200/1600',posts:67,followers:'11K',following:340}
   },
   activeChat:null,activePost:null,activeChannel:null,activeShop:null,activeProduct:null,etab:'all',
-  composeImgs:[],composeChannelId:null,pendingProductImage:null,storyIdx:0,storyUser:null,storyTimer:null
+  composeImgs:[],composeChannelId:null,pendingProductImage:null,pendingChannelCover:null,storyIdx:0,storyUser:null,storyTimer:null
 });
 
 let DB;
