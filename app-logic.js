@@ -195,6 +195,8 @@ async function syncCloudFeed(options={}){
     try{
       const remote=await window.NEXUS_CLOUD_SOCIAL.fetchFeed(30);
       const previous=new Map(DB.posts.filter(post=>post.cloudId).map(post=>[post.cloudId,post]));
+      DB.profiles=DB.profiles||{};
+      remote.forEach(post=>{if(post.authorKey&&post.authorKey!=='me'&&post.profileData)DB.profiles[post.authorKey]={...post.profileData,followers:0,following:0,posts:0}});
       const local=DB.posts.filter(post=>!post.cloudId);
       DB.posts=[...remote.map(post=>({...post,saved:previous.get(post.cloudId)?.saved||false})),...local];
       DB.channels.forEach(channel=>{channel.posts=remote.filter(post=>post.channelId===channel.cloudId)});
@@ -296,17 +298,23 @@ function renderSaved(){
   }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
   hydrateMediaImages(box);
 }
-function openProfile(key){
-  const pr=DB.profiles[key];if(!pr)return;if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
-  document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero}')`;
-  document.getElementById('prof-name').textContent=pr.name;
-  document.getElementById('prof-handle').textContent=pr.handle;
-  document.getElementById('prof-bio').textContent=pr.bio;
-  document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${pr.following}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.followers}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.posts}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
+async function openProfile(key){
+  let pr=DB.profiles[key];if(!pr){toast('Профиль недоступен');return}
+  if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
+  if(pr.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{const fresh=await window.NEXUS_CLOUD_SOCIAL.fetchProfile(pr.cloudId);if(fresh){pr={...pr,...fresh};DB.profiles[key]=pr;save()}}
+    catch(error){toast('Не удалось обновить профиль')}
+  }
+  DB.activeProfile=key;
+  document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero||'https://picsum.photos/seed/profile/1200/1600'}')`;
+  document.getElementById('prof-name').textContent=pr.name||'Пользователь';
+  document.getElementById('prof-handle').textContent=pr.handle||'';
+  document.getElementById('prof-bio').textContent=pr.bio||'';
+  document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${Number(pr.following)||0}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.followers)||0}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.posts)||0}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
   const fol=!!DB.following[key];
-  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
+  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${esc(key)}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
 }
-function toggleFollow(key){DB.following[key]=!DB.following[key];save();toast(DB.following[key]?'Подписка':'Отписка');openProfile(key)}
+async function toggleFollow(key){const profile=DB.profiles[key];if(!profile)return;const next=!DB.following[key];if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.followUser(profile.cloudId,next)}catch(error){toast(error.message||'Не удалось изменить подписку');return}DB.following[key]=next;save();toast(next?'Подписка':'Отписка');void openProfile(key)}
 async function shareProfile(){
  const url=location.origin+location.pathname+'?profile='+encodeURIComponent(DB.me.handle.replace(/^@/,''));
  try{
