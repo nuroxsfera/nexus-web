@@ -99,9 +99,11 @@
   }
   async function updateChannel(id,{title,description,visibility,cover=null}){
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const old=await client.rest('channels','select=cover_path&id=eq.'+id+'&owner_id=eq.'+user.id);
     const patch={};if(title!==undefined)patch.title=String(title).slice(0,80);if(description!==undefined)patch.description=String(description).slice(0,1500);if(visibility!==undefined)patch.visibility=visibility;
-    if(cover){patch.cover_path=await uploadOwnerMedia(user,'channels',cover)}
+    if(cover)patch.cover_path=await uploadOwnerMedia(user,'channels',cover);
     await client.rest('channels','id=eq.'+id+'&owner_id=eq.'+user.id,{method:'PATCH',body:patch});
+    if(cover&&old?.[0]?.cover_path)try{await client.removeMedia('nexus-media',[old[0].cover_path])}catch{}
   }
   async function createShop({title,description='',visibility='public',avatar=null}){
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
@@ -113,6 +115,11 @@
       return {id,avatarPath};
     }catch(error){if(avatarPath)try{await client.removeMedia('nexus-media',[avatarPath])}catch{}throw error}
   }
+  async function updateShop(id,{title,description,visibility}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const patch={};if(title!==undefined)patch.title=String(title).slice(0,80);if(description!==undefined)patch.description=String(description).slice(0,1500);if(visibility!==undefined)patch.visibility=visibility;
+    return client.rest('shops','id=eq.'+id+'&owner_id=eq.'+user.id,{method:'PATCH',body:patch});
+  }
   async function createProduct({shopId,title,description='',price=0,currency='RUB',cover=null}){
     const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
     const coverPath=await uploadOwnerMedia(user,'products',cover);
@@ -121,9 +128,13 @@
       return {...(rows?.[0]||{}),coverPath};
     }catch(error){if(coverPath)try{await client.removeMedia('nexus-media',[coverPath])}catch{}throw error}
   }
-  async function updateProduct(id,patch){
-    const client=auth();await currentUser();
-    return client.rest('products','id=eq.'+id,{method:'PATCH',body:patch});
+  async function updateProduct(id,{title,description,price,cover=null}){
+    const client=auth(),user=await currentUser();if(!user?.id)throw new Error('Сначала войди в аккаунт');
+    const old=await client.rest('products','select=cover_path&id=eq.'+id);
+    const patch={};if(title!==undefined)patch.title=String(title).slice(0,120);if(description!==undefined)patch.description=String(description).slice(0,3000);if(price!==undefined)patch.price=Number(price)||0;
+    if(cover)patch.cover_path=await uploadOwnerMedia(user,'products',cover);
+    await client.rest('products','id=eq.'+id,{method:'PATCH',body:patch});
+    if(cover&&old?.[0]?.cover_path)try{await client.removeMedia('nexus-media',[old[0].cover_path])}catch{}
   }
   async function deleteProduct(id){
     const client=auth();await currentUser();
@@ -152,5 +163,5 @@
     }));
     return {channels:mappedChannels,shops:mappedShops};
   }
-  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,createProduct,updateProduct,deleteProduct,fetchResources};
+  window.NEXUS_CLOUD_SOCIAL={isReady:async()=>!!(await currentUser()),createPost,fetchFeed,toggleLike,fetchComments,addComment,deletePost,createChannel,updateChannel,createShop,updateShop,createProduct,updateProduct,deleteProduct,fetchResources};
 })();
