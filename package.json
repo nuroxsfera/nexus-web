@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npx serve .",
-    "build": "echo Static site"
+    "build": "npm test",
+    "test": "node scripts/check.mjs"
   }
 }
