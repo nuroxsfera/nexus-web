@@ -569,42 +569,83 @@ function createWatchlistItem(){
   if(title.length<1||!url){toast('Укажи название и HTTPS-ссылку на площадку');return}
   list.items.push({id:'wi'+Date.now(),title,url,mediaType,provider,status:'want_to_watch'});save();closeSheet();openWatchlist(list.id);toast('Добавлено в подборку');
 }
+function openHealthVault(){
+  const api=window.NEXUS_HEALTH_VAULT;if(!api?.isReady()){toast('Защищённое хранилище ещё загружается');return}
+  const create=!api.hasVault();
+  document.getElementById('health-vault-title').textContent=create?'Создать личный сейф':'Разблокировать сейф';
+  document.getElementById('health-vault-copy').textContent=create?'Задай отдельную парольную фразу минимум из 12 символов. Старые локальные записи тренировок и питания будут перенесены в зашифрованное хранилище.':'Введи парольную фразу, чтобы расшифровать личные записи на этом устройстве.';
+  document.getElementById('health-vault-confirm-wrap').hidden=!create;
+  document.getElementById('health-vault-confirm').value='';document.getElementById('health-vault-pass').value='';document.getElementById('health-vault-error').textContent='';
+  document.getElementById('health-vault-submit').textContent=create?'Создать сейф':'Разблокировать';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('health-vault-sheet').classList.add('open');setNav(false);
+}
+async function submitHealthVault(){
+  const api=window.NEXUS_HEALTH_VAULT,pass=document.getElementById('health-vault-pass').value,confirm=document.getElementById('health-vault-confirm').value,error=document.getElementById('health-vault-error');
+  const create=!api.hasVault();
+  if(pass.length<12){error.textContent='Парольная фраза должна содержать минимум 12 символов.';return}
+  if(create&&pass!==confirm){error.textContent='Парольные фразы не совпадают.';return}
+  const button=document.getElementById('health-vault-submit');button.disabled=true;button.textContent='Обработка…';
+  try{
+    if(create)await api.setup(pass,DB);else await api.unlock(pass,DB);
+    DB.healthVaultUnlocked=true;
+    document.getElementById('health-vault-pass').value='';document.getElementById('health-vault-confirm').value='';
+    closeSheet();save();renderFitness();toast(create?'Личный сейф создан и зашифрован':'Сейф разблокирован');
+  }catch(e){error.textContent=e.message||'Не удалось открыть сейф'}
+  finally{button.disabled=false;button.textContent=create?'Создать сейф':'Разблокировать'}
+}
+async function lockHealthVault(){
+  const api=window.NEXUS_HEALTH_VAULT;if(!api?.isUnlocked())return;
+  try{await api.lock(DB);DB.healthVaultUnlocked=false;save();renderFitness();toast('Личный сейф заблокирован')}
+  catch(e){toast('Не удалось сохранить сейф. Он останется разблокированным')}
+}
 function renderFitness(){
+  const vault=window.NEXUS_HEALTH_VAULT;
+  if(!vault?.isUnlocked()){
+    const exists=!!vault?.hasVault();
+    document.getElementById('eres').innerHTML='<div class="rounded-3xl p-5 bg-gradient-to-br from-emerald-500/15 to-teal-500/5 border border-emerald-400/10"><div class="w-14 h-14 rounded-2xl bg-emerald-400/10 flex items-center justify-center text-2xl mb-4">🔐</div><p class="text-[20px] font-bold mb-2">Личный сейф здоровья</p><p class="text-[12px] text-white/55 leading-relaxed mb-4">'+(exists?'Данные зашифрованы на устройстве. Разблокируй сейф, чтобы открыть тренировки и питание.':'Перед добавлением личных данных создай отдельный зашифрованный сейф. Старые локальные записи будут зашифрованы при создании.')+'</p><button onclick="openHealthVault()" class="w-full py-3 rounded-full bg-white text-black text-[13px] font-semibold press">'+(exists?'Разблокировать сейф':'Создать защищённый сейф')+'</button><p class="text-[10px] text-white/30 mt-3">AES-256-GCM · парольная фраза не отправляется на сервер</p></div>';
+    return;
+  }
   const profile=DB.fitnessProfile||{},workouts=DB.workouts||[],entries=DB.nutritionEntries||[];
   const minutes=workouts.reduce((sum,item)=>sum+Number(item.duration||0),0);
   const today=new Date().toDateString();
   const calories=entries.filter(item=>new Date(item.consumedAt).toDateString()===today).reduce((sum,item)=>sum+Number(item.calories||0),0);
   const box=document.getElementById('eres');
-  box.innerHTML=`<div class="rounded-2xl p-4 bg-gradient-to-br from-emerald-500/15 to-teal-500/5 border border-emerald-400/10 mb-3"><div class="flex items-center justify-between"><div><p class="text-[11px] text-white/45">Мой профиль</p><p class="text-[19px] font-bold mt-1">${profile.goal?esc(profile.goal):'Твоя форма — твои правила'}</p><p class="text-[11px] text-white/45 mt-1">${profile.height?esc(String(profile.height))+' см':''}${profile.weight?' · '+esc(String(profile.weight))+' кг':''}</p></div><button onclick="openFitnessProfileEdit()" class="px-3 py-2 rounded-full glass text-[11px] press">Настроить</button></div><p class="text-[10px] text-white/30 mt-3">Записи пока хранятся на устройстве без шифрования — не добавляй чувствительные медданные</p></div>
+  box.innerHTML=`<div class="rounded-2xl p-4 bg-gradient-to-br from-emerald-500/15 to-teal-500/5 border border-emerald-400/10 mb-3"><div class="flex items-center justify-between"><div><p class="text-[11px] text-white/45">Мой профиль</p><p class="text-[19px] font-bold mt-1">${profile.goal?esc(profile.goal):'Твоя форма — твои правила'}</p><p class="text-[11px] text-white/45 mt-1">${profile.height?esc(String(profile.height))+' см':''}${profile.weight?' · '+esc(String(profile.weight))+' кг':''}</p></div><button onclick="openFitnessProfileEdit()" class="px-3 py-2 rounded-full glass text-[11px] press">Настроить</button></div><div class="flex items-center justify-between mt-3"><p class="text-[10px] text-emerald-300/60">Зашифрованный сейф разблокирован</p><button onclick="lockHealthVault()" class="text-[10px] text-white/50 press">Заблокировать</button></div></div>
   <div class="grid grid-cols-3 gap-2 mb-3"><div class="rounded-xl bg-white/[0.04] p-3"><p class="text-[10px] text-white/40">Тренировки</p><p class="text-[20px] font-bold mt-1">${workouts.length}</p></div><div class="rounded-xl bg-white/[0.04] p-3"><p class="text-[10px] text-white/40">Минуты</p><p class="text-[20px] font-bold mt-1">${minutes}</p></div><div class="rounded-xl bg-white/[0.04] p-3"><p class="text-[10px] text-white/40">Ккал сегодня</p><p class="text-[20px] font-bold mt-1">${Math.round(calories)}</p></div></div>
   <div class="grid grid-cols-2 gap-2 mb-4"><button onclick="openWorkoutCreate()" class="py-3 rounded-xl bg-white text-black text-[12px] font-semibold press">＋ Тренировка</button><button onclick="openNutritionCreate()" class="py-3 rounded-xl glass text-white text-[12px] font-semibold press">＋ Питание</button></div>
   <p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2">Последние тренировки</p>${workouts.length?workouts.slice(0,5).map(item=>`<div class="p-3 rounded-xl bg-white/[0.04] mb-1.5 flex justify-between"><div><p class="text-[13px] font-semibold">${esc(item.type)}</p><p class="text-[10px] text-white/40">${esc(item.date)}</p></div><p class="text-[12px] text-white/60">${Number(item.duration)} мин</p></div>`).join(''):'<div class="empty">Добавь первую тренировку</div>'}
   <p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mt-4 mb-2">Питание</p>${entries.length?entries.slice(0,5).map(item=>`<div class="p-3 rounded-xl bg-white/[0.04] mb-1.5 flex justify-between"><div><p class="text-[13px] font-semibold">${esc(item.food)}</p><p class="text-[10px] text-white/40">${esc(item.date)}</p></div><p class="text-[12px] text-white/60">${Math.round(Number(item.calories||0))} ккал</p></div>`).join(''):'<div class="empty">Добавь первый приём пищи</div>'}`;
 }
 function openFitnessProfileEdit(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   const p=DB.fitnessProfile||{};document.getElementById('fitness-height').value=p.height||'';document.getElementById('fitness-weight').value=p.weight||'';document.getElementById('fitness-goal').value=p.goal||'';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('fitness-profile-sheet').classList.add('open');setNav(false);
 }
 function saveFitnessProfile(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
   const height=Number(document.getElementById('fitness-height').value),weight=Number(document.getElementById('fitness-weight').value),goal=document.getElementById('fitness-goal').value.trim();
   if(document.getElementById('fitness-height').value&&(!Number.isFinite(height)||height<50||height>260)){toast('Проверь рост');return}
   if(document.getElementById('fitness-weight').value&&(!Number.isFinite(weight)||weight<10||weight>500)){toast('Проверь вес');return}
   DB.fitnessProfile={height:height||null,weight:weight||null,goal};save();closeSheet();DB.etab='fitness';go('explore');toast('Профиль сохранён локально');
 }
 function openWorkoutCreate(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   document.getElementById('workout-type').value='Силовая';document.getElementById('workout-duration').value='45';document.getElementById('workout-notes').value='';
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('workout-create-sheet').classList.add('open');setNav(false);
 }
 function createWorkout(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
   const type=document.getElementById('workout-type').value.trim(),duration=Number(document.getElementById('workout-duration').value),notes=document.getElementById('workout-notes').value.trim();
   if(!type||!Number.isInteger(duration)||duration<1||duration>1440){toast('Проверь тип и длительность тренировки');return}
   DB.workouts.unshift({id:'wo'+Date.now(),type,duration,notes,date:new Date().toLocaleString('ru-RU'),createdAt:Date.now()});save();closeSheet();DB.etab='fitness';go('explore');toast('Тренировка сохранена');
 }
 function openNutritionCreate(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked()){openHealthVault();return}
   ['nutrition-food','nutrition-grams','nutrition-calories','nutrition-protein','nutrition-carbs','nutrition-fat'].forEach(id=>document.getElementById(id).value='');
   closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('nutrition-create-sheet').classList.add('open');setNav(false);
 }
 function createNutritionEntry(){
+  if(!window.NEXUS_HEALTH_VAULT?.isUnlocked())return;
   const food=document.getElementById('nutrition-food').value.trim();
   const number=id=>{const raw=document.getElementById(id).value.trim();return raw===''?null:Number(raw.replace(',','.'))};
   const grams=number('nutrition-grams'),calories=number('nutrition-calories'),protein=number('nutrition-protein'),carbs=number('nutrition-carbs'),fat=number('nutrition-fat');
