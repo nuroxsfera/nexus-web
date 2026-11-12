@@ -1109,5 +1109,6 @@ function closeSheet(){
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
 if(window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&window.NEXUS_AUTH?.hasSession?.())void syncCloudFeed({silent:true})});
 if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
