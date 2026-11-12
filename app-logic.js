@@ -76,7 +76,7 @@ function renderStories(){
     if(story.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
     const seen=DB.seenStories[story.id];
     const avatar=story.avatar?`<img src="${esc(story.avatar)}" class="w-full h-full rounded-full object-cover border-[2.5px] border-black" onerror="this.style.display='none'">`:`<div class="w-full h-full rounded-full bg-[#222] border-[2.5px] border-black"></div>`;
-    return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openStory('${esc(story.id)}')"><div class="w-[66px] h-[66px] ${seen?'story-ring seen':'story-ring'}">${avatar}</div><span class="text-[10px] text-white/75">${esc(story.name)}</span></button>`;
+    return `<button class="flex flex-col items-center gap-1 shrink-0 press" data-story-id="${esc(story.id)}" onclick="openStory(this.dataset.storyId)"><div class="w-[66px] h-[66px] ${seen?'story-ring seen':'story-ring'}">${avatar}</div><span class="text-[10px] text-white/75">${esc(story.name)}</span></button>`;
   }).join('');
 }
 function openStory(id){
@@ -110,7 +110,7 @@ function renderFeed(){
   feed.innerHTML=DB.posts.map(p=>{
     const images=Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
     const gallery=images.length?images.map(src=>{
-      const source=src.startsWith('idb:')?(`data-media-ref="${src}"`):(`src="${src}"`);
+      const source=src.startsWith('idb:')?(`data-media-ref="${src}"`):(`src="${esc(src)}"`);
       return `<img ${source} class="w-full min-w-full h-[250px] object-cover snap-center" loading="lazy" alt="Фото публикации">`;
     }).join(''):'<div class="w-full h-[250px] flex items-center justify-center bg-[#dedee3] text-black/35 text-sm">Публикация без фото</div>';
     return `
@@ -121,7 +121,7 @@ function renderFeed(){
         <div class="heart-burst"><svg width="72" height="72" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
         <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
         <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${esc(p.author)}')`}">
-          <img src="${p.avatar}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
+          <img src="${esc(p.avatar)}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
           <span class="text-[12px] font-semibold text-white drop-shadow">${esc(p.author)}</span>
         </button>
         <div class="absolute bottom-2.5 left-2.5 flex gap-1.5">
@@ -361,7 +361,7 @@ function renderExplore(){
     if(channels.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Каналы</p>'+channels.map(c=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-channel-id="${esc(c.id)}" onclick="go('channel',{id:this.dataset.channelId})"><p class="text-[14px] font-semibold">${esc(c.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(c.desc)} · ${esc(c.members)}</p></button>`).join('');
   }
   if(tab==='all'||tab==='shops'){
-    if(shops.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>'+shops.map(shop=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})"><p class="text-[14px] font-semibold">${esc(shop.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(shop.desc)} · ${Number(shop.items?.length??shop.products??0)} товаров</p></button>`).join('');
+    if(shops.length)h+='<p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 mt-3">Магазины</p>'+shops.map(shop=>`<button class="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.04] mb-1.5 press" data-shop-id="${esc(shop.id)}" onclick="go('shop',{id:this.dataset.shopId})"><p class="text-[14px] font-semibold">${esc(shop.name)}</p><p class="text-[12px] text-white/40 mt-0.5">${esc(shop.desc)} · ${Number(shop.ownerKey==='me'?shop.items.length:shop.products)} товаров</p></button>`).join('');
   }
   document.getElementById('eres').innerHTML=h||'<div class="empty">Ничего не найдено</div>';
 }
