@@ -515,7 +515,8 @@ as $$
       then private.can_view_profile(split_part(target_name,'/',1)::uuid)
     when target_bucket='nexus-media'
       then (
-        exists(select 1 from public.post_media pm where pm.storage_path=target_name and private.can_view_post_record(pm.post_id))
+        split_part(target_name,'/',1)=(select auth.uid())::text
+        or exists(select 1 from public.post_media pm where pm.storage_path=target_name and private.can_view_post_record(pm.post_id))
         or exists(
           select 1 from public.story_media sm
           join public.stories s on s.id=sm.story_id
