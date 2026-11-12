@@ -1,7 +1,8 @@
 const LS='atlantis_v2';
 const defaultDB=()=>({
   onboarded:false,
-  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊'},
+  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊',visibility:'public'},
+  blocked:{},
   following:{},channelSub:{},cart:[],seenStories:{},
   stories:[
     {id:'add',type:'add',name:'Добавить'},
