@@ -13,15 +13,39 @@ function openMediaDB(){
   });
   return mediaDbPromise;
 }
+async function optimizeImageFile(file){
+  if(!file?.type?.startsWith('image/')||['image/gif','image/svg+xml'].includes(file.type))return file;
+  if(typeof createImageBitmap!=='function')return file;
+  let bitmap;
+  try{
+    bitmap=await createImageBitmap(file);
+    const maxSide=2048,scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+    if(scale===1&&file.size<=1500000)return file;
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const context=canvas.getContext('2d',{alpha:false});
+    if(!context)return file;
+    context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.84));
+    if(!blob)return file;
+    const name=(file.name||'nexus-photo').replace(/\.[^.]+$/,'')+'.jpg';
+    return new File([blob],name,{type:'image/jpeg',lastModified:Date.now()});
+  }catch(error){
+    console.warn('Image optimization skipped:',error?.message||error);return file;
+  }finally{bitmap?.close?.()}
+}
 async function saveMediaFile(file){
-  if(!file||!file.type.startsWith('image/'))throw new Error('Выберите изображение');
-  if(file.size>20*1024*1024)throw new Error('Фото должно быть меньше 20 МБ');
+  if(!file||!file.size)throw new Error('Файл пустой');
+  const isImage=file.type?.startsWith('image/'),isVideo=file.type?.startsWith('video/');
+  if(!isImage&&!isVideo)throw new Error('Поддерживаются только изображения и видео');
+  if(file.size>(isVideo?100:40)*1024*1024)throw new Error(isVideo?'Видео должно быть меньше 100 МБ':'Фото должно быть меньше 40 МБ');
+  const stored=isImage?await optimizeImageFile(file):file;
   const db=await openMediaDB();
   const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);
   await new Promise((resolve,reject)=>{
     const tx=db.transaction('files','readwrite');
-    tx.objectStore('files').put({id,blob:file,type:file.type||'image/*'});
-    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Не удалось сохранить фото'));
+    tx.objectStore('files').put({id,blob:stored,type:stored.type||'application/octet-stream',originalName:file.name||''});
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Не удалось сохранить медиа'));
   });
   return 'idb:'+id;
 }
