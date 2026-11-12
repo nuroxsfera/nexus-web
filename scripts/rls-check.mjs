@@ -63,6 +63,12 @@ try {
     "insert into public.watchlists(id,owner_id,title,visibility) values ('71000000-0000-4000-8000-000000000001','" + B + "','Public watchlist','public'),('71000000-0000-4000-8000-000000000002','" + B + "','Private watchlist','private');",
     "insert into public.watchlist_items(watchlist_id,title,media_type,provider,provider_url) values ('71000000-0000-4000-8000-000000000001','Example film','movie','kinopoisk','https://www.kinopoisk.ru/film/1/'),('71000000-0000-4000-8000-000000000002','Private series','series','ivi','https://www.ivi.ru/watch/example');",
 
+    "insert into public.organizations(id,owner_id,name,slug) values ('72000000-0000-4000-8000-000000000001','" + B + "','Nexus Org','nexus-org-test');",
+    "update public.channels set organization_id='72000000-0000-4000-8000-000000000001' where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';",
+    "update public.shops set organization_id='72000000-0000-4000-8000-000000000001' where id='50000000-0000-4000-8000-000000000002';",
+    "insert into public.spaces(id,organization_id,created_by,title,slug,space_type,visibility) values ('73000000-0000-4000-8000-000000000001','72000000-0000-4000-8000-000000000001','" + B + "','Public community','public-community','community','public'),('73000000-0000-4000-8000-000000000002','72000000-0000-4000-8000-000000000001','" + B + "','Private team','private-team','team','private');",
+    "insert into public.space_links(space_id,link_type,channel_id) values ('73000000-0000-4000-8000-000000000001','channel','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');",
+    "insert into public.space_links(space_id,link_type,shop_id) values ('73000000-0000-4000-8000-000000000002','shop','50000000-0000-4000-8000-000000000002');",
     "insert into public.products(shop_id,title,price,status) values ('50000000-0000-4000-8000-000000000001','Secret product',100,'published'),('50000000-0000-4000-8000-000000000002','Public product',100,'published');",
     "insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/draft.jpg'),('nexus-media','" + publicPath + "'),('nexus-media','" + privatePath + "'),('nexus-media','" + publicClipPath + "'),('nexus-media','" + followerClipPath + "');"
   ].join('\n'));
@@ -77,6 +83,8 @@ try {
   assert.equal(await count('public.notifications'),0,'notifications are recipient-only');
   assert.equal(await count('public.shops'),1,'private shops stay hidden');
   assert.equal(await count('public.products'),1,'private shop products stay hidden');
+  assert.equal(await count('public.spaces'),1,'only public organization spaces are visible');
+  assert.equal(await count('public.space_links'),1,'space links inherit parent visibility');
   assert.equal(await count('public.playlists'),1,'private playlists stay hidden');
   assert.equal(await count('public.playlist_tracks'),1,'playlist tracks inherit visibility');
   assert.equal(await count('public.watchlists'),1,'private watchlists stay hidden');
@@ -95,6 +103,8 @@ try {
   assert.equal(await count('public.workout_sessions'),1,'owner can read workout history');
   assert.equal(await count('public.nutrition_entries'),1,'owner can read nutrition entries');
   assert.equal(await count('public.health_measurements'),1,'owner can read health measurements');
+  assert.equal(await count('public.spaces'),2,'organization owner can read private spaces');
+  assert.equal(await count('public.space_links'),2,'organization owner can read private space links');
   assert.equal((await db.query("select count(*)::int as n from storage.objects where bucket_id='nexus-health'")).rows[0].n,1,'owner can read private health files');
   await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
 
@@ -127,7 +137,7 @@ try {
   await db.exec('reset role; set role anon;');
   await assert.rejects(db.query('select * from public.profiles'),/permission denied/);
   await db.exec('reset role');
-  console.log('Nexus RLS checks passed: profiles, posts, channels, clips, music playlists, watchlists, media, shops, DMs, notifications, owner-only health data, follows, immutable identities, blocks and anonymous access.');
+  console.log('Nexus RLS checks passed: profiles, posts, channels, organization spaces, clips, music playlists, watchlists, media, shops, DMs, notifications, owner-only health data, follows, immutable identities, blocks and anonymous access.');
 } catch (error) {
   console.error('RLS check failed:', error?.message || error);
   process.exitCode = 1;
