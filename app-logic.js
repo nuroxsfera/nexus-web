@@ -1041,9 +1041,10 @@ function openPrivacySheet(){
   document.getElementById('privacy-profile-visibility').value=DB.me.visibility||'public';
   document.getElementById('bd').classList.add('open');document.getElementById('privacy-sheet').classList.add('open');setNav(false);
 }
-function savePrivacySettings(){
-  DB.me.visibility=document.getElementById('privacy-profile-visibility').value;
-  save();closeSheet();toast('Настройка сохранена на устройстве');
+async function savePrivacySettings(){
+  const visibility=document.getElementById('privacy-profile-visibility').value;let cloudError=null;
+  if(DB.me.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.updateMyProfile({visibility})}catch(error){cloudError=error}
+  DB.me.visibility=visibility;save();closeSheet();toast(cloudError?'Настройка сохранена локально: '+cloudError.message:DB.me.cloudId?'Приватность синхронизирована':'Настройка сохранена на устройстве');
 }
 function openBlockSheet(){
   renderBlockList();document.getElementById('bd').classList.add('open');document.getElementById('blocks-sheet').classList.add('open');setNav(false);
@@ -1053,7 +1054,7 @@ function renderBlockList(){
   const entries=Object.entries(DB.profiles);
   box.innerHTML=entries.map(([key,profile])=>{
     const blocked=!!DB.blocked?.[key];
-    return `<div class="flex items-center gap-3 py-3 border-b border-white/[0.06]"><img src="https://i.pravatar.cc/64?u=${encodeURIComponent(key)}" class="w-10 h-10 rounded-full"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(profile.name)}</p><p class="text-[11px] text-white/40">${esc(profile.handle)}</p></div><button data-profile-key="${esc(key)}" onclick="toggleBlock(this.dataset.profileKey)" class="px-3 py-2 rounded-full text-[11px] font-semibold ${blocked?'glass text-white':'bg-white text-black'}">${blocked?'Разблокировать':'Заблокировать'}</button></div>`;
+    return `<div class="flex items-center gap-3 py-3 border-b border-white/[0.06]"><img src="${esc(profile.avatar||'https://i.pravatar.cc/64?u='+encodeURIComponent(key))}" class="w-10 h-10 rounded-full object-cover"><div class="flex-1 min-w-0"><p class="text-[13px] font-semibold truncate">${esc(profile.name)}</p><p class="text-[11px] text-white/40">${esc(profile.handle)}</p></div><button data-profile-key="${esc(key)}" onclick="toggleBlock(this.dataset.profileKey)" class="px-3 py-2 rounded-full text-[11px] font-semibold ${blocked?'glass text-white':'bg-white text-black'}">${blocked?'Разблокировать':'Заблокировать'}</button></div>`;
   }).join('')||'<div class="empty">Список пуст</div>';
 }
 async function toggleBlock(key){
