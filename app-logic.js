@@ -350,6 +350,23 @@ function renderSaved(){
   }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
   hydrateMediaImages(box);
 }
+async function messageProfile(key){
+  const profile=DB.profiles[key];if(!profile)return;
+  if(DB.blocked?.[key]){toast('Сначала сними блокировку');return}
+  let chat=DB.chats.find(item=>item.profileKey===key);
+  if(!chat){
+    let cloudId=null,cloudError=null;
+    if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+      try{const result=await window.NEXUS_CLOUD_SOCIAL.createConversation({participantIds:[profile.cloudId]});cloudId=result.id}
+      catch(error){cloudError=error}
+    }
+    chat={id:'chat'+Date.now(),cloudId,name:profile.name,avatar:profile.avatar||'https://i.pravatar.cc/128?u='+encodeURIComponent(key),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:key,profileKeys:[key]};
+    DB.chats.unshift(chat);save();
+    if(cloudError)toast('Чат создан локально: '+cloudError.message);
+    else if(cloudId)void syncCloudChats({silent:true});
+  }
+  go('chat',{chatId:chat.id});
+}
 async function openProfile(key){
   let pr=DB.profiles[key];if(!pr){toast('Профиль недоступен');return}
   if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
@@ -364,7 +381,7 @@ async function openProfile(key){
   document.getElementById('prof-bio').textContent=pr.bio||'';
   document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${Number(pr.following)||0}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.followers)||0}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.posts)||0}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
   const fol=!!DB.following[key];
-  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${esc(key)}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
+  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${esc(key)}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="messageProfile('${esc(key)}')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
 }
 async function toggleFollow(key){const profile=DB.profiles[key];if(!profile)return;const next=!DB.following[key];if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.followUser(profile.cloudId,next)}catch(error){toast(error.message||'Не удалось изменить подписку');return}DB.following[key]=next;save();toast(next?'Подписка':'Отписка');void openProfile(key)}
 async function shareProfile(){
