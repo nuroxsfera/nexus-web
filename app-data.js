@@ -5,6 +5,7 @@ const defaultDB=()=>({
   pendingAvatar:null,pendingCover:null,
   blocked:{},
   clips:[],pendingClipVideo:null,
+  playlists:[],watchlists:[],activePlaylist:null,activeWatchlist:null,
   following:{},channelSub:{},cart:[],seenStories:{},
   stories:[
     {id:'add',type:'add',name:'Добавить'},
