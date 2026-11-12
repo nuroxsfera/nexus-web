@@ -1044,7 +1044,6 @@ function publishPost(){
   });
   DB.composeImgs=[];DB.composeChannelId=null;save();toast('Опубликовано локально');
   if(channelId)go('channel',{id:channelId});else go('home');
-if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 }
 function closeSheet(){
   ['auth-sheet','bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
@@ -1052,4 +1051,5 @@ function closeSheet(){
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
+if(new URLSearchParams(location.search).get('auth')==='recovery')openAuth('recovery');
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
