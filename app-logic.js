@@ -142,6 +142,7 @@ function renderFeed(){
       <div class="px-3.5 pt-1 pb-3.5">
         <p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p>
         <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${esc(p.text)}</p>
+        <button data-report-id="${esc(p.id)}" onclick="openReport('post',this.dataset.reportId)" class="mt-2 text-[10px] text-black/35 press">Пожаловаться</button>
       </div>
     </article>`;
   }).join('');
@@ -179,7 +180,7 @@ function openProfile(key){
   document.getElementById('prof-bio').textContent=pr.bio;
   document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${pr.following}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.followers}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${pr.posts}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
   const fol=!!DB.following[key];
-  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
+  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
 }
 function toggleFollow(key){DB.following[key]=!DB.following[key];save();toast(DB.following[key]?'Подписка':'Отписка');openProfile(key)}
 async function shareProfile(){
@@ -636,6 +637,17 @@ function renderSettings(){
   document.getElementById('sbody').innerHTML=status+groups.map(([title,items])=>`<div><p class="text-[10px] text-white/35 uppercase tracking-wider font-semibold mb-2 px-1">${title}</p><div class="rounded-2xl bg-white/[0.04] border border-white/[0.04] overflow-hidden divide-y divide-white/[0.04]">${items.map(item=>`<button class="w-full text-left px-4 py-3.5 text-[14px] press flex justify-between items-center" onclick="settingAction('${item}')"><span>${item}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`).join('')}</div></div>`).join('')+'<p class="text-center text-[11px] text-white/20 pt-4">Atlantis · локальный прототип</p>';
   checkBackendStatus();
 }
+function openReport(type,id){
+  document.getElementById('report-target-type').value=type;document.getElementById('report-target-id').value=id;
+  document.getElementById('report-reason').value='spam';document.getElementById('report-details').value='';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('report-sheet').classList.add('open');setNav(false);
+}
+function submitReport(){
+  const type=document.getElementById('report-target-type').value,id=document.getElementById('report-target-id').value,reason=document.getElementById('report-reason').value,details=document.getElementById('report-details').value.trim();
+  if(!type||!id){toast('Не удалось определить объект жалобы');return}
+  DB.reports=DB.reports||[];DB.reports.unshift({id:'rep'+Date.now(),targetType:type,targetId:id,reason,details,createdAt:Date.now(),status:'local'});
+  save();closeSheet();toast('Жалоба сохранена на устройстве');
+}
 function openPrivacySheet(){
   document.getElementById('privacy-profile-visibility').value=DB.me.visibility||'public';
   document.getElementById('bd').classList.add('open');document.getElementById('privacy-sheet').classList.add('open');setNav(false);
@@ -752,7 +764,7 @@ function publishPost(){
   if(channelId)go('channel',{id:channelId});else go('home');
 }
 function closeSheet(){
-  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  ['bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
   setNav(true);
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
