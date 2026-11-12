@@ -885,6 +885,7 @@ async function importHealthVaultBackup(input){
   const file=input.files?.[0];input.value='';if(!file)return;
   if(file.size>30*1024*1024){toast('Файл слишком большой');return}
   try{
+    if(window.NEXUS_HEALTH_VAULT.hasVault()&&!window.confirm('Заменить текущий зашифрованный сейф резервной копией? Существующая копия будет перезаписана.'))return;
     const bundle=JSON.parse(await file.text());
     await window.NEXUS_HEALTH_VAULT.importEncrypted(bundle);
     DB.fitnessProfile={};DB.workouts=[];DB.nutritionEntries=[];DB.healthMeasurements=[];DB.healthVaultUnlocked=false;
