@@ -18,7 +18,7 @@
 | Clips | Short vertical videos | Local video picker, caption, playback, likes, discovery tab | Clips, clip likes, private media authorization |
 | Music | Curated playlists and music discovery | Local playlists and tracks with HTTPS provider links | Playlists and playlist tracks |
 | Cinema | Movie/series watchlists and legal provider links | Local watchlists and items | Watchlists and watchlist items |
-| Fitness & nutrition | Training history, nutrition logs, body metrics | UI module still to be built | Owner-only fitness, workout, nutrition and health tables |
+| Fitness & nutrition | Training history, nutrition logs, body metrics | Basic local tracker: body metrics, workout logs, nutrition entries | Owner-only fitness, workout, nutrition and health tables |
 | Messaging | Private conversations and notifications | Local demo chats | Conversations, members, messages, notifications, RLS |
 | Organizations | Company identity, roles, linked channels and stores | UI management still to be built | Organizations, members, spaces, channels, shops |
 
@@ -26,7 +26,7 @@
 
 ### Phase 1 — Usable product prototype
 - Finish consistent design language, responsive iPhone layouts, animations, empty states, loading states and accessibility.
-- Complete local CRUD flows for profiles, channels, shops, products, clips, playlists and watchlists.
+- Complete local CRUD flows for profiles, channels, shops, products, clips, playlists, watchlists, workouts and nutrition.
 - Make all demo-only behavior clearly labeled.
 
 ### Phase 2 — Real accounts and cloud data
@@ -47,7 +47,7 @@
 - Clip transcoding, adaptive streaming, thumbnails, moderation and CDN delivery.
 - Music-provider linking and playlist synchronization where APIs and licenses allow.
 - Movie catalog metadata and watch-provider availability; no unlicensed video hosting.
-- Fitness, nutrition and health UI with private-by-default records and explicit sharing controls.
+- Expand fitness and nutrition with progress charts, goals, meal templates and body-measurement history; keep records private by default.
 
 ## Current boundary
 The current branch is a local interactive prototype plus a prepared/tested Postgres security foundation. It is not yet a multi-user cloud social network: no live Supabase project has been linked, and local IndexedDB content does not sync between devices or accounts.
