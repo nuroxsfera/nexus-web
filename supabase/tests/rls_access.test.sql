@@ -54,7 +54,7 @@ update public.channels set organization_id='72000000-0000-4000-8000-000000000001
 update public.shops set organization_id='72000000-0000-4000-8000-000000000001' where id='50000000-0000-4000-8000-000000000002';
 insert into public.spaces(id,organization_id,created_by,title,slug,space_type,visibility) values
 ('73000000-0000-4000-8000-000000000001','72000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Public community','public-community','community','public'),
-('73000000-0000-4000-8000-000000000002','72000000-0000-4000-8000-222222222222','22222222-2222-4222-8222-222222222222','Private team','private-team','team','private');
+('73000000-0000-4000-8000-000000000002','72000000-0000-4000-8000-000000000001','22222222-2222-4222-8222-222222222222','Private team','private-team','team','private');
 insert into public.space_links(space_id,link_type,channel_id) values ('73000000-0000-4000-8000-000000000001','channel','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 insert into public.space_links(space_id,link_type,shop_id) values ('73000000-0000-4000-8000-000000000002','shop','50000000-0000-4000-8000-000000000002');
 
