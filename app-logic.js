@@ -14,6 +14,8 @@ function openMediaDB(){
   return mediaDbPromise;
 }
 async function saveMediaFile(file){
+  if(!file||!file.type.startsWith('image/'))throw new Error('Выберите изображение');
+  if(file.size>20*1024*1024)throw new Error('Фото должно быть меньше 20 МБ');
   const db=await openMediaDB();
   const id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);
   await new Promise((resolve,reject)=>{
@@ -42,6 +44,7 @@ async function hydrateMediaImages(root=document){
   }));
 }
 
+function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 const VIEWS=['home','profile','me','saved','notifications','messages','chat','explore','settings','channel','shop','compose'];
 function go(r,p){
   closeSheet();closeStory();
@@ -117,9 +120,9 @@ function renderFeed(){
         ${images.length>1?`<span class="absolute top-2.5 right-2.5 glass rounded-full px-2 py-1 text-[10px] font-semibold text-white">${images.length} фото · листайте</span>`:''}
         <div class="heart-burst"><svg width="72" height="72" viewBox="0 0 24 24" fill="#ef4444"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
         <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15 pointer-events-none"></div>
-        <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${p.author}')`}">
+        <button class="absolute top-2.5 left-2.5 flex items-center gap-1.5 press" onclick="event.stopPropagation();${p.authorKey?`go('profile',{key:'${p.authorKey}'})`:`toast('${esc(p.author)}')`}">
           <img src="${p.avatar}" class="w-7 h-7 rounded-full object-cover ring-1 ring-white/50" onerror="this.style.opacity=0">
-          <span class="text-[12px] font-semibold text-white drop-shadow">${p.author}</span>
+          <span class="text-[12px] font-semibold text-white drop-shadow">${esc(p.author)}</span>
         </button>
         <div class="absolute bottom-2.5 left-2.5 flex gap-1.5">
           <button class="flex items-center gap-1 glass rounded-full px-2.5 py-1 press" onclick="toggleLike('${p.id}')">
@@ -136,24 +139,24 @@ function renderFeed(){
         </button>
       </div></div>
       <div class="px-3.5 pt-1 pb-3.5">
-        <p class="text-[12.5px] font-semibold text-black">${p.author}</p>
-        <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${p.text}</p>
+        <p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p>
+        <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${esc(p.text)}</p>
       </div>
     </article>`;
   }).join('');
   hydrateMediaImages(feed);
 }
-function doubleLike(id,el){
-  const p=DB.posts.find(x=>x.id===id);if(!p)return;
-  if(!p.liked){p.liked=true;p.likes++}
-  save();
-  const burst=el.querySelector('.heart-burst');
-  if(burst){burst.classList.remove('show');void burst.offsetWidth;burst.classList.add('show')}
-  renderFeed();
+function doubleLike(id){
+ const p=DB.posts.find(x=>x.id===id);if(!p)return;
+ if(!p.liked){p.liked=true;p.likes++}
+ save();renderFeed();
+ const card=[...document.querySelectorAll('.post-card')].find(node=>node.dataset.id===id);
+ const burst=card&&card.querySelector('.heart-burst');
+ if(burst){burst.classList.remove('show');void burst.offsetWidth;burst.classList.add('show')}
 }
 function toggleLike(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.liked=!p.liked;p.likes+=p.liked?1:-1;save();renderFeed()}
 function toggleSave(id){const p=DB.posts.find(x=>x.id===id);if(!p)return;p.saved=!p.saved;save();toast(p.saved?'Сохранено':'Убрано');renderFeed()}
-function openComments(id){DB.activePost=id;const p=DB.posts.find(x=>x.id===id);document.getElementById('clist-c').innerHTML=(p.commentList||[]).map(c=>`<div class="flex gap-2.5"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[12px] font-semibold">${c.user[0]}</div><div><p class="text-[12.5px] font-semibold">${c.user}</p><p class="text-[13px] text-white/65">${c.text}</p></div></div>`).join('')||'<p class="empty">Нет комментариев — будьте первым</p>';document.getElementById('bd').classList.add('open');document.getElementById('comments-sheet').classList.add('open');setNav(false)}
+function openComments(id){DB.activePost=id;const p=DB.posts.find(x=>x.id===id);document.getElementById('clist-c').innerHTML=(p.commentList||[]).map(c=>`<div class="flex gap-2.5"><div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[12px] font-semibold">${c.user[0]}</div><div><p class="text-[12.5px] font-semibold">${esc(c.user)}</p><p class="text-[13px] text-white/65">${esc(c.text)}</p></div></div>`).join('')||'<p class="empty">Нет комментариев — будьте первым</p>';document.getElementById('bd').classList.add('open');document.getElementById('comments-sheet').classList.add('open');setNav(false)}
 function addCm(){const inp=document.getElementById('cminput');const t=inp.value.trim();if(!t||!DB.activePost)return;const p=DB.posts.find(x=>x.id===DB.activePost);p.commentList.push({user:'Вы',text:t});p.comments++;inp.value='';save();openComments(p.id);renderFeed()}
 function renderSaved(){
   const list=DB.posts.filter(p=>p.saved);
@@ -162,7 +165,7 @@ function renderSaved(){
     const src=(Array.isArray(p.images)&&p.images[0])||p.image||'';
     const image=src?(src.startsWith('idb:')?`<img data-media-ref="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`:`<img src="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`):'';
     return `<article class="post-card"><div class="p-1.5">${image}</div>
-      <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-black">${p.author}</p><p class="text-[13px] text-black/70">${p.text}</p>
+      <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p><p class="text-[13px] text-black/70">${esc(p.text)}</p>
       <button class="mt-2 text-[12px] text-black/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`;
   }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
   hydrateMediaImages(box);
@@ -178,7 +181,14 @@ function openProfile(key){
   document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${key}')">${fol?'Вы подписаны':'Подписаться'}</button><button onclick="go('messages')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
 }
 function toggleFollow(key){DB.following[key]=!DB.following[key];save();toast(DB.following[key]?'Подписка':'Отписка');openProfile(key)}
-function shareProfile(){toast('Ссылка скопирована (демо)')}
+async function shareProfile(){
+ const url=location.origin+location.pathname+'?profile='+encodeURIComponent(DB.me.handle.replace(/^@/,''));
+ try{
+  if(navigator.share){await navigator.share({title:DB.me.name,text:'Мой профиль',url});return}
+  if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url);toast('Ссылка скопирована');return}
+  toast('Браузер не разрешил поделиться ссылкой');
+ }catch(e){if(e&&e.name!=='AbortError')toast('Не удалось поделиться ссылкой')}
+}
 function renderMe(){
   document.getElementById('me-name').textContent=DB.me.name;
   document.getElementById('me-handle').textContent=DB.me.handle;
@@ -211,7 +221,7 @@ function openChannel(id){
   const btn=document.getElementById('ch-sub');
   btn.textContent=sub?'Вы подписаны':'Подписаться';
   btn.className=sub?'w-full h-10 rounded-full glass text-white font-semibold text-[14px] press mb-3':'w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3';
-  document.getElementById('ch-posts').innerHTML=ch.posts.map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${p.image}" class="w-full h-[160px] object-cover"><div class="p-3.5"><h3 class="text-[15px] font-semibold">${p.title}</h3><p class="text-[12.5px] text-white/50 mt-1">${p.text}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`).join('');
+  document.getElementById('ch-posts').innerHTML=ch.posts.map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${p.image}" class="w-full h-[160px] object-cover"><div class="p-3.5"><h3 class="text-[15px] font-semibold">${p.title}</h3><p class="text-[12.5px] text-white/50 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`).join('');
 }
 function toggleChSub(){if(!DB.activeChannel)return;DB.channelSub[DB.activeChannel]=!DB.channelSub[DB.activeChannel];save();toast(DB.channelSub[DB.activeChannel]?'Подписка на канал':'Отписались');openChannel(DB.activeChannel)}
 function openShop(id){
@@ -242,7 +252,7 @@ function openCart(){
   document.getElementById('bd').classList.add('open');document.getElementById('cart-sheet').classList.add('open');setNav(false);
 }
 function rmCart(id){DB.cart=DB.cart.filter(c=>c.id!==id);save();updateCartBadge();openCart()}
-function checkout(){DB.cart=[];save();updateCartBadge();closeSheet();toast('Заказ оформлен ✓');DB.notifications.unshift({id:Date.now(),read:false,title:'Заказ',body:'принят в обработку',time:'сейчас',avatar:null});save()}
+function checkout(){toast('Оформление заказов подключим вместе с сервером. Корзина сохранена.')}
 function renderNotifs(){
   if(!DB.notifications.length){document.getElementById('nlist').innerHTML='<div class="empty">Нет уведомлений</div>';document.getElementById('ndot').style.display='none';return}
   document.getElementById('nlist').innerHTML=DB.notifications.map(n=>`<div class="flex gap-3 p-3 rounded-2xl ${n.read?'bg-white/[0.03]':'bg-white/[0.07]'} border border-white/[0.04]"><div class="w-11 h-11 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">${n.avatar?`<img src="${n.avatar}" class="w-full h-full object-cover">`:'🔔'}</div><div class="flex-1"><p class="text-[13px]"><span class="font-semibold">${n.title}</span> <span class="text-white/55">${n.body}</span></p><p class="text-[11px] text-white/35 mt-0.5">${n.time}</p></div></div>`).join('');
@@ -255,7 +265,7 @@ function renderChats(){
   document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" onclick="go('chat',{chatId:'${c.id}'})"><img src="${c.avatar}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${c.name}</p><span class="text-[10px] text-white/35">${c.time}</span></div><p class="text-[12.5px] text-white/45 truncate">${c.last}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${c.unread}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
   const u=DB.chats.reduce((s,c)=>s+c.unread,0);const b=document.getElementById('mbadge');if(u){b.textContent=u;b.classList.remove('hidden')}else b.classList.add('hidden');
 }
-function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'bubble-me':'bubble-them'}">${m.text}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
+function openChat(id){const c=DB.chats.find(x=>x.id===id);if(!c)return;DB.activeChat=id;c.unread=0;save();document.getElementById('cv-av').src=c.avatar;document.getElementById('cv-name').textContent=c.name;const box=document.getElementById('cmsgs');box.innerHTML=c.messages.map(m=>`<div class="flex ${m.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${m.me?'bubble-me':'bubble-them'}">${esc(m.text)}</div></div>`).join('');box.scrollTop=box.scrollHeight;renderChats()}
 function sendMsg(){const inp=document.getElementById('cinput');const t=inp.value.trim();if(!t||!DB.activeChat)return;const c=DB.chats.find(x=>x.id===DB.activeChat);c.messages.push({me:true,text:t});c.last=t;c.time='сейчас';inp.value='';save();openChat(c.id)}
 function renderExplore(){
   const q=(document.getElementById('eq')?.value||'').toLowerCase();
@@ -281,7 +291,7 @@ function settingAction(i){
   if(i==='Сбросить демо'){localStorage.removeItem(LS);location.reload();return}
   if(i==='Очистить кэш'){toast('Кэш очищен');return}
   if(i==='Профиль'){go('me');return}
-  toast(i+' — в полной версии');
+  toast(i+' пока не подключено к серверной части');
 }
 function openCreate(){
   document.getElementById('create-opts').innerHTML=[
@@ -309,9 +319,9 @@ function addMyStory(){
   if(picker)picker.click();
 }
 async function handleStoryFiles(input){
-  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/')).slice(0,10);
+  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/')&&f.size<=20*1024*1024).slice(0,10);
   input.value='';
-  if(!files.length)return;
+  if(!files.length){toast('Выберите изображение до 20 МБ');return}
   try{
     const refs=[];
     for(const file of files)refs.push(await saveMediaFile(file));
@@ -330,8 +340,9 @@ function addComposeImg(){
   document.getElementById('compose-file-input').click();
 }
 async function handleComposeFiles(input){
-  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/'));
+  const files=[...(input.files||[])].filter(f=>f.type.startsWith('image/')&&f.size<=20*1024*1024);
   input.value='';
+  if(!files.length){toast('Выберите изображение до 20 МБ');return}
   const room=4-DB.composeImgs.length;
   if(!room){toast('Максимум 4 фото');return}
   if(files.length>room)toast('Можно добавить не более 4 фото');
