@@ -89,6 +89,12 @@ try {
   state=window.__getDB();
   assert.equal(state.chats[0].profileKey,people.options[0].value);
   assert.equal(state.chats[0].messages.length,0);
+  window.openReport('post','demo-post');
+  window.document.getElementById('report-reason').value='harassment';
+  window.document.getElementById('report-details').value='Test report';
+  window.submitReport();
+  state=window.__getDB();
+  assert.equal(state.reports[0].reason,'harassment');
   state=window.__getDB();
   state.pendingClipVideo='idb:smoke-video';
   window.document.getElementById('clip-caption').value='Первый клип';
