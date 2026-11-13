@@ -371,11 +371,382 @@ function renderSaved(){
     return `<article class="post-card"><div class="p-1.5">${image}</div>
       <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-white">${esc(p.author)}</p><p class="text-[13px] text-white/70">${esc(p.text)}</p>
       <button class="mt-2 text-[12px] text-white/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`;
-  }).join(''):'<div class="empty"><div class="text-3xl mb-3">⌕</div><p class="font-semibold text-white/75 mb-1">Нет совпадений</p><p class="text-[12px] text-white/35">Попробуйте другое имя или слово</p></div>'
-  const caption=document.getElementById('chat-search-caption');
-  if(caption)caption.textContent=q?'Результаты поиска':'Недавние';
-  const unread=DB.chats.reduce((sum,chat)=>sum+Number(chat.unread||0),0),badge=document.getElementById('mbadge');
-  if(badge){if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden')}
+  }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
+  hydrateMediaImages(box);
+}
+async function messageProfile(key){
+  const profile=DB.profiles[key];if(!profile)return;
+  if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.())await syncCloudChats({silent:true});
+  if(DB.blocked?.[key]){toast('Сначала сними блокировку');return}
+  let chat=DB.chats.find(item=>item.profileKey===key);
+  if(!chat){
+    let cloudId=null,cloudError=null;
+    if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+      try{const result=await window.NEXUS_CLOUD_SOCIAL.createConversation({participantIds:[profile.cloudId]});cloudId=result.id}
+      catch(error){cloudError=error}
+    }
+    chat={id:'chat'+Date.now(),cloudId,name:profile.name,avatar:profile.avatar||'https://i.pravatar.cc/128?u='+encodeURIComponent(key),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:key,profileKeys:[key]};
+    DB.chats.unshift(chat);save();
+    if(cloudError)toast('Чат создан локально: '+cloudError.message);
+    else if(cloudId)void syncCloudChats({silent:true});
+  }
+  go('chat',{chatId:chat.id});
+}
+async function openProfile(key){
+  let pr=DB.profiles[key];if(!pr){toast('Профиль недоступен');return}
+  if(DB.blocked?.[key]){toast('Этот профиль заблокирован на устройстве');return}
+  if(pr.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{const fresh=await window.NEXUS_CLOUD_SOCIAL.fetchProfile(pr.cloudId);if(!fresh){delete DB.profiles[key];delete DB.following[key];save();toast('Этот профиль недоступен');go('explore');return}pr={...pr,...fresh};DB.profiles[key]=pr;save()}
+    catch(error){toast('Не удалось обновить профиль');return}
+  }
+  DB.activeProfile=key;
+  document.getElementById('prof-hero').style.backgroundImage=`url('${pr.hero||'https://picsum.photos/seed/profile/1200/1600'}')`;
+  document.getElementById('prof-name').textContent=pr.name||'Пользователь';
+  document.getElementById('prof-handle').textContent=pr.handle||'';
+  document.getElementById('prof-bio').textContent=pr.bio||'';
+  document.getElementById('prof-stats').innerHTML=`<div class="text-center"><p class="text-[20px] font-bold">${Number(pr.following)||0}</p><p class="text-[11px] text-white/45">Подписки</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.followers)||0}</p><p class="text-[11px] text-white/45">Подписчики</p></div><div class="text-center"><p class="text-[20px] font-bold">${Number(pr.posts)||0}</p><p class="text-[11px] text-white/45">Посты</p></div>`;
+  const fol=!!DB.following[key];
+  document.getElementById('prof-actions').innerHTML=`<button class="flex-1 max-w-[200px] h-11 rounded-full ${fol?'glass text-white':'bg-white text-black'} font-semibold text-[14px] press" onclick="toggleFollow('${esc(key)}')">${fol?'Вы подписаны':'Подписаться'}</button><button data-profile-key="${esc(key)}" onclick="openReport('profile',this.dataset.profileKey)" class="px-3 h-11 rounded-full glass text-[12px] press">Пожаловаться</button><button onclick="messageProfile('${esc(key)}')" class="w-11 h-11 rounded-full glass flex items-center justify-center press"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`;
+}
+async function toggleFollow(key){const profile=DB.profiles[key];if(!profile)return;const next=!DB.following[key];if(profile.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.followUser(profile.cloudId,next)}catch(error){toast(error.message||'Не удалось изменить подписку');return}DB.following[key]=next;save();toast(next?'Подписка':'Отписка');void openProfile(key)}
+async function shareProfile(){
+ const url=location.origin+location.pathname+'?profile='+encodeURIComponent(DB.me.handle.replace(/^@/,''));
+ try{
+  if(navigator.share){await navigator.share({title:DB.me.name,text:'Мой профиль',url});return}
+  if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(url);toast('Ссылка скопирована');return}
+  toast('Браузер не разрешил поделиться ссылкой');
+ }catch(e){if(e&&e.name!=='AbortError')toast('Не удалось поделиться ссылкой')}
+}
+function renderMe(){
+  document.getElementById('me-name').textContent=DB.me.name;
+  setMediaSource(document.getElementById('me-avatar'),DB.me.avatar||'https://i.pravatar.cc/300?u=me');
+  setMediaBackground(document.getElementById('me-hero'),DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600');
+  document.getElementById('me-handle').textContent=DB.me.handle;
+  document.getElementById('me-bio').textContent=DB.me.bio;
+  document.getElementById('me-posts').textContent=DB.posts.filter(p=>p.author==='Вы'||p.author===DB.me.name).length;
+}
+function openEditProfile(){
+  DB.pendingAvatar=null;DB.pendingCover=null;
+  document.getElementById('edit-name').value=DB.me.name;
+  document.getElementById('edit-handle').value=DB.me.handle;
+  document.getElementById('edit-bio').value=DB.me.bio;
+  const avatarPreview=document.getElementById('edit-avatar-preview'),coverPreview=document.getElementById('edit-cover-preview');
+  avatarPreview.hidden=false;coverPreview.hidden=false;setMediaSource(avatarPreview,DB.me.avatar||'https://i.pravatar.cc/300?u=me');setMediaSource(coverPreview,DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600');
+  document.getElementById('bd').classList.add('open');
+  document.getElementById('edit-sheet').classList.add('open');
+  setNav(false);
+}
+async function saveProfile(){
+  const name=document.getElementById('edit-name').value.trim()||'Вы';
+  let handle=document.getElementById('edit-handle').value.trim()||'@you';if(!handle.startsWith('@'))handle='@'+handle;
+  const bio=document.getElementById('edit-bio').value.trim()||'';
+  const avatarRef=DB.pendingAvatar,coverRef=DB.pendingCover;
+  let cloudError=null,cloudProfile=null;
+  if(window.NEXUS_AUTH?.hasSession?.()){
+    try{
+      const avatar=avatarRef?await getMediaBlob(avatarRef).catch(()=>null):null;
+      const cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
+      cloudProfile=await window.NEXUS_CLOUD_SOCIAL.updateMyProfile({name,username:handle.replace(/^@/,''),bio,avatar,cover,visibility:DB.me.visibility||'public'});
+    }catch(error){cloudError=error}
+  }
+  DB.me.name=name;DB.me.handle=handle;DB.me.bio=bio;
+  DB.me.avatar=avatarRef||cloudProfile?.avatar||DB.me.avatar||'https://i.pravatar.cc/300?u=me';
+  DB.me.cover=coverRef||cloudProfile?.cover||DB.me.cover||'https://picsum.photos/seed/mehero/1200/1600';
+  if(cloudProfile){DB.me.cloudId=cloudProfile.cloudId;DB.me.visibility=cloudProfile.visibility}
+  DB.pendingAvatar=null;DB.pendingCover=null;save();closeSheet();renderMe();
+  toast(cloudError?'Профиль сохранён на устройстве: '+cloudError.message:cloudProfile?'Профиль обновлён и синхронизирован':'Профиль сохранён на устройстве');
+}
+function setMediaBackground(element,ref){
+  if(!element)return;
+  if(ref&&ref.startsWith('idb:'))resolveMediaURL(ref).then(url=>{element.style.backgroundImage='url("'+url+'")'}).catch(()=>{});
+  else element.style.backgroundImage=ref?'url("'+ref+'")':'';
+}
+function chooseProfileAvatar(){document.getElementById('edit-avatar-file').click()}
+function chooseProfileCover(){document.getElementById('edit-cover-file').click()}
+async function handleProfileAvatar(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите фото до 20 МБ');return}
+  try{DB.pendingAvatar=await saveMediaFile(file);const preview=document.getElementById('edit-avatar-preview');preview.hidden=false;setMediaSource(preview,DB.pendingAvatar)}
+  catch(e){toast(e.message||'Не удалось сохранить фото')}
+}
+async function handleProfileCover(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите обложку до 20 МБ');return}
+  try{DB.pendingCover=await saveMediaFile(file);const preview=document.getElementById('edit-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingCover)}
+  catch(e){toast(e.message||'Не удалось сохранить обложку')}
+}
+function setMediaSource(img,ref){
+  if(!img)return;
+  if(ref&&ref.startsWith('idb:')){
+    img.removeAttribute('src');img.dataset.mediaRef=ref;
+    resolveMediaURL(ref).then(url=>{img.src=url}).catch(()=>{img.alt='Изображение недоступно'});
+  }else{delete img.dataset.mediaRef;img.src=ref||''}
+}
+async function toggleChSub(){
+  const channel=DB.channels.find(item=>item.id===DB.activeChannel);if(!channel||channel.ownerKey==='me')return;
+  const joined=!DB.channelSub[channel.id];
+  if(channel.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{await window.NEXUS_CLOUD_SOCIAL.joinChannel(channel.cloudId,joined)}
+    catch(error){toast(error.message||'Не удалось изменить подписку');return}
+  }
+  DB.channelSub[channel.id]=joined;save();openChannel(channel.id);toast(joined?'Вы подписались на канал':'Вы отписались от канала');
+}
+function openChannel(id){
+  const ch=DB.channels.find(c=>c.id===id);if(!ch)return;DB.activeChannel=id;
+  setMediaSource(document.getElementById('ch-cover'),ch.cover);
+  setMediaSource(document.getElementById('ch-av'),ch.avatar);
+  document.getElementById('ch-name').textContent=ch.name;
+  document.getElementById('ch-meta').textContent=(ch.members||'0')+' подписчиков';
+  document.getElementById('ch-desc').textContent=ch.desc;
+  const owner=ch.ownerKey==='me';
+  const sub=!!DB.channelSub[id];
+  const btn=document.getElementById('ch-sub');
+  btn.hidden=owner;
+  btn.textContent=sub?'Вы подписаны':'Подписаться';
+  btn.className=sub?'w-full h-10 rounded-full glass text-white font-semibold text-[14px] press mb-3':'w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3';
+  document.getElementById('ch-new-post').hidden=!owner;
+  document.getElementById('ch-edit').hidden=!owner;
+  const local=DB.posts.filter(p=>p.channelId===id).map(p=>{
+    const ref=(p.images&&p.images[0])||p.image||'';
+    const image=ref?(ref.startsWith('idb:')?`<img data-media-ref="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`:`<img src="${esc(ref)}" class="w-full h-[180px] object-cover" alt="Фото публикации">`):'';
+    return `<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5">${image}<div class="p-3.5"><h3 class="text-[15px] font-semibold">${esc(p.author)}</h3><p class="text-[12.5px] text-white/55 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${fmt(p.likes)}</p></div></article>`;
+  });
+  const seeded=(ch.posts||[]).map(p=>`<article class="rounded-2xl overflow-hidden bg-[#141416] border border-white/5"><img src="${esc(p.image)}" class="w-full h-[160px] object-cover" alt=""><div class="p-3.5"><h3 class="text-[15px] font-semibold">${esc(p.title)}</h3><p class="text-[12.5px] text-white/50 mt-1">${esc(p.text)}</p><p class="text-[11px] text-white/35 mt-2">♥ ${p.likes}</p></div></article>`);
+  const box=document.getElementById('ch-posts');
+  box.innerHTML=[...local,...seeded].join('')||'<div class="empty">Пока нет публикаций. Создайте первую.</div>';
+  hydrateMediaImages(box);
+}
+function chooseChannelCover(){document.getElementById('channel-cover-input').click()}
+async function handleChannelCover(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите изображение до 20 МБ');return}
+  try{
+    DB.pendingChannelCover=await saveMediaFile(file);
+    const preview=document.getElementById('channel-cover-preview');preview.hidden=false;setMediaSource(preview,DB.pendingChannelCover);
+  }catch(e){toast(e.message||'Не удалось сохранить обложку')}
+}
+function openChannelPost(){
+  const channel=DB.channels.find(item=>item.id===DB.activeChannel);
+  if(!channel||channel.ownerKey!=='me'){toast('Публиковать в канале может владелец');return}
+  go('compose',{channelId:channel.id});
+}
+function openChannelEdit(){
+  const ch=DB.channels.find(channel=>channel.id===DB.activeChannel);if(ch?.ownerKey!=='me')return;
+  DB.editingChannelId=ch.id;DB.pendingChannelCover=ch.cover||null;
+  document.getElementById('new-channel-name').value=ch.name;document.getElementById('new-channel-desc').value=ch.desc||'';document.getElementById('new-channel-visibility').value=ch.visibility||'public';
+  const preview=document.getElementById('channel-cover-preview');preview.hidden=!ch.cover;if(ch.cover)setMediaSource(preview,ch.cover);
+  document.getElementById('channel-create-title').textContent='Настройки канала';document.getElementById('channel-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('channel-create-sheet').classList.add('open');setNav(false);
+}
+async function createChannel(){
+  const name=document.getElementById('new-channel-name').value.trim(),desc=document.getElementById('new-channel-desc').value.trim(),visibility=document.getElementById('new-channel-visibility').value;
+  if(name.length<2){toast('Название канала должно быть длиннее');return}
+  const coverRef=DB.pendingChannelCover||null,cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
+  if(DB.editingChannelId){
+    const channel=DB.channels.find(item=>item.id===DB.editingChannelId);if(!channel){toast('Канал не найден');return}
+    let cloudError=null;
+    if(channel.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+      try{await window.NEXUS_CLOUD_SOCIAL.updateChannel(channel.cloudId,{title:name,description:desc,visibility,cover})}catch(error){cloudError=error}
+    }
+    channel.name=name;channel.desc=desc;channel.visibility=visibility;channel.cover=coverRef||channel.cover;
+    const id=channel.id;DB.editingChannelId=null;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});
+    toast(cloudError?'Изменения сохранены локально: '+cloudError.message:channel.cloudId?'Канал синхронизирован':'Настройки канала сохранены локально');return;
+  }
+  const id='ch'+Date.now();let cloudResult=null,cloudError=null;
+  if(window.NEXUS_AUTH?.hasSession?.()){
+    try{cloudResult=await window.NEXUS_CLOUD_SOCIAL.createChannel({title:name,description:desc,visibility,cover})}catch(error){cloudError=error}
+  }
+  const channel={id,cloudId:cloudResult?.id||null,name,desc,visibility,members:'1',ownerKey:'me',cover:coverRef||'https://picsum.photos/seed/'+id+'cover/900/420',avatar:'https://picsum.photos/seed/'+id+'avatar/200/200',posts:[]};
+  DB.channels.unshift(channel);DB.channelSub[id]=true;DB.pendingChannelCover=null;save();closeSheet();go('channel',{id});
+  toast(cloudResult?'Канал создан и синхронизирован':cloudError?'Канал сохранён локально: '+cloudError.message:'Канал создан · сохранён на устройстве');
+  if(cloudResult)void syncCloudResources({silent:true});
+}
+async function createShop(){
+  const name=document.getElementById('new-shop-name').value.trim(),desc=document.getElementById('new-shop-desc').value.trim(),visibility=document.getElementById('new-shop-visibility').value;
+  if(name.length<2){toast('Название магазина должно быть длиннее');return}
+  if(DB.editingShopId){
+    const shop=DB.shops.find(item=>item.id===DB.editingShopId);if(!shop){toast('Магазин не найден');return}
+    let cloudError=null;if(shop.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.updateShop(shop.cloudId,{title:name,description:desc,visibility})}catch(error){cloudError=error}
+    shop.name=name;shop.desc=desc;shop.visibility=visibility;const id=shop.id;DB.editingShopId=null;save();closeSheet();go('shop',{id});
+    toast(cloudError?'Изменения сохранены локально: '+cloudError.message:shop.cloudId?'Магазин синхронизирован':'Настройки магазина сохранены локально');return;
+  }
+  const id='sh'+Date.now();let cloudResult=null,cloudError=null;
+  if(window.NEXUS_AUTH?.hasSession?.())try{cloudResult=await window.NEXUS_CLOUD_SOCIAL.createShop({title:name,description:desc,visibility})}catch(error){cloudError=error}
+  DB.shops.unshift({id,cloudId:cloudResult?.id||null,name,desc,visibility,ownerKey:'me',products:0,items:[]});
+  save();closeSheet();go('shop',{id});
+  toast(cloudResult?'Магазин создан и синхронизирован':cloudError?'Магазин сохранён локально: '+cloudError.message:'Магазин создан · сохранён на устройстве');
+  if(cloudResult)void syncCloudResources({silent:true});
+}
+function openShop(id){
+  const shop=DB.shops.find(item=>item.id===id);if(!shop)return;
+  DB.activeShop=id;shop.items=shop.items||[];
+  document.getElementById('sh-name').textContent=shop.name;
+  document.getElementById('sh-meta').textContent=shop.items.length+' товаров';
+  document.getElementById('sh-desc').textContent=shop.desc||'';
+  const owner=shop.ownerKey==='me';
+  document.getElementById('sh-edit-shop').hidden=!owner;
+  document.getElementById('sh-add-product').hidden=!owner;
+  const grid=document.getElementById('sh-grid');
+  grid.innerHTML=shop.items.map(item=>{
+    const ref=item.image||'';
+    const image=ref?(ref.startsWith('idb:')?`<img data-media-ref="${esc(ref)}" class="w-full h-full object-cover" alt="${esc(item.name)}">`:`<img src="${esc(ref)}" class="w-full h-full object-cover" alt="${esc(item.name)}">`):'<div class="w-full h-full bg-white/5"></div>';
+    return `<button class="text-left rounded-2xl overflow-hidden bg-[#151517] border border-white/5 press" onclick="openProduct('${esc(shop.id)}','${esc(item.id)}')"><div class="aspect-square overflow-hidden">${image}</div><div class="p-3"><p class="text-[13px] font-semibold line-clamp-2">${esc(item.name)}</p><p class="text-[12px] text-white/45 mt-1 line-clamp-2">${esc(item.desc||'')}</p><p class="text-[14px] font-bold mt-2">${Number(item.price||0).toLocaleString('ru-RU')} ₽</p></div></button>`;
+  }).join('')||'<div class="empty col-span-2">В магазине пока нет товаров.</div>';
+  hydrateMediaImages(grid);
+  const cartCount=(DB.cart||[]).reduce((sum,item)=>sum+Number(item.qty||1),0);
+  const badge=document.getElementById('cart-n');badge.textContent=cartCount;badge.classList.toggle('hidden',!cartCount);
+}
+function openProductCreate(){
+  if(!DB.activeShop)return;
+  const sh=DB.shops.find(s=>s.id===DB.activeShop);if(sh?.ownerKey!=='me'){toast('Добавлять товары может владелец');return}
+  DB.pendingProductImage=null;DB.editingProductId=null;
+  document.getElementById('product-create-title').textContent='Новый товар';document.getElementById('product-save-btn').textContent='Добавить товар';
+  ['new-product-name','new-product-price','new-product-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('product-image-preview').hidden=true;
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
+}
+function chooseProductImage(){document.getElementById('product-file-input').click()}
+async function handleProductFile(input){
+  const file=input.files?.[0];input.value='';
+  if(!file||!file.type.startsWith('image/')||file.size>20*1024*1024){toast('Выберите изображение до 20 МБ');return}
+  try{
+    DB.pendingProductImage=await saveMediaFile(file);
+    const preview=document.getElementById('product-image-preview');preview.hidden=false;setMediaSource(preview,DB.pendingProductImage);
+  }catch(e){toast(e.message||'Не удалось сохранить изображение')}
+}
+function openProductEdit(){
+  const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
+  DB.editingProductId=active.item.id;DB.pendingProductImage=active.item.image||null;
+  document.getElementById('new-product-name').value=active.item.name;document.getElementById('new-product-price').value=String(active.item.price);document.getElementById('new-product-desc').value=active.item.desc||'';
+  const preview=document.getElementById('product-image-preview');preview.hidden=!active.item.image;if(active.item.image)setMediaSource(preview,active.item.image);
+  document.getElementById('product-create-title').textContent='Редактировать товар';document.getElementById('product-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('product-create-sheet').classList.add('open');setNav(false);
+}
+async function deleteProduct(){
+  const active=DB.activeProduct;if(!active)return;const sh=DB.shops.find(s=>s.id===active.shopId);if(sh?.ownerKey!=='me')return;
+  if(active.item.cloudId&&window.NEXUS_AUTH?.hasSession?.())try{await window.NEXUS_CLOUD_SOCIAL.deleteProduct(active.item.cloudId)}catch(error){toast(error.message||'Не удалось удалить товар в облаке');return}
+  sh.items=sh.items.filter(item=>item.id!==active.item.id);sh.products=sh.items.length;DB.activeProduct=null;save();closeSheet();openShop(sh.id);toast('Товар удалён');
+}
+function openShopEdit(){
+  const shop=DB.shops.find(item=>item.id===DB.activeShop);if(shop?.ownerKey!=='me')return;
+  DB.editingShopId=shop.id;
+  document.getElementById('new-shop-name').value=shop.name;
+  document.getElementById('new-shop-desc').value=shop.desc||'';
+  document.getElementById('new-shop-visibility').value=shop.visibility||'public';
+  document.getElementById('shop-create-title').textContent='Настройки магазина';
+  document.getElementById('shop-save-btn').textContent='Сохранить изменения';
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('shop-create-sheet').classList.add('open');setNav(false);
+}
+async function createProduct(){
+  const sh=DB.shops.find(item=>item.id===DB.activeShop);
+  if(!sh||sh.ownerKey!=='me'){toast('Магазин недоступен');return}
+  const name=document.getElementById('new-product-name').value.trim(),price=Number(document.getElementById('new-product-price').value.replace(',','.')),desc=document.getElementById('new-product-desc').value.trim();
+  if(name.length<2||!Number.isFinite(price)||price<=0){toast('Проверьте название и цену');return}
+  const coverRef=DB.pendingProductImage||null,cover=coverRef?await getMediaBlob(coverRef).catch(()=>null):null;
+  let cloudError=null,cloudProduct=null;
+  if(sh.cloudId&&window.NEXUS_AUTH?.hasSession?.()){
+    try{
+      if(DB.editingProductId){
+        const old=sh.items.find(product=>product.id===DB.editingProductId);
+        if(old?.cloudId)await window.NEXUS_CLOUD_SOCIAL.updateProduct(old.cloudId,{title:name,description:desc,price,cover});
+      }else cloudProduct=await window.NEXUS_CLOUD_SOCIAL.createProduct({shopId:sh.cloudId,title:name,description:desc,price,cover});
+    }catch(error){cloudError=error}
+  }
+  if(DB.editingProductId){
+    const item=sh.items.find(product=>product.id===DB.editingProductId);if(!item){toast('Товар не найден');return}
+    item.name=name;item.price=price;item.desc=desc;item.image=coverRef||item.image;
+  }else sh.items.unshift({id:'item'+Date.now(),cloudId:cloudProduct?.id||null,name,price,desc,image:coverRef||'https://picsum.photos/seed/new-product/600/600'});
+  sh.products=sh.items.length;DB.pendingProductImage=null;DB.editingProductId=null;save();closeSheet();openShop(sh.id);
+  toast(cloudError?'Сохранено локально: '+cloudError.message:cloudProduct?'Товар опубликован в магазине':'Изменения сохранены локально');
+  if(cloudProduct)void syncCloudResources({silent:true});
+}
+function openProduct(sid,iid){
+  const sh=DB.shops.find(s=>s.id===sid);const item=sh?.items.find(i=>i.id===iid);if(!item)return;
+  DB.activeProduct={shopId:sid,item};
+  const source=item.image&&item.image.startsWith('idb:')?`<img data-media-ref="${esc(item.image)}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`:`<img src="${esc(item.image||'')}" class="w-full aspect-square object-cover rounded-2xl mb-3" alt="${esc(item.name)}">`;
+  document.getElementById('pdetail').innerHTML=`${source}<h3 class="text-[20px] font-bold">${esc(item.name)}</h3><p class="text-[18px] font-bold mt-1 gt">${Number(item.price).toLocaleString('ru-RU')} ₽</p><p class="text-[13px] text-white/55 mt-2">${esc(item.desc)}</p>`;
+  hydrateMediaImages(document.getElementById('pdetail'));
+  document.getElementById('pfoot').innerHTML=sh.ownerKey==='me'?'<div class="flex gap-2"><button onclick="openProductEdit()" class="flex-1 h-11 rounded-full bg-white text-black font-semibold text-[13px] press">Изменить</button><button onclick="deleteProduct()" class="px-4 h-11 rounded-full bg-red-500/15 text-red-300 font-semibold text-[13px] press">Удалить</button></div>':`<button onclick="addToCart()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">В корзину</button>`;
+  document.getElementById('bd').classList.add('open');document.getElementById('product-sheet').classList.add('open');setNav(false);
+}
+function addToCart(){if(!DB.activeProduct)return;const {item}=DB.activeProduct;const ex=DB.cart.find(c=>c.id===item.id);if(ex)ex.qty++;else DB.cart.push({...item,qty:1});save();updateCartBadge();toast('В корзине');closeSheet()}
+function updateCartBadge(){const n=DB.cart.reduce((s,c)=>s+c.qty,0);const b=document.getElementById('cart-n');if(n){b.textContent=n;b.classList.remove('hidden')}else b.classList.add('hidden')}
+function openCart(){
+  const list=document.getElementById('cart-list');
+  if(!DB.cart.length){list.innerHTML='<div class="empty">Корзина пуста</div>';document.getElementById('cart-foot').innerHTML=''}
+  else{
+    list.innerHTML=DB.cart.map(item=>{
+      const source=item.image&&item.image.startsWith('idb:')?`data-media-ref="${esc(item.image)}"`:`src="${esc(item.image||'')}"`;
+      return `<div class="flex gap-2.5 items-center"><img ${source} class="w-14 h-14 rounded-xl object-cover"><div class="flex-1"><p class="text-[13px] font-semibold">${esc(item.name)}</p><p class="text-[12px] text-white/50">${Number(item.price).toLocaleString('ru-RU')} ₽ × ${Number(item.qty)}</p></div><button class="text-white/40 text-[11px] press" data-cart-id="${esc(item.id)}" onclick="rmCart(this.dataset.cartId)">✕</button></div>`;
+    }).join('');
+    hydrateMediaImages(list);
+    const total=DB.cart.reduce((sum,item)=>sum+Number(item.price)*Number(item.qty),0);
+    document.getElementById('cart-foot').innerHTML=`<div class="flex justify-between mb-2.5"><span class="text-white/50 text-[13px]">Итого</span><span class="font-bold">${total.toLocaleString('ru-RU')} ₽</span></div><button onclick="checkout()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Оформить</button>`;
+  }
+  document.getElementById('bd').classList.add('open');document.getElementById('cart-sheet').classList.add('open');setNav(false);
+}
+function rmCart(id){DB.cart=DB.cart.filter(c=>c.id!==id);save();updateCartBadge();openCart()}
+function checkout(){toast('Оформление заказов подключим вместе с сервером. Корзина сохранена.')}
+function renderNotifs(){
+  if(!DB.notifications.length){document.getElementById('nlist').innerHTML='<div class="empty">Нет уведомлений</div>';document.getElementById('ndot').style.display='none';return}
+  document.getElementById('nlist').innerHTML=DB.notifications.map(n=>`<div class="flex gap-3 p-3 rounded-2xl ${n.read?'bg-white/[0.03]':'bg-white/[0.07]'} border border-white/[0.04]"><div class="w-11 h-11 rounded-full overflow-hidden bg-white/10 shrink-0 flex items-center justify-center">${n.avatar?`<img src="${esc(n.avatar)}" class="w-full h-full object-cover">`:'🔔'}</div><div class="flex-1"><p class="text-[13px]"><span class="font-semibold">${esc(n.title)}</span> <span class="text-white/55">${esc(n.body)}</span></p><p class="text-[11px] text-white/35 mt-0.5">${esc(n.time)}</p></div></div>`).join('');
+  document.getElementById('ndot').style.display=DB.notifications.some(n=>!n.read)?'':'none';
+}
+function markRead(){DB.notifications.forEach(n=>n.read=true);save();renderNotifs();toast('Прочитано')}
+function openNewChat(){
+  document.getElementById('chat-group-name').value='';
+  document.getElementById('chat-people').innerHTML=Object.entries(DB.profiles).filter(([key])=>!DB.blocked?.[key]).map(([key,profile])=>`<option value="${esc(key)}">${esc(profile.name)} · ${esc(profile.handle)}</option>`).join('');
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('new-chat-sheet').classList.add('open');setNav(false);
+}
+async function createChat(){
+  const select=document.getElementById('chat-people');
+  const keys=[...select.selectedOptions].map(option=>option.value);
+  if(window.NEXUS_AUTH?.hasSession?.())await syncCloudChats({silent:true});
+  if(!keys.length){toast('Выбери хотя бы одного собеседника');return}
+  const profiles=keys.map(key=>DB.profiles[key]).filter(Boolean);if(!profiles.length)return;
+  if(keys.length===1){
+    const existing=DB.chats.find(chat=>chat.profileKey===keys[0]);
+    if(existing){closeSheet();go('chat',{chatId:existing.id});return}
+  }
+  const customName=document.getElementById('chat-group-name').value.trim();
+  const name=customName||(profiles.length===1?profiles[0].name:profiles.map(profile=>profile.name).join(', '));
+  let cloudId=null,cloudError=null;
+  const participantIds=profiles.map(profile=>profile.cloudId).filter(Boolean);
+  if(participantIds.length===profiles.length&&window.NEXUS_AUTH?.hasSession?.()){
+    try{const result=await window.NEXUS_CLOUD_SOCIAL.createConversation({participantIds,title:name});cloudId=result.id}
+    catch(error){cloudError=error}
+  }
+  const id='chat'+Date.now();
+  const chat={id,cloudId,name,avatar:'https://i.pravatar.cc/128?u='+encodeURIComponent(keys.join('-')),last:'Чат создан',time:'сейчас',unread:0,messages:[],profileKey:keys.length===1?keys[0]:null,profileKeys:keys};
+  DB.chats.unshift(chat);save();closeSheet();go('chat',{chatId:id});
+  toast(cloudId?'Чат создан и синхронизирован':cloudError?'Чат создан локально: '+cloudError.message:'Чат создан на устройстве');
+  if(cloudId)void syncCloudChats({silent:true});
+}
+let chatFilterMode='all';
+function startChatSearch(){const view=document.getElementById('view-messages');if(!view.classList.contains('search-mode')){view.classList.add('search-mode');renderChats()}}
+function closeChatSearch(){const view=document.getElementById('view-messages'),input=document.getElementById('csearch');view.classList.remove('search-mode');input.value='';input.blur();chatFilterMode='all';document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter==='all'));renderChats()}
+function setChatFilter(mode){chatFilterMode=['all','unread','groups'].includes(mode)?mode:'all';document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter===chatFilterMode));renderChats()}
+function showCallInfo(){toast('Голосовые и видеозвонки появятся после подключения отдельного сервиса')}
+function openActiveChatProfile(){const chat=DB.chats.find(item=>item.id===DB.activeChat),key=chat?.profileKey||(chat?.profileKeys||[])[0];if(key&&DB.profiles[key])go('profile',{key})}
+function insertChatEmoji(emoji){const input=document.getElementById('cinput');if(!input)return;const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;input.value=input.value.slice(0,start)+emoji+input.value.slice(end);const cursor=start+emoji.length;input.setSelectionRange(cursor,cursor);input.focus()}
+const CHAT_WALLPAPERS={midnight:'radial-gradient(circle at 80% 12%,rgba(71,55,111,.34),transparent 45%),linear-gradient(135deg,#151827,#080a12)',aurora:'radial-gradient(circle at 15% 15%,rgba(37,107,105,.38),transparent 48%),radial-gradient(circle at 90% 90%,rgba(90,58,131,.3),transparent 48%),#0b151b',graphite:'linear-gradient(145deg,#30343d,#101116 70%)',lavender:'radial-gradient(circle at 70% 10%,rgba(98,75,142,.36),transparent 50%),linear-gradient(145deg,#29213c,#11101b)',ocean:'radial-gradient(circle at 20% 15%,rgba(36,92,131,.38),transparent 48%),linear-gradient(145deg,#102433,#090e18)',plain:'none'};
+function applyChatWallpaper(chat){const box=document.getElementById('cmsgs');if(!box)return;const wallpaper=chat?.wallpaper||'midnight';box.style.backgroundImage=CHAT_WALLPAPERS[wallpaper]||CHAT_WALLPAPERS.midnight;box.style.backgroundColor=wallpaper==='plain'?'#090a10':'transparent'}
+function openChatWallpaper(){const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat)return;document.querySelectorAll('[data-wallpaper]').forEach(button=>button.classList.toggle('active',button.dataset.wallpaper===(chat.wallpaper||'midnight')));closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('chat-wallpaper-sheet').classList.add('open');setNav(false)}
+function chooseChatWallpaper(wallpaper){const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat||!Object.prototype.hasOwnProperty.call(CHAT_WALLPAPERS,wallpaper))return;chat.wallpaper=wallpaper;save();applyChatWallpaper(chat);document.querySelectorAll('[data-wallpaper]').forEach(button=>button.classList.toggle('active',button.dataset.wallpaper===wallpaper));closeSheet();toast('Оформление чата обновлено')}
+function renderChats(){
+ const q=(document.getElementById('csearch')?.value||'').trim().toLocaleLowerCase('ru-RU');
+ let list=DB.chats.filter(chat=>{
+  if((chat.profileKey&&DB.blocked?.[chat.profileKey])||(chat.profileKeys||[]).some(key=>DB.blocked?.[key]))return false;
+  if(chatFilterMode==='unread'&&!Number(chat.unread||0))return false;
+  if(chatFilterMode==='groups'&&!((chat.profileKeys||[]).length>1||(!chat.profileKey&&!(chat.profileKeys||[]).length)))return false;
+  if(q&&!((chat.name||'').toLocaleLowerCase('ru-RU').includes(q)||(chat.last||'').toLocaleLowerCase('ru-RU').includes(q)))return false;
+  return true;
+ });
+ const recent=!q&&chatFilterMode==='all'&&document.getElementById('view-messages')?.classList.contains('search-mode');if(recent)list=list.slice(0,8);
+ const box=document.getElementById('clist');
+ box.innerHTML=list.length?list.map(chat=>`<button class="chat-row press" data-chat-id="${esc(chat.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(chat.avatar)}" class="chat-row-avatar" alt=""><span class="chat-row-copy"><span class="chat-row-title"><strong>${esc(chat.name||'Диалог')}</strong><span class="chat-row-time">${esc(chat.time||'')}</span></span><span class="chat-row-preview"><span>${esc(chat.last||'Начните общение')}</span>${chat.unread?'<span class="chat-unread">'+Number(chat.unread)+'</span>':''}</span></span></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">⌕</div><p class="font-semibold text-white/75 mb-1">Нет совпадений</p><p class="text-[12px] text-white/35">Попробуйте другое имя или слово</p></div>';
+ const caption=document.getElementById('chat-search-caption');if(caption)caption.textContent=q?'Результаты поиска':'Недавние';
+ const unread=DB.chats.reduce((sum,chat)=>sum+Number(chat.unread||0),0),badge=document.getElementById('mbadge');if(badge){if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden')}
 }
 async function openChat(id){
   const chat=DB.chats.find(item=>item.id===id);if(!chat)return;
