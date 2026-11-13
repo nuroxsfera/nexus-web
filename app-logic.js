@@ -762,7 +762,14 @@ async function openChat(id){
   applyChatWallpaper(chat);renderChatMessages(chat);renderChats();
 }
 function renderChatMessages(chat){
-  const box=document.getElementById('cmsgs');applyChatWallpaper(chat);box.innerHTML=(chat.messages||[]).map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
+  const box=document.getElementById('cmsgs');applyChatWallpaper(chat);
+  const messages=chat.messages||[];
+  box.innerHTML=messages.length?messages.map(message=>{
+    const date=message.createdAt?new Date(message.createdAt):null;
+    const stamp=date&&Number.isFinite(date.getTime())?date.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'';
+    const meta=stamp?'<span class="chat-message-time">'+stamp+'</span>':'';
+    return `<div class="flex ${message.me?'justify-end':''}"><div class="chat-message-bubble ${message.me?'bubble-me':'bubble-them'}"><span>${esc(message.text)}</span>${meta}</div></div>`;
+  }).join(''):'<div class="chat-empty-state"><div class="chat-empty-icon">✦</div><p>Начните общение</p><span>Ваши сообщения будут отображаться здесь</span></div>';
   box.scrollTop=box.scrollHeight;
 }
 async function refreshActiveChat(){
@@ -786,7 +793,7 @@ async function sendMsg(){
     try{await window.NEXUS_CLOUD_SOCIAL.sendMessage(chat.cloudId,textValue)}
     catch(error){toast(error.message||'Не удалось отправить сообщение');return}
   }
-  chat.messages.push({me:true,text:textValue});chat.last=textValue;chat.time='сейчас';input.value='';save();await openChat(chat.id);
+  chat.messages.push({me:true,text:textValue,createdAt:new Date().toISOString()});chat.last=textValue;chat.time='сейчас';input.value='';save();await openChat(chat.id);
 }
 
 function openClipCreate(){
