@@ -744,7 +744,7 @@ function showCallInfo(){
 function openActiveChatProfile(){
   const chat=DB.chats.find(item=>item.id===DB.activeChat);
   const key=chat?.profileKey||(chat?.profileKeys||[])[0];
-  if(key&&DB.profiles[key])openProfile(key);
+  if(key&&DB.profiles[key])go('profile',{key});
 }
 function insertChatEmoji(emoji){
   const input=document.getElementById('cinput');if(!input)return;
@@ -809,7 +809,7 @@ async function openChat(id){
   applyChatWallpaper(chat);renderChatMessages(chat);renderChats();
 }
 function renderChatMessages(chat){
-  const box=document.getElementById('cmsgs');box.innerHTML=(chat.messages||[]).map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
+  const box=document.getElementById('cmsgs');applyChatWallpaper(chat);box.innerHTML=(chat.messages||[]).map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
   box.scrollTop=box.scrollHeight;
 }
 async function refreshActiveChat(){
@@ -1422,8 +1422,8 @@ async function publishPost(){
   if(cloudId)void syncCloudFeed({silent:true});
 }
 function closeSheet(){
-  ['auth-sheet','bd','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
-  setNav(true);
+  ['auth-sheet','bd','chat-wallpaper-sheet','create-sheet','comments-sheet','product-sheet','cart-sheet','edit-sheet','channel-create-sheet','shop-create-sheet','product-create-sheet','privacy-sheet','blocks-sheet','clip-create-sheet','playlist-create-sheet','track-create-sheet','watchlist-create-sheet','watch-item-create-sheet','report-sheet','organization-create-sheet','organization-link-sheet','organization-members-sheet','fitness-profile-sheet','workout-create-sheet','nutrition-create-sheet','new-chat-sheet','space-create-sheet','space-link-sheet','health-vault-sheet'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  setNav(!document.getElementById('view-chat')?.classList.contains('active'));
 }
 if(!DB.onboarded)document.getElementById('onboarding').classList.add('on');
 renderStories();renderFeed();renderNotifs();renderChats();renderMe();
