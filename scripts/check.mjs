@@ -34,7 +34,7 @@ assert.ok(sw.includes("'/app-logic.js'"));
 assert.ok(sw.includes("'/health-vault.js'"));
 assert.ok(sw.includes("'/auth.js'"));
 assert.ok(sw.includes("'/cloud-social.js'"));
-assert.ok(sw.includes("const CACHE = 'nexus-v24'"));
+assert.ok(sw.includes("const CACHE = 'nexus-v25'"));
 assert.ok(sw.includes("event.data.type === 'SKIP_WAITING'"));
 assert.ok(sw.includes("'/pwa.js'"));
 assert.ok(app.includes("load('/pwa.js')"));
