@@ -141,6 +141,11 @@ try {
   assert.equal(state.chats[0].wallpaper,'aurora');
   assert.equal(window.document.getElementById('chat-wallpaper-sheet').classList.contains('open'),false);
   assert.equal(window.document.getElementById('bnav').classList.contains('hide'),true);
+  assert.ok(window.document.querySelector('.chat-empty-state'));
+  state.chats[0].messages.push({me:true,text:'Timestamp test',createdAt:new Date().toISOString()});
+  window.renderChatMessages(state.chats[0]);
+  assert.ok(window.document.querySelector('.chat-message-time'));
+  state.chats[0].messages=[];window.renderChatMessages(state.chats[0]);
   const createdChatId=state.chats[0].id,createdChatPerson=state.chats[0].profileKey;
   window.toggleBlock(createdChatPerson);
   window.document.getElementById('cinput').value='blocked message';
@@ -244,7 +249,7 @@ try {
   assert.equal(state.blocked.marley,true);
   assert.equal(window.document.getElementById('view-settings').classList.contains('active'),false);
 
-  console.log('Nexus UI smoke checks passed: channel, shop, products, clips, playlists, watchlists, fitness, nutrition, profile, privacy and blocks.');
+  console.log('Nexus UI smoke checks passed: messages, search, wallpapers, channel, shop, products, clips, playlists, watchlists, fitness, nutrition, profile, privacy and blocks.');
 } finally {
   dom.window.close();
 }
