@@ -53,6 +53,10 @@ const remoteProfile=await cloud.fetchProfile('77777777-7777-4777-8777-7777777777
 assert.equal(remoteProfile.name,'Tester');
 const matches=await cloud.searchProfiles('tester');
 assert.equal(matches.length,1);
+const profileSearch=calls.find(call=>call[0]==='profiles'&&call[1].startsWith('or='));
+assert.ok(profileSearch,'Cloud profile search must query both username and display name');
+assert.ok(profileSearch[1].includes('username.ilike.*tester*'));
+assert.ok(profileSearch[1].includes('display_name.ilike.*tester*'));
 await cloud.followUser(remoteProfile.cloudId,true);
 await cloud.followUser(remoteProfile.cloudId,false);
 await cloud.blockUser(remoteProfile.cloudId,true);
