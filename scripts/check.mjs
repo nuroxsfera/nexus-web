@@ -56,6 +56,8 @@ assert.ok(migration.includes('revoke all on function private.handle_new_user() f
 assert.ok(migration.includes('fallback_username'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
+assert.ok(auth.includes('let config=null,session=null,ready=false,refreshPromise=null'));
+assert.ok(auth.includes('if(refreshPromise)return refreshPromise'));
 assert.ok(auth.includes('hasSession:function()'));
 assert.ok(auth.includes('async function uploadMedia('));
 assert.ok(auth.includes('async function rest('));
