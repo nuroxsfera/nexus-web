@@ -167,9 +167,13 @@
   }
   async function searchProfiles(term){
     const client=auth();await currentUser();
-    const query=encodeURIComponent(String(term||'').replace(/^@/,'').trim());
-    if(!query)return [];
-    const rows=await client.rest('profiles','select=id,username,display_name,bio,avatar_path,cover_path,visibility&username=ilike.*'+query+'*&limit=20');
+    const normalized=String(term||'').replace(/^@/,'').trim().slice(0,64);
+    if(!normalized)return [];
+    // Search both public handle and display name. Encode user input separately
+    // so PostgREST filter syntax cannot be altered by punctuation in the query.
+    const query=encodeURIComponent(normalized);
+    const filter='or=(username.ilike.*'+query+'*,display_name.ilike.*'+query+'*)&select=id,username,display_name,bio,avatar_path,cover_path,visibility&limit=20';
+    const rows=await client.rest('profiles',filter);
     return Promise.all((rows||[]).map(profileWithMedia));
   }
   async function followUser(userId,follow){
