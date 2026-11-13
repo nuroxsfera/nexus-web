@@ -129,6 +129,41 @@ try {
   );
   await db.exec("reset role; set role authenticated; select set_config('request.jwt.claim.sub','" + A + "',false);");
 
+  // A must never be able to attach B's private object to an A-owned record.
+  await assert.rejects(
+    db.query("update public.profiles set avatar_path='" + B + "/avatar.jpg' where id='" + A + "'"),
+    /row-level security/
+  );
+  await db.query("insert into public.posts(id,author_id,body) values ('10000000-0000-4000-8000-000000000099','" + A + "','Owned test post')");
+  await assert.rejects(
+    db.query("insert into public.post_media(post_id,storage_path,media_type) values ('10000000-0000-4000-8000-000000000099','" + B + "/private/borrowed.jpg','image')"),
+    /row-level security/
+  );
+  await db.query("insert into public.stories(id,author_id) values ('80000000-0000-4000-8000-000000000001','" + A + "')");
+  await assert.rejects(
+    db.query("insert into public.story_media(story_id,storage_path) values ('80000000-0000-4000-8000-000000000001','" + B + "/private/story.jpg')"),
+    /row-level security/
+  );
+  await assert.rejects(
+    db.query("insert into public.clips(author_id,caption,storage_path) values ('" + A + "','Borrowed clip','" + B + "/private/clip.mp4')"),
+    /row-level security/
+  );
+  await assert.rejects(
+    db.query("insert into public.channels(owner_id,title,slug,avatar_path) values ('" + A + "','Owned channel','owned-channel','" + B + "/private/channel.jpg')"),
+    /row-level security/
+  );
+  await db.query("insert into public.shops(owner_id,title,slug) values ('" + A + "','Owned shop','owned-shop')");
+  const ownedShop = (await db.query("select id from public.shops where slug='owned-shop'")).rows[0].id;
+  await assert.rejects(
+    db.query("insert into public.products(shop_id,title,price,cover_path) values ('" + ownedShop + "','Borrowed cover',100,'" + B + "/private/product.jpg')"),
+    /row-level security/
+  );
+  await assert.rejects(
+    db.query("insert into storage.objects(bucket_id,name) values ('nexus-media','" + B + "/private/forged-upload.jpg')"),
+    /row-level security/
+  );
+  await db.query("insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/owned-upload.jpg')");
+
   await db.exec("insert into public.blocks(blocker_id,blocked_id) values ('" + A + "','" + B + "');");
   assert.equal((await db.query("select count(*)::int as n from public.posts where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user posts');
   assert.equal((await db.query("select count(*)::int as n from public.clips where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user clips');
