@@ -12,6 +12,7 @@ const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
 const gitignore = fs.readFileSync('.gitignore', 'utf8');
 const envExample = fs.readFileSync('.env.example', 'utf8');
 const migration = fs.readFileSync('supabase/migrations/202611120001_initial_schema.sql', 'utf8');
+const storageOwnershipMigration = fs.readFileSync('supabase/migrations/202611130001_storage_path_ownership.sql', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const vault = fs.readFileSync('health-vault.js', 'utf8');
 const auth = fs.readFileSync('auth.js', 'utf8');
@@ -57,6 +58,13 @@ assert.ok(migration.includes('function private.handle_new_user()'));
 assert.ok(!migration.includes('function public.handle_new_user()'));
 assert.ok(migration.includes('revoke all on function private.handle_new_user() from public,anon,authenticated'));
 assert.ok(migration.includes('fallback_username'));
+assert.ok(storageOwnershipMigration.includes('function private.owns_storage_path(target_path text)'));
+for (const policy of ['profiles_update','channels_update_admin','shops_update_owner','products_update_shop_admin','post_media_insert_author','story_media_insert_author','clips_insert_author','clips_update_author']) {
+  assert.ok(storageOwnershipMigration.includes('drop policy if exists '+policy), 'Storage ownership migration must replace '+policy);
+}
+assert.ok(storageOwnershipMigration.includes('private.owns_storage_path(storage_path)'));
+assert.ok(storageOwnershipMigration.includes('private.owns_storage_path(avatar_path)'));
+assert.ok(storageOwnershipMigration.includes('private.owns_storage_path(cover_path)'));
 assert.ok(auth.includes('/auth/v1/token?grant_type=password'));
 assert.ok(auth.includes('sessionStorage'));
 assert.ok(auth.includes('let config=null,session=null,ready=false,refreshPromise=null'));
