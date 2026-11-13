@@ -1,4 +1,4 @@
-const CACHE = 'atlantis-v22';
+const CACHE = 'atlantis-v23';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,38 +11,49 @@ const ASSETS = [
   '/app-logic.js',
   '/icon.svg'
 ];
+const NETWORK_FIRST = new Set(ASSETS);
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
+self.addEventListener('install', (event) => {
+  event.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(ASSETS))
+      .then(cache => cache.addAll(ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))
     ).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  // Network-first for HTML so updates show immediately
-  if (e.request.mode === 'navigate' || (e.request.headers.get('accept') || '').includes('text/html')) {
-    e.respondWith(
-      fetch(e.request)
-        .then(r => {
-          const copy = r.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
-          return r;
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  // Always check the network for the app shell first. This prevents an installed
+  // PWA from silently running old JavaScript after a successful deployment.
+  if (NETWORK_FIRST.has(url.pathname) || request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)));
+          }
+          return response;
         })
-        .catch(() => caches.match(e.request).then(r => r || caches.match('/')))
+        .catch(() => caches.match(request).then(cached => cached || caches.match('/')))
     );
     return;
   }
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/')))
+
+  event.respondWith(
+    caches.match(request).then(cached => cached || fetch(request).catch(() => caches.match('/')))
   );
 });
