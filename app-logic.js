@@ -123,7 +123,29 @@ function setNav(v){document.getElementById('bnav').classList.toggle('hide',!v)}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>t.classList.remove('show'),2200)}
 function fmt(n){return n>=1000?(n/1000).toFixed(1).replace('.0','')+' тыс.':String(n)}
 function finishOnboarding(){DB.onboarded=true;save();document.getElementById('onboarding').classList.remove('on');toast('Добро пожаловать 🌊')}
+function expireStories(){
+  const now=Date.now(),maxAge=24*60*60*1000,expired=[];
+  DB.stories=(DB.stories||[]).filter(story=>{
+    if(story.type==='add')return true;
+    const images=Array.isArray(story.images)?story.images:[];
+    if(!images.length)return false;
+    const timestamps=Array.isArray(story.imageCreatedAt)?story.imageCreatedAt:[];
+    if(!timestamps.length&&!story.createdAt)return true; // Untimed demo fixtures remain visible.
+    const kept=[],keptTimes=[];
+    images.forEach((image,index)=>{
+      const created=Number(timestamps[index]??story.createdAt??now);
+      if(Number.isFinite(created)&&now-created<maxAge){kept.push(image);keptTimes.push(created)}
+      else expired.push(image);
+    });
+    story.images=kept;story.imageCreatedAt=keptTimes;
+    if(!kept.length){delete DB.seenStories[story.id];return false}
+    story.createdAt=Math.max(...keptTimes);
+    return true;
+  });
+  if(expired.length){save();expired.forEach(ref=>void cleanupMedia(ref))}
+}
 function renderStories(){
+  expireStories();
   document.getElementById('stories').innerHTML=DB.stories.filter(story=>!story.profile||!DB.blocked?.[story.profile]).map(story=>{
     if(story.type==='add')return `<button class="flex flex-col items-center gap-1 shrink-0 press" onclick="openCreate()"><div class="w-[66px] h-[66px] rounded-full bg-[#161618] border border-white/10 flex items-center justify-center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div><span class="text-[10px] text-white/45">Добавить</span></button>`;
     const seen=DB.seenStories[story.id];
@@ -132,6 +154,7 @@ function renderStories(){
   }).join('');
 }
 function openStory(id){
+  expireStories();
   const s=DB.stories.find(x=>x.id===id);if(!s||!s.images||!s.images.length)return;
   DB.storyUser=s;DB.storyIdx=0;
   document.getElementById('story-viewer').classList.add('on');
@@ -713,6 +736,7 @@ async function openChat(id){
     catch(error){toast('Не удалось загрузить сообщения')}
   }
   save();document.getElementById('cv-av').src=chat.avatar;document.getElementById('cv-name').textContent=chat.name;
+  const status=document.getElementById('cv-status');if(status)status.textContent=chat.cloudId?'Облачный диалог':'На этом устройстве';
   renderChatMessages(chat);renderChats();
 }
 function renderChatMessages(chat){
@@ -1282,8 +1306,10 @@ async function handleStoryFiles(input){
     const refs=[];
     for(const file of files)refs.push(await saveMediaFile(file));
     let mine=DB.stories.find(s=>s.id==='me');
-    if(!mine){mine={id:'me',name:'Вы',avatar:'https://i.pravatar.cc/140?u=me',images:[]};DB.stories.splice(1,0,mine)}
-    mine.images.push(...refs);delete DB.seenStories.me;save();renderStories();toast('История добавлена');openStory('me');
+    if(!mine){mine={id:'me',name:'Вы',avatar:'https://i.pravatar.cc/140?u=me',images:[],imageCreatedAt:[]};DB.stories.splice(1,0,mine)}
+    if(!Array.isArray(mine.imageCreatedAt))mine.imageCreatedAt=(mine.images||[]).map(()=>Number(mine.createdAt)||Date.now());
+    const createdAt=Date.now();mine.images.push(...refs);mine.imageCreatedAt.push(...refs.map(()=>createdAt));mine.createdAt=createdAt;
+    delete DB.seenStories.me;save();renderStories();toast('История добавлена · исчезнет через 24 часа');openStory('me');
   }catch(e){console.error(e);toast(e.message||'Не удалось сохранить фото')}
 }
 function renderComposeImgs(){
