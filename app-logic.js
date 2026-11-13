@@ -99,7 +99,8 @@ async function hydrateMediaImages(root=document){
 function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 const VIEWS=['home','profile','me','saved','notifications','messages','chat','explore','settings','channel','shop','compose'];
 function go(r,p){
-  closeSheet();closeStory();
+  closeSheet();closeStory();setNav(r!=='chat');
+  if(r!=='messages'&&document.getElementById('view-messages')?.classList.contains('search-mode'))closeChatSearch();
   VIEWS.forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.classList.toggle('active',v===r)});
   document.querySelectorAll('.nav-btn').forEach(b=>{
     const route=b.getAttribute('data-r');
@@ -721,11 +722,78 @@ async function createChat(){
   toast(cloudId?'Чат создан и синхронизирован':cloudError?'Чат создан локально: '+cloudError.message:'Чат создан на устройстве');
   if(cloudId)void syncCloudChats({silent:true});
 }
+let chatFilterMode='all';
+function startChatSearch(){
+  const view=document.getElementById('view-messages');
+  if(!view.classList.contains('search-mode')){view.classList.add('search-mode');renderChats()}
+}
+function closeChatSearch(){
+  const view=document.getElementById('view-messages'),input=document.getElementById('csearch');
+  view.classList.remove('search-mode');input.value='';input.blur();chatFilterMode='all';
+  document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter==='all'));
+  renderChats();
+}
+function setChatFilter(mode){
+  chatFilterMode=['all','unread','groups'].includes(mode)?mode:'all';
+  document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter===chatFilterMode));
+  renderChats();
+}
+function showCallInfo(){
+  toast('Голосовые и видеозвонки появятся после подключения отдельного сервиса');
+}
+function openActiveChatProfile(){
+  const chat=DB.chats.find(item=>item.id===DB.activeChat);
+  const key=chat?.profileKey||(chat?.profileKeys||[])[0];
+  if(key&&DB.profiles[key])openProfile(key);
+}
+function insertChatEmoji(emoji){
+  const input=document.getElementById('cinput');if(!input)return;
+  const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;
+  input.value=input.value.slice(0,start)+emoji+input.value.slice(end);
+  const cursor=start+emoji.length;input.setSelectionRange(cursor,cursor);input.focus();
+}
+const CHAT_WALLPAPERS={
+  midnight:'radial-gradient(circle at 80% 12%,rgba(71,55,111,.34),transparent 45%),linear-gradient(135deg,#151827,#080a12)',
+  aurora:'radial-gradient(circle at 15% 15%,rgba(37,107,105,.38),transparent 48%),radial-gradient(circle at 90% 90%,rgba(90,58,131,.3),transparent 48%),#0b151b',
+  graphite:'linear-gradient(145deg,#30343d,#101116 70%)',
+  lavender:'radial-gradient(circle at 70% 10%,rgba(98,75,142,.36),transparent 50%),linear-gradient(145deg,#29213c,#11101b)',
+  ocean:'radial-gradient(circle at 20% 15%,rgba(36,92,131,.38),transparent 48%),linear-gradient(145deg,#102433,#090e18)',
+  plain:'none'
+};
+function applyChatWallpaper(chat){
+  const box=document.getElementById('cmsgs');if(!box)return;
+  const wallpaper=chat?.wallpaper||'midnight';
+  box.style.backgroundImage=CHAT_WALLPAPERS[wallpaper]||CHAT_WALLPAPERS.midnight;
+  box.style.backgroundColor=wallpaper==='plain'?'#090a10':'transparent';
+}
+function openChatWallpaper(){
+  const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat)return;
+  document.querySelectorAll('[data-wallpaper]').forEach(button=>button.classList.toggle('active',button.dataset.wallpaper===(chat.wallpaper||'midnight')));
+  closeSheet();document.getElementById('bd').classList.add('open');document.getElementById('chat-wallpaper-sheet').classList.add('open');setNav(false);
+}
+function chooseChatWallpaper(wallpaper){
+  const chat=DB.chats.find(item=>item.id===DB.activeChat);if(!chat||!CHAT_WALLPAPERS[wallpaper]&&wallpaper!=='plain')return;
+  chat.wallpaper=wallpaper;save();applyChatWallpaper(chat);
+  document.querySelectorAll('[data-wallpaper]').forEach(button=>button.classList.toggle('active',button.dataset.wallpaper===wallpaper));
+  closeSheet();toast('Оформление чата обновлено');
+}
 function renderChats(){
-  const q=(document.getElementById('csearch')?.value||'').toLowerCase();
-  const list=DB.chats.filter(c=>!(c.profileKey&&DB.blocked?.[c.profileKey])&&!(c.profileKeys||[]).some(key=>DB.blocked?.[key])&&(!q||c.name.toLowerCase().includes(q)));
-  document.getElementById('clist').innerHTML=list.length?list.map(c=>`<button class="w-full flex items-center gap-3 px-3 py-3 press text-left" data-chat-id="${esc(c.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(c.avatar)}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1 min-w-0"><div class="flex justify-between"><p class="text-[14px] font-semibold truncate">${esc(c.name)}</p><span class="text-[10px] text-white/35">${esc(c.time)}</span></div><p class="text-[12.5px] text-white/45 truncate">${esc(c.last)}</p></div>${c.unread?`<span class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:linear-gradient(135deg,#a855f7,#ec4899)">${Number(c.unread)}</span>`:''}</button>`).join(''):'<div class="empty">Нет чатов</div>';
-  const unread=DB.chats.reduce((sum,c)=>sum+Number(c.unread||0),0);const badge=document.getElementById('mbadge');if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden');
+  const q=(document.getElementById('csearch')?.value||'').trim().toLocaleLowerCase('ru-RU');
+  let list=DB.chats.filter(chat=>{
+    if((chat.profileKey&&DB.blocked?.[chat.profileKey])||(chat.profileKeys||[]).some(key=>DB.blocked?.[key]))return false;
+    if(chatFilterMode==='unread'&&!Number(chat.unread||0))return false;
+    if(chatFilterMode==='groups'&&!((chat.profileKeys||[]).length>1||(!chat.profileKey&&!(chat.profileKeys||[]).length)))return false;
+    if(q&&!((chat.name||'').toLocaleLowerCase('ru-RU').includes(q)||(chat.last||'').toLocaleLowerCase('ru-RU').includes(q)))return false;
+    return true;
+  });
+  const recent=!q&&chatFilterMode==='all'&&document.getElementById('view-messages')?.classList.contains('search-mode');
+  if(recent)list=list.slice(0,8);
+  const box=document.getElementById('clist');
+  box.innerHTML=list.length?list.map(chat=>`<button class="chat-row press" data-chat-id="${esc(chat.id)}" onclick="go('chat',{chatId:this.dataset.chatId})"><img src="${esc(chat.avatar)}" class="chat-row-avatar" alt=""><span class="chat-row-copy"><span class="chat-row-title"><strong>${esc(chat.name||'Диалог')}</strong><span class="chat-row-time">${esc(chat.time||'')}</span></span><span class="chat-row-preview"><span>${esc(chat.last||'Начните общение')}</span>${chat.unread?`<span class="chat-unread">${Number(chat.unread)}</span>`:''}</span></span></button>`).join(''):'<div class="empty"><div class="text-3xl mb-3">⌕</div><p class="font-semibold text-white/75 mb-1">${q?'Ничего не найдено':'Пока тихо'}</p><p class="text-[12px] text-white/35">${q?'Попробуйте другое имя или слово':'Начните новый диалог — он появится здесь'}</p></div>';
+  const caption=document.getElementById('chat-search-caption');
+  if(caption)caption.textContent=q?'Результаты поиска':'Недавние';
+  const unread=DB.chats.reduce((sum,chat)=>sum+Number(chat.unread||0),0),badge=document.getElementById('mbadge');
+  if(badge){if(unread){badge.textContent=unread;badge.classList.remove('hidden')}else badge.classList.add('hidden')}
 }
 async function openChat(id){
   const chat=DB.chats.find(item=>item.id===id);if(!chat)return;
@@ -737,7 +805,8 @@ async function openChat(id){
   }
   save();document.getElementById('cv-av').src=chat.avatar;document.getElementById('cv-name').textContent=chat.name;
   const status=document.getElementById('cv-status');if(status)status.textContent=chat.cloudId?'Облачный диалог':'На этом устройстве';
-  renderChatMessages(chat);renderChats();
+  const context=document.getElementById('chat-context-label');if(context)context.textContent=chat.profileKeys?.length>1?'Групповой диалог':'Личная переписка';
+  applyChatWallpaper(chat);renderChatMessages(chat);renderChats();
 }
 function renderChatMessages(chat){
   const box=document.getElementById('cmsgs');box.innerHTML=(chat.messages||[]).map(message=>`<div class="flex ${message.me?'justify-end':''}"><div class="max-w-[78%] px-3.5 py-2 text-[14px] ${message.me?'bubble-me':'bubble-them'}">${esc(message.text)}</div></div>`).join('');
