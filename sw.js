@@ -1,4 +1,4 @@
-const CACHE = 'nexus-v24';
+const CACHE = 'nexus-v25';
 const ASSETS = [
   '/',
   '/index.html',
@@ -34,7 +34,25 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  // The current UI uses Tailwind's browser runtime and Google Fonts.
+  // Keep these cross-origin assets available to installed PWAs after first load.
+  const trustedExternal = url.origin === 'https://cdn.tailwindcss.com' || url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com';
+  if (url.origin !== self.location.origin && !trustedExternal) return;
+
+  if (trustedExternal) {
+    event.respondWith(
+      fetch(request).then(response => {
+        if (response && (response.ok || response.type === 'opaque')) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)));
+        }
+        return response;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
 
   // Always check the network for the app shell first. This prevents an installed
   // PWA from silently running old JavaScript after a successful deployment.
