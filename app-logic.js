@@ -292,7 +292,7 @@ function renderFeed(){
     const gallery=images.length?images.map(src=>{
       const source=src.startsWith('idb:')?(`data-media-ref="${src}"`):(`src="${esc(src)}"`);
       return `<img ${source} class="w-full min-w-full h-[250px] object-cover snap-center" loading="lazy" alt="Фото публикации">`;
-    }).join(''):'<div class="w-full h-[250px] flex items-center justify-center bg-[#dedee3] text-black/35 text-sm">Публикация без фото</div>';
+    }).join(''):'<div class="w-full h-[250px] flex items-center justify-center bg-[#1b1d26] text-white/40 text-sm">Публикация без фото</div>';
     return `
     <article class="post-card relative" data-id="${p.id}">
       <div class="p-1.5"><div class="relative rounded-[22px] overflow-hidden bg-[#e4e4e8]" ondblclick="doubleLike('${p.id}',this)">
@@ -319,9 +319,9 @@ function renderFeed(){
         </button>
       </div></div>
       <div class="px-3.5 pt-1 pb-3.5">
-        <p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p>
-        <p class="text-[13px] text-black/70 mt-0.5 leading-snug">${esc(p.text)}</p>
-        ${p.authorKey==='me'?`<button data-post-id="${esc(p.id)}" onclick="deletePost(this.dataset.postId)" class="mt-2 text-[10px] text-red-400/70 press">Удалить публикацию</button>`:`<button data-report-id="${esc(p.id)}" onclick="openReport('post',this.dataset.reportId)" class="mt-2 text-[10px] text-black/35 press">Пожаловаться</button>`}
+        <p class="text-[12.5px] font-semibold text-white">${esc(p.author)}</p>
+        <p class="text-[13px] text-white/70 mt-0.5 leading-snug">${esc(p.text)}</p>
+        ${p.authorKey==='me'?`<button data-post-id="${esc(p.id)}" onclick="deletePost(this.dataset.postId)" class="mt-2 text-[10px] text-red-400/70 press">Удалить публикацию</button>`:`<button data-report-id="${esc(p.id)}" onclick="openReport('post',this.dataset.reportId)" class="mt-2 text-[10px] text-white/40 press">Пожаловаться</button>`}
       </div>
     </article>`;
   }).join('');
@@ -368,8 +368,8 @@ function renderSaved(){
     const src=(Array.isArray(p.images)&&p.images[0])||p.image||'';
     const image=src?(src.startsWith('idb:')?`<img data-media-ref="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`:`<img src="${src}" class="w-full h-[200px] object-cover rounded-[20px]" alt="Фото">`):'';
     return `<article class="post-card"><div class="p-1.5">${image}</div>
-      <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-black">${esc(p.author)}</p><p class="text-[13px] text-black/70">${esc(p.text)}</p>
-      <button class="mt-2 text-[12px] text-black/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`;
+      <div class="px-3.5 pb-3"><p class="text-[12.5px] font-semibold text-white">${esc(p.author)}</p><p class="text-[13px] text-white/70">${esc(p.text)}</p>
+      <button class="mt-2 text-[12px] text-white/40 press" onclick="toggleSave('${p.id}');renderSaved()">Убрать</button></div></article>`;
   }).join(''):'<div class="empty">Пока ничего не сохранено.<br>Нажмите закладку на посте.</div>';
   hydrateMediaImages(box);
 }
