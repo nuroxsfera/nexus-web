@@ -104,6 +104,19 @@ try {
   assert.equal(state.me.avatar,'idb:smoke-avatar');
   assert.equal(state.me.cover,'idb:smoke-cover');
 
+  const now=Date.now();
+  state=window.__getDB();
+  state.stories=[
+    {id:'add',type:'add',name:'Добавить'},
+    {id:'expired-story',name:'Expired',images:['idb:expired'],imageCreatedAt:[now-25*60*60*1000]},
+    {id:'fresh-story',name:'Fresh',images:['idb:fresh'],imageCreatedAt:[now-60*60*1000]}
+  ];
+  window.expireStories();
+  state=window.__getDB();
+  assert.equal(state.stories.some(story=>story.id==='expired-story'),false);
+  assert.equal(state.stories.some(story=>story.id==='fresh-story'),true);
+  assert.equal(state.stories.find(story=>story.id==='fresh-story').images.length,1);
+
   window.toggleBlock('marley');
   window.openNewChat();
   const people=window.document.getElementById('chat-people');
