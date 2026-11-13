@@ -1,7 +1,7 @@
 // Nexus browser auth client. Uses only Supabase publishable/anon key; no service-role secret.
 (function(){
   const SESSION_KEY='nexus.auth.session.v1';
-  let config=null,session=null,ready=false;
+  let config=null,session=null,ready=false,refreshPromise=null;
   function readStoredSession(){
     try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch{return null}
   }
@@ -46,12 +46,17 @@
     return readJson(response);
   }
   async function refreshSession(){
+    if(refreshPromise)return refreshPromise;
     if(!session?.refresh_token){storeSession(null);return null}
-    try{
-      const next=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});
-      storeSession({...next,expires_at:Date.now()/1000+Number(next.expires_in||3600)});
-      return session;
-    }catch(error){storeSession(null);throw error}
+    const pending=(async()=>{
+      try{
+        const next=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});
+        storeSession({...next,expires_at:Date.now()/1000+Number(next.expires_in||3600)});
+        return session;
+      }catch(error){storeSession(null);throw error}
+    })();
+    refreshPromise=pending;
+    try{return await pending}finally{if(refreshPromise===pending)refreshPromise=null}
   }
   async function getSession(){
     if(!session)session=readStoredSession();
