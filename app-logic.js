@@ -133,7 +133,7 @@ function expireStories(){
     if(!timestamps.length&&!story.createdAt)return true; // Untimed demo fixtures remain visible.
     const kept=[],keptTimes=[];
     images.forEach((image,index)=>{
-      const created=Number(timestamps[index]??story.createdAt??now);
+      const created=new Date(timestamps[index]??story.createdAt??now).getTime();
       if(Number.isFinite(created)&&now-created<maxAge){kept.push(image);keptTimes.push(created)}
       else expired.push(image);
     });
