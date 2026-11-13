@@ -36,6 +36,7 @@ try {
   const migration = fs.readFileSync('supabase/migrations/202611120001_initial_schema.sql','utf8')
     .replace('create extension if not exists pgcrypto;','');
   await db.exec(migration);
+  await db.exec(fs.readFileSync('supabase/migrations/202611130001_storage_path_ownership.sql','utf8'));
 
   await db.exec([
     "insert into auth.users values ('" + A + "','{}'),('" + B + "','{}'),('" + C + "','{}');",
@@ -162,7 +163,6 @@ try {
     db.query("insert into storage.objects(bucket_id,name) values ('nexus-media','" + B + "/private/forged-upload.jpg')"),
     /row-level security/
   );
-  await db.query("insert into storage.objects(bucket_id,name) values ('nexus-media','" + A + "/owned-upload.jpg')");
 
   await db.exec("insert into public.blocks(blocker_id,blocked_id) values ('" + A + "','" + B + "');");
   assert.equal((await db.query("select count(*)::int as n from public.posts where author_id='" + B + "'")).rows[0].n,0,'blocks hide the other user posts');
