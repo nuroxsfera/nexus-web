@@ -150,6 +150,15 @@ button.press:active{filter:brightness(1.13)}
 .messages-view.search-mode .chat-search-meta{display:block;padding-top:8px}
 .messages-view.search-mode .messages-list{padding-bottom:calc(22px + var(--sb))}
 .messages-view.search-mode .messages-search-shell input{font-size:15px}
+.messages-view.search-mode .messages-search-wrap{top:max(12px,var(--st));padding:0 13px;gap:9px}
+.messages-view.search-mode .messages-search-shell{min-width:0;flex:1}
+.messages-view.search-mode .search-close{display:flex!important;opacity:1;transform:scale(1);width:42px;height:42px;flex:0 0 42px;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}
+.messages-view.search-mode .chat-search-meta{display:block!important;position:absolute;top:calc(max(12px,var(--st)) + 58px);left:0;right:0;z-index:2;padding:10px 16px 12px;background:linear-gradient(180deg,rgba(8,9,14,.98),rgba(8,9,14,.88));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.messages-view.search-mode .chat-search-heading{margin:0 2px 9px}
+.messages-view.search-mode .messages-list{padding-top:116px;padding-bottom:calc(86px + var(--sb))}
+.messages-view.search-mode #clist .chat-row{padding-top:12px;padding-bottom:12px}
+@media(max-width:370px){.messages-view.search-mode .messages-search-wrap{padding-left:10px;padding-right:10px}.messages-view.search-mode .messages-search-shell{padding:0 12px}.messages-view.search-mode .search-close{width:40px;height:40px;flex-basis:40px}}
+
 .chat-view{background:radial-gradient(ellipse at 50% 0%,rgba(124,92,220,.09),transparent 45%),#090a10}
 .chat-header{display:flex;align-items:center;gap:9px;padding:0 12px 10px;border-bottom:1px solid rgba(255,255,255,.055);flex:0 0 auto;background:rgba(10,11,17,.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:2}
 .chat-person{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
