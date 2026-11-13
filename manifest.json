@@ -1,18 +1,23 @@
 {
+  "id": "/",
   "name": "Atlantis",
   "short_name": "Atlantis",
   "description": "Presence over noise",
+  "lang": "ru",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#08090d",
+  "theme_color": "#08090d",
   "orientation": "portrait",
+  "categories": ["social", "communication"],
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
