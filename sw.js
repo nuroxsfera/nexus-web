@@ -1,4 +1,4 @@
-const CACHE = 'atlantis-v23';
+const CACHE = 'nexus-v24';
 const ASSETS = [
   '/',
   '/index.html',
@@ -17,7 +17,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -56,4 +55,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then(cached => cached || fetch(request).catch(() => caches.match('/')))
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
