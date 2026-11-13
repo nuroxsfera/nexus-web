@@ -723,7 +723,22 @@ async function createChat(){
   if(cloudId)void syncCloudChats({silent:true});
 }
 let chatFilterMode='all';
-function startChatSearch(){const view=document.getElementById('view-messages');if(!view.classList.contains('search-mode')){view.classList.add('search-mode');renderChats()}}
+function startChatSearch(){
+ const view=document.getElementById('view-messages'),wrap=document.getElementById('messages-search-wrap');
+ if(!view||!wrap||view.classList.contains('search-mode'))return;
+ const from=wrap.getBoundingClientRect();
+ view.classList.add('search-mode');
+ const to=wrap.getBoundingClientRect();
+ const delta=from.top-to.top;
+ wrap.style.transition='none';
+ wrap.style.transform='translate3d(0,'+delta+'px,0)';
+ wrap.getBoundingClientRect();
+ requestAnimationFrame(()=>{
+  wrap.style.transition='';
+  wrap.style.transform='';
+ });
+ renderChats();
+}
 function closeChatSearch(){const view=document.getElementById('view-messages'),input=document.getElementById('csearch');view.classList.remove('search-mode');input.value='';input.blur();chatFilterMode='all';document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter==='all'));renderChats()}
 function setChatFilter(mode){chatFilterMode=['all','unread','groups'].includes(mode)?mode:'all';document.querySelectorAll('[data-chat-filter]').forEach(button=>button.classList.toggle('active',button.dataset.chatFilter===chatFilterMode));renderChats()}
 function showCallInfo(){toast('Голосовые и видеозвонки появятся после подключения отдельного сервиса')}
