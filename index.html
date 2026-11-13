@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#000000"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -238,7 +238,7 @@ button.press:active{filter:brightness(1.13)}
 <header class="px-2 pb-2 flex items-center gap-2 border-b border-white/5" style="padding-top:max(10px,var(--st))">
 <button onclick="go('messages')" class="w-10 h-10 rounded-full flex items-center justify-center press"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
 <img id="cv-av" class="w-9 h-9 rounded-full object-cover" alt="">
-<div class="flex-1 min-w-0"><p id="cv-name" class="text-[14px] font-semibold truncate"></p><p class="text-[11px] text-emerald-400/90">в сети</p></div>
+<div class="flex-1 min-w-0"><p id="cv-name" class="text-[14px] font-semibold truncate"></p><p id="cv-status" class="text-[11px] text-white/40">Личный диалог</p></div>
 </header>
 <div class="flex-1 overflow-y-auto ns px-3 py-3 space-y-2" id="cmsgs"></div>
 <div class="px-2.5 pt-1.5 flex items-center gap-2" style="padding-bottom:max(10px,var(--sb))">
