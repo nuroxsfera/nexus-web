@@ -334,7 +334,7 @@ button.press:active{filter:brightness(1.13)}
 <div class="flex-1 overflow-y-auto ns chat-messages" id="cmsgs"></div>
 <div class="chat-composer-wrap" style="padding-bottom:max(10px,var(--sb))">
   <div class="chat-composer">
-    <button onclick="openChatWallpaper()" class="composer-tool press" aria-label="Оформление переписки"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg></button>
+    <button onclick="insertChatEmoji('😊')" class="composer-tool press" aria-label="Добавить эмодзи"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.3 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></button>
     <input id="cinput" type="text" placeholder="Написать сообщение…" onkeydown="if(event.key==='Enter')sendMsg()">
     <button onclick="sendMsg()" class="composer-send press" aria-label="Отправить сообщение"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg></button>
   </div>
