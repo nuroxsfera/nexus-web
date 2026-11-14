@@ -4,6 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "npx serve .",
-    "build": "echo Static site"
+    "build": "npm test",
+    "test": "node scripts/check.mjs && node scripts/rls-check.mjs && node scripts/ui-smoke.mjs && node scripts/cloud-social-smoke.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "jsdom": "^26.1.0"
   }
 }

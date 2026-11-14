@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#000000"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Atlantis"/>
 <link rel="manifest" href="/manifest.json"/>
-<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="apple-touch-icon" href="/icon.svg"/>
 <title>Atlantis</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,9 +21,9 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 .press{transition:transform .15s cubic-bezier(.2,.8,.2,1),opacity .12s}.press:active{transform:scale(.96);opacity:.88}
 .story-ring{background:conic-gradient(from 210deg,#a855f7,#ec4899,#f97316,#a855f7);padding:2.5px;border-radius:999px}
 .story-ring.seen{background:#3a3a3c}
-.post-card{border-radius:28px;overflow:hidden;background:#f2f2f4;color:#0a0a0a;box-shadow:0 6px 32px rgba(0,0,0,.28)}
+.post-card{border-radius:26px;overflow:hidden;background:linear-gradient(160deg,#171923 0%,#101116 68%,#0d0e13 100%);color:#f7f7fb;border:1px solid rgba(255,255,255,.075);box-shadow:0 12px 36px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.035)}
 .nav-item{transition:all .18s;color:rgba(255,255,255,.38)}.nav-item.active{background:#fff;color:#000;box-shadow:0 2px 10px rgba(255,255,255,.2)}
-#bnav{transition:opacity .22s,transform .28s}#bnav.hide{opacity:0;pointer-events:none;transform:translateY(22px)}
+#bnav{transition:opacity .22s,transform .28s;filter:none!important;isolation:isolate;z-index:80!important}#bnav.hide{opacity:0;pointer-events:none;transform:translateY(22px)}
 .view{display:none;flex-direction:column;height:100%;min-height:0}.view.active{display:flex}
 .hero{position:absolute;inset:0;background-size:cover;background-position:center 22%}
 .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 28%,rgba(0,0,0,.88) 78%,#000)}
@@ -50,6 +50,143 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 .heart-burst.show{animation:burst .6s ease-out}
 @keyframes burst{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.4)}}
 .empty{text-align:center;padding:48px 24px;color:rgba(255,255,255,.35);font-size:14px}
+
+/* Product polish: motion, depth, safe areas and accessible focus */
+:root{color-scheme:dark;--accent:#b66cff;--accent-2:#ed78c5;--surface:#111114}
+body{background:radial-gradient(ellipse at 50% -12%,rgba(133,72,196,.18),transparent 42%),#000}
+#app{background:linear-gradient(180deg,#08080b 0%,#000 38%);box-shadow:0 0 80px rgba(0,0,0,.45)}
+.view.active{animation:view-enter .28s cubic-bezier(.2,.75,.25,1) both}
+@keyframes view-enter{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.post-card{transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease}
+.post-card:active{transform:scale(.992);box-shadow:0 2px 16px rgba(0,0,0,.22)}
+.story-ring{transition:transform .22s ease,filter .22s ease}
+.story-ring:active{transform:scale(.94);filter:brightness(1.15)}
+.nav-item{transition:color .2s ease,background .24s cubic-bezier(.2,.8,.2,1),transform .2s ease}
+.nav-item.active{transform:translateY(-1px)}
+.sheet{box-shadow:0 -24px 80px rgba(0,0,0,.48);transition:transform .38s cubic-bezier(.18,.9,.22,1)}
+.bd{background:rgba(0,0,0,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+button,input,textarea{font:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(192,132,252,.9);outline-offset:3px}
+input,textarea{accent-color:#c084fc}
+::selection{background:rgba(192,132,252,.35);color:#fff}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+.etab{transition:background .24s cubic-bezier(.2,.8,.2,1),color .2s ease,transform .2s ease;white-space:nowrap;scroll-snap-align:start}
+.etab:active{transform:scale(.95)}
+#etabs{scroll-snap-type:x proximity}
+.vault-shell{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(145deg,rgba(17,47,39,.96),rgba(11,15,19,.98) 58%,rgba(24,19,35,.98));border:1px solid rgba(110,231,183,.16);box-shadow:0 18px 55px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.04)}
+.vault-shell::before{content:'';position:absolute;z-index:-1;width:240px;height:240px;right:-95px;top:-120px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,.22),transparent 68%);filter:blur(8px);animation:vault-breathe 7s ease-in-out infinite alternate;pointer-events:none}
+.vault-orb{box-shadow:0 0 28px rgba(52,211,153,.14),inset 0 1px rgba(255,255,255,.1);border:1px solid rgba(110,231,183,.12)}
+@keyframes vault-breathe{from{transform:translate3d(-10px,0,0) scale(.92);opacity:.65}to{transform:translate3d(10px,12px,0) scale(1.12);opacity:1}}
+@media(prefers-reduced-motion:reduce){.vault-shell::before{animation:none}}
+
+/* Nexus visual system — refined dark surfaces, calm contrast and tactile controls */
+:root{
+  --bg:#08090d;
+  --surface-1:#101219;
+  --surface-2:#171a23;
+  --line:rgba(255,255,255,.085);
+  --muted:rgba(238,240,248,.48);
+  --accent:#a78bfa;
+  --accent-2:#7c8cff;
+}
+html,body{background:var(--bg)}
+body{background:radial-gradient(ellipse at 50% -18%,rgba(124,92,220,.19),transparent 48%),radial-gradient(ellipse at 100% 58%,rgba(57,89,160,.07),transparent 42%),var(--bg)}
+#app{background:linear-gradient(180deg,#0b0c12 0%,#090a0f 42%,#08090d 100%);box-shadow:0 0 100px rgba(0,0,0,.55)}
+.glass{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.09);box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.post-card{border-radius:26px}
+.sheet{background:linear-gradient(180deg,#171922 0%,#11131a 100%);border-color:rgba(255,255,255,.09);box-shadow:0 -28px 90px rgba(0,0,0,.58)}
+input,textarea,select{color-scheme:dark}
+input::placeholder,textarea::placeholder{color:rgba(238,240,248,.32)}
+button{touch-action:manipulation}
+button.press:active{filter:brightness(1.13)}
+#bnav{background:rgba(16,18,26,.88)!important;border:1px solid rgba(255,255,255,.09);box-shadow:0 14px 40px rgba(0,0,0,.38);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+#bd{z-index:40;display:block;visibility:hidden}#bd.open{visibility:visible}#bnav{z-index:120!important;opacity:1;filter:none!important;pointer-events:auto}#bnav.hide{opacity:0;pointer-events:none}
+.nav-item.active{background:linear-gradient(135deg,#eeeaff,#d9d1ff);color:#171321;box-shadow:0 4px 18px rgba(167,139,250,.18)}
+.etab{border:1px solid transparent}
+.etab:not(.bg-white){border-color:rgba(255,255,255,.07);background:rgba(255,255,255,.045)}
+.etab.bg-white{background:linear-gradient(135deg,#eeeaff,#d9d1ff);color:#171321}
+#toast{background:rgba(238,236,255,.96);color:#171321}
+@media(min-width:700px){
+  body{padding:20px 0}
+  #app{height:min(900px,calc(100dvh - 40px));border:1px solid rgba(255,255,255,.08);border-radius:34px}
+}
+@media(prefers-reduced-motion:reduce){.view.active{animation:none}}
+
+
+/* Messaging experience */
+.messages-view{position:relative}
+.messages-header{height:62px;flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-left:14px;padding-right:14px;gap:10px;transition:opacity .2s,transform .25s}
+.messages-header h2{font-size:21px;font-weight:750;letter-spacing:-.65px;text-align:center}
+.messages-inbox-pill{height:40px;min-width:108px;padding:0 13px;border-radius:999px;display:flex;align-items:center;gap:8px;justify-self:start;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(124,140,255,.08));border:1px solid rgba(167,139,250,.2);font-size:12px;font-weight:650;color:#e9e2ff}
+.messages-actions{display:flex;justify-content:flex-end;gap:8px}
+.message-icon-btn{width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.09);color:#f2efff;box-shadow:inset 0 1px rgba(255,255,255,.04)}
+.messages-search-wrap{position:relative;z-index:3;display:flex;align-items:center;gap:8px;padding:0 13px 13px;transition:top .25s,padding .25s,transform .36s cubic-bezier(.22,.8,.22,1)}
+.messages-search-shell{height:46px;border-radius:16px;display:flex;align-items:center;gap:10px;padding:0 14px;flex:1;min-width:0;color:rgba(255,255,255,.42);transition:border-radius .2s,background .2s}
+.messages-search-shell:focus-within{border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.075)}
+.messages-search-shell input{width:100%;min-width:0;background:transparent;outline:none;border:0;color:#fff;font-size:14px}
+.messages-search-shell input::-webkit-search-cancel-button{-webkit-appearance:none}
+.search-close{display:none;opacity:0;transform:scale(.85);transition:opacity .2s,transform .2s}
+.chat-search-meta{display:none;padding:2px 16px 10px;flex:0 0 auto}
+.chat-search-heading{display:flex;align-items:center;justify-content:space-between;margin:1px 2px 10px;font-size:13px;font-weight:700;color:rgba(255,255,255,.86)}
+.chat-sort-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+.chat-sort-row::-webkit-scrollbar{display:none}
+.chat-filter-chip{white-space:nowrap;padding:8px 13px;border-radius:999px;font-size:11px;font-weight:650;color:rgba(255,255,255,.55);background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
+.chat-filter-chip.active{color:#171321;background:linear-gradient(135deg,#eeeaff,#d9d1ff);border-color:transparent}
+.messages-list{padding:0 9px calc(18px + var(--sb))}
+.messages-list .chat-row{width:100%;display:flex;align-items:center;gap:12px;padding:11px 9px;text-align:left;border-radius:18px;transition:background .18s}
+.messages-list .chat-row:active{background:rgba(255,255,255,.055)}
+.chat-row-avatar{width:53px;height:53px;flex:0 0 53px;border-radius:50%;object-fit:cover;background:#20212b;border:1px solid rgba(255,255,255,.08)}
+.chat-row-copy{flex:1;min-width:0}
+.chat-row-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chat-row-title strong{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-row-time{font-size:10px;color:rgba(255,255,255,.34);flex:0 0 auto}
+.chat-row-preview{display:flex;align-items:center;gap:7px;margin-top:4px;color:rgba(255,255,255,.43);font-size:12px}
+.chat-row-preview span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-unread{min-width:19px;height:19px;padding:0 5px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#a78bfa,#7c8cff);font-size:10px;font-weight:750;color:#111}
+.messages-view.search-mode .messages-header{opacity:0;transform:translateY(-12px);pointer-events:none}
+.messages-view.search-mode .messages-search-wrap{position:absolute;top:max(12px,var(--st));left:0;right:0;padding:0 13px;align-items:center}
+.messages-view.search-mode .messages-search-shell{height:46px;border-radius:999px}
+.messages-view.search-mode .search-close{display:flex;opacity:1;transform:scale(1)}
+.messages-view.search-mode .chat-search-meta{display:block;padding-top:8px}
+.messages-view.search-mode .messages-list{padding-bottom:calc(22px + var(--sb))}
+.messages-view.search-mode .messages-search-shell input{font-size:15px}
+.messages-view.search-mode .messages-search-wrap{top:max(12px,var(--st));padding:0 13px;gap:9px;will-change:transform}
+.messages-view.search-mode .messages-search-shell{min-width:0;flex:1}
+.messages-view.search-mode .search-close{display:flex!important;opacity:1;transform:scale(1);width:42px;height:42px;flex:0 0 42px;background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14)}
+.messages-view.search-mode .chat-search-meta{display:block!important;position:absolute;top:calc(max(12px,var(--st)) + 58px);left:0;right:0;z-index:2;padding:10px 16px 12px;background:linear-gradient(180deg,rgba(8,9,14,.98),rgba(8,9,14,.88));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.messages-view.search-mode .chat-search-heading{margin:0 2px 9px}
+.messages-view.search-mode .messages-list{padding-top:116px;padding-bottom:calc(86px + var(--sb))}
+.messages-view.search-mode #clist .chat-row{padding-top:12px;padding-bottom:12px}
+@media(max-width:370px){.messages-view.search-mode .messages-search-wrap{padding-left:10px;padding-right:10px}.messages-view.search-mode .messages-search-shell{padding:0 12px}.messages-view.search-mode .search-close{width:40px;height:40px;flex-basis:40px}}
+
+.chat-view{background:radial-gradient(ellipse at 50% 0%,rgba(124,92,220,.09),transparent 45%),#090a10}
+.chat-header{display:flex;align-items:center;gap:9px;padding:0 12px 10px;border-bottom:1px solid rgba(255,255,255,.055);flex:0 0 auto;background:rgba(10,11,17,.76);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:2}
+.chat-person{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.chat-person img{border:1px solid rgba(255,255,255,.12)}
+.chat-header-actions{display:flex;gap:7px}
+.chat-context-line{height:33px;flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:0 17px;color:rgba(255,255,255,.38);font-size:10px;letter-spacing:.15px}
+.chat-context-dot{width:6px;height:6px;border-radius:50%;background:#9c8af7;box-shadow:0 0 9px rgba(167,139,250,.55)}
+.chat-context-spacer{flex:1}
+.chat-messages{padding:15px 13px 20px;display:flex;flex-direction:column;gap:9px;background-size:cover;background-position:center;transition:background .25s}
+.chat-messages .bubble-me,.chat-messages .bubble-them{max-width:min(80%,330px);padding:10px 14px;font-size:14px;line-height:1.45;box-shadow:0 4px 15px rgba(0,0,0,.13);overflow-wrap:anywhere}
+.chat-messages .bubble-them{background:rgba(34,36,47,.88);border-color:rgba(255,255,255,.075);backdrop-filter:blur(12px)}
+.chat-messages .bubble-me{background:linear-gradient(135deg,#7964d9,#a56ce2);border-radius:19px 19px 5px 19px}
+.chat-composer-wrap{flex:0 0 auto;padding:8px 11px 5px;background:linear-gradient(180deg,rgba(9,10,16,.78),#0b0c12);border-top:1px solid rgba(255,255,255,.055)}
+.chat-composer{height:51px;display:flex;align-items:center;gap:9px;padding:0 6px;border-radius:19px;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.085);box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.composer-tool{width:36px;height:36px;flex:0 0 36px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.65);background:rgba(255,255,255,.055)}
+.chat-composer input{flex:1;min-width:0;height:100%;background:transparent;border:0;outline:none;color:#fff;font-size:14px}
+.chat-composer input::placeholder{color:rgba(255,255,255,.34)}
+.composer-send{width:39px;height:39px;flex:0 0 39px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#8b78e8,#a56ce2);box-shadow:0 4px 14px rgba(139,120,232,.28)}
+.composer-hint{height:13px;margin-top:4px;text-align:center;font-size:9px;color:rgba(255,255,255,.2)}
+.chat-wallpaper-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.chat-wallpaper-option{height:100px;border-radius:17px;border:2px solid transparent;position:relative;overflow:hidden}
+.chat-wallpaper-option.active{border-color:#c4b5fd;box-shadow:0 0 0 2px rgba(196,181,253,.18)}
+.chat-wallpaper-option span{position:absolute;left:10px;bottom:9px;font-size:11px;font-weight:700;text-shadow:0 2px 8px #000}
+@media(max-width:370px){.messages-inbox-pill{min-width:40px;width:40px;padding:0;justify-content:center}.messages-inbox-pill span{display:none}.messages-header h2{font-size:19px}.chat-header-actions{gap:4px}.chat-header .message-icon-btn{width:37px;height:37px;flex-basis:37px}}
+.chat-message-bubble{max-width:min(80%,330px);display:flex;flex-direction:column;gap:4px;padding:10px 13px;font-size:14px;line-height:1.45;box-shadow:0 4px 15px rgba(0,0,0,.13);overflow-wrap:anywhere}.chat-message-bubble.bubble-them{background:rgba(34,36,47,.88);border:1px solid rgba(255,255,255,.075);border-radius:19px 19px 19px 5px;backdrop-filter:blur(12px)}.chat-message-bubble.bubble-me{background:linear-gradient(135deg,#7964d9,#a56ce2);border-radius:19px 19px 5px 19px}.chat-message-time{align-self:flex-end;font-size:9px;line-height:1;color:rgba(255,255,255,.58)}.chat-empty-state{margin:auto;max-width:250px;padding:22px 18px;text-align:center;border-radius:24px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(14px)}.chat-empty-icon{width:42px;height:42px;margin:0 auto 12px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(167,139,250,.24),rgba(124,140,255,.12));color:#d9ccff;font-size:20px}.chat-empty-state p{font-size:14px;font-weight:700;color:rgba(255,255,255,.85)}.chat-empty-state span{display:block;margin-top:5px;font-size:11px;color:rgba(255,255,255,.38)}
+@media(prefers-reduced-motion:reduce){.messages-header,.search-close,.chat-messages{transition:none}.messages-view.search-mode .messages-search-wrap{transition:transform .28s cubic-bezier(.22,.8,.22,1),top .28s cubic-bezier(.22,.8,.22,1),padding .28s ease}}
+
 </style>
 </head>
 <body>
@@ -97,14 +234,14 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <div class="glass rounded-2xl px-4 py-3 mb-4"><p id="prof-bio" class="text-[13px] text-white/75 text-center leading-relaxed"></p></div>
 </div></div>
 <div id="view-me" class="view relative overflow-hidden">
-<div class="hero" style="background-image:url('https://picsum.photos/seed/mehero/1200/1600')"></div>
+<div id="me-hero" class="hero" style="background-image:url('https://picsum.photos/seed/mehero/1200/1600')"></div>
 <div class="relative z-10 flex items-center justify-between px-4" style="padding-top:max(12px,var(--st))">
 <span class="text-[15px] font-semibold">Мой профиль</span>
 <button onclick="go('settings')" class="w-10 h-10 rounded-full glass flex items-center justify-center press"><svg width="17" height="17" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
 </div>
 <div class="flex-1"></div>
 <div class="relative z-10 px-5" style="padding-bottom:calc(92px + var(--sb))">
-<div class="text-center mb-4"><h2 class="text-[28px] font-bold" id="me-name">Вы</h2><p class="text-[13px] text-white/55 mt-0.5" id="me-handle">@you</p></div>
+<div class="text-center mb-4"><img id="me-avatar" src="https://i.pravatar.cc/300?u=me" class="w-24 h-24 rounded-full object-cover border-4 border-[#101012] shadow-xl mx-auto mb-3" alt="Аватар профиля"><h2 class="text-[28px] font-bold" id="me-name">Вы</h2><p class="text-[13px] text-white/55 mt-0.5" id="me-handle">@you</p></div>
 <button onclick="openEditProfile()" class="w-full max-w-[240px] mx-auto h-11 rounded-full glass text-white font-semibold text-[14px] press mb-5 block">Редактировать</button>
 <div class="flex justify-center gap-10 mb-4">
 <div class="text-center"><p class="text-[20px] font-bold" id="me-posts">0</p><p class="text-[11px] text-white/45">Посты</p></div>
@@ -136,6 +273,8 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <div class="flex-1 pb-0.5"><h2 id="ch-name" class="text-[20px] font-bold"></h2><p id="ch-meta" class="text-[12px] text-white/45"></p></div>
 </div>
 <p id="ch-desc" class="text-[13px] text-white/55 mb-3"></p>
+<button id="ch-edit" onclick="openChannelEdit()" hidden class="w-full h-9 rounded-full glass text-white/80 text-[12px] font-semibold press mb-2">Настроить канал</button>
+<button id="ch-new-post" onclick="openChannelPost()" hidden class="w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-2">Создать публикацию</button>
 <button id="ch-sub" onclick="toggleChSub()" class="w-full h-10 rounded-full bg-white text-black font-semibold text-[14px] press mb-3">Подписаться</button>
 </div></header>
 <div class="flex-1 overflow-y-auto ns px-3 space-y-3" style="padding-bottom:calc(86px + var(--sb))" id="ch-posts"></div>
@@ -150,6 +289,7 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <span id="cart-n" class="hidden absolute -top-0.5 -right-0.5 min-w-[15px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center">0</span>
 </button></div>
 <p id="sh-desc" class="text-[12.5px] text-white/50 px-1"></p>
+<button id="sh-edit-shop" onclick="openShopEdit()" hidden class="mt-3 ml-1 mr-3 text-[13px] font-semibold text-violet-300 press">Настроить магазин</button><button id="sh-add-product" onclick="openProductCreate()" hidden class="mt-3 ml-1 text-[13px] font-semibold text-violet-300 press">＋ Добавить товар</button>
 </header>
 <div class="flex-1 overflow-y-auto ns px-3" style="padding-bottom:calc(86px + var(--sb))"><div class="grid grid-cols-2 gap-2.5" id="sh-grid"></div></div>
 </div>
@@ -161,25 +301,57 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 </header>
 <div class="flex-1 overflow-y-auto ns px-3 space-y-2" style="padding-bottom:calc(86px + var(--sb))" id="nlist"></div>
 </div>
-<div id="view-messages" class="view">
-<header class="px-4 pb-2" style="padding-top:max(12px,var(--st))"><h2 class="text-[24px] font-bold">Сообщения</h2></header>
-<div class="px-3 pb-2"><div class="flex items-center gap-2 glass rounded-2xl px-3.5 py-2.5">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-<input id="csearch" type="search" placeholder="Поиск" class="bg-transparent outline-none text-[14px] flex-1 placeholder:text-white/30" oninput="renderChats()">
-</div></div>
-<div class="flex-1 overflow-y-auto ns" style="padding-bottom:calc(86px + var(--sb))" id="clist"></div>
-</div>
-<div id="view-chat" class="view">
-<header class="px-2 pb-2 flex items-center gap-2 border-b border-white/5" style="padding-top:max(10px,var(--st))">
-<button onclick="go('messages')" class="w-10 h-10 rounded-full flex items-center justify-center press"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-<img id="cv-av" class="w-9 h-9 rounded-full object-cover" alt="">
-<div class="flex-1 min-w-0"><p id="cv-name" class="text-[14px] font-semibold truncate"></p><p class="text-[11px] text-emerald-400/90">в сети</p></div>
+<div id="view-messages" class="view messages-view">
+<header id="messages-header" class="messages-header" style="padding-top:max(12px,var(--st))">
+  <button onclick="setChatFilter('all')" class="messages-inbox-pill press" aria-label="Все входящие">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M4 13h4l2 3h4l2-3h4"/></svg><span>Входящие</span>
+  </button>
+  <h2>Сообщения</h2>
+  <div class="messages-actions">
+    <button onclick="openNewChat()" class="message-icon-btn press" aria-label="Создать чат"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button onclick="showCallInfo()" class="message-icon-btn press" aria-label="Звонки"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.9L7.1 10.5a16 16 0 0 0 6.4 6.4l1.9-1.9a2 2 0 0 1 1.9-.6l3 .5a2 2 0 0 1 1.7 2z"/></svg></button>
+  </div>
 </header>
-<div class="flex-1 overflow-y-auto ns px-3 py-3 space-y-2" id="cmsgs"></div>
-<div class="px-2.5 pt-1.5 flex items-center gap-2" style="padding-bottom:max(10px,var(--sb))">
-<input id="cinput" type="text" placeholder="Сообщение…" class="flex-1 bg-[#1a1a1c] rounded-full px-4 py-2.5 text-[14px] outline-none border border-white/5" onkeydown="if(event.key==='Enter')sendMsg()">
-<button onclick="sendMsg()" class="w-10 h-10 rounded-full flex items-center justify-center press shrink-0" style="background:linear-gradient(135deg,#a855f7,#ec4899)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
-</div></div>
+<div id="messages-search-wrap" class="messages-search-wrap">
+  <div class="messages-search-shell glass">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7.5"/><path d="m16.5 16.5 4 4"/></svg>
+    <input id="csearch" type="search" autocomplete="off" placeholder="Поиск сообщений и людей" onfocus="startChatSearch()" oninput="renderChats()">
+  </div>
+  <button id="chat-search-close" onclick="closeChatSearch()" class="message-icon-btn search-close press" aria-label="Закрыть поиск"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+</div>
+<div id="chat-search-meta" class="chat-search-meta">
+  <div class="chat-search-heading"><span id="chat-search-caption">Недавние</span><span class="text-[10px] text-white/35">ВАШИ ДИАЛОГИ</span></div>
+  <div class="chat-sort-row" role="group" aria-label="Фильтр чатов">
+    <button data-chat-filter="all" onclick="setChatFilter('all')" class="chat-filter-chip active">Все</button>
+    <button data-chat-filter="unread" onclick="setChatFilter('unread')" class="chat-filter-chip">Непрочитанные</button>
+    <button data-chat-filter="groups" onclick="setChatFilter('groups')" class="chat-filter-chip">Группы</button>
+  </div>
+</div>
+<div class="flex-1 overflow-y-auto ns messages-list" id="clist"></div>
+</div>
+<div id="view-chat" class="view chat-view">
+<header class="chat-header" style="padding-top:max(8px,var(--st))">
+  <button onclick="go('messages')" class="message-icon-btn chat-back press" aria-label="Назад к сообщениям"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+  <button class="chat-person press" onclick="openActiveChatProfile()">
+    <img id="cv-av" class="w-10 h-10 rounded-full object-cover" alt="">
+    <span class="min-w-0 text-left"><span id="cv-name" class="block text-[14px] font-semibold truncate"></span><span id="cv-status" class="block text-[11px] text-white/40">Личный диалог</span></span>
+  </button>
+  <div class="chat-header-actions">
+    <button onclick="openChatWallpaper()" class="message-icon-btn press" aria-label="Обои чата"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></button>
+    <button onclick="showCallInfo()" class="message-icon-btn press" aria-label="Позвонить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.9L7.1 10.5a16 16 0 0 0 6.4 6.4l1.9-1.9a2 2 0 0 1 1.9-.6l3 .5a2 2 0 0 1 1.7 2z"/></svg></button>
+  </div>
+</header>
+<div class="chat-context-line"><span class="chat-context-dot"></span><span id="chat-context-label">Личная переписка</span><span class="chat-context-spacer"></span><button onclick="openChatWallpaper()" class="text-[11px] text-violet-200/80 press">Оформление</button></div>
+<div class="flex-1 overflow-y-auto ns chat-messages" id="cmsgs"></div>
+<div class="chat-composer-wrap" style="padding-bottom:max(10px,var(--sb))">
+  <div class="chat-composer">
+    <button onclick="insertChatEmoji('😊')" class="composer-tool press" aria-label="Добавить эмодзи"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.3 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></button>
+    <input id="cinput" type="text" placeholder="Написать сообщение…" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()" class="composer-send press" aria-label="Отправить сообщение"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg></button>
+  </div>
+  <p class="composer-hint">Enter — отправить</p>
+</div>
+</div>
 <div id="view-explore" class="view">
 <header class="px-3 pb-2" style="padding-top:max(12px,var(--st))">
 <div class="flex items-center gap-2 glass rounded-2xl px-3.5 py-2.5">
@@ -190,7 +362,7 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <button data-t="all" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-white text-black">Все</button>
 <button data-t="people" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Люди</button>
 <button data-t="channels" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Каналы</button>
-<button data-t="shops" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Магазины</button>
+<button data-t="shops" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Магазины</button><button data-t="clips" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Клипы</button><button data-t="music" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Музыка</button><button data-t="cinema" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Кино</button><button data-t="fitness" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Форма</button><button data-t="business" class="etab px-3.5 py-1.5 rounded-full text-[12px] font-medium glass text-white/70">Бизнес</button>
 </div>
 <div class="flex-1 overflow-y-auto ns px-3 space-y-2" style="padding-bottom:calc(86px + var(--sb))" id="eres"></div>
 </div>
@@ -204,17 +376,19 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <div id="view-compose" class="view">
 <header class="px-4 pb-2 flex items-center gap-3" style="padding-top:max(12px,var(--st))">
 <button onclick="go('home')" class="text-[14px] text-white/50 press">Отмена</button>
-<span class="flex-1 text-center text-[16px] font-semibold">Новый пост</span>
+<span id="compose-title" class="flex-1 text-center text-[16px] font-semibold">Новый пост</span>
 <button onclick="publishPost()" class="text-[14px] font-semibold press" style="color:#c084fc">Опубликовать</button>
 </header>
 <div class="flex-1 px-4 pt-2 overflow-y-auto">
 <textarea id="compose-text" class="compose-area" placeholder="Что у вас нового?" maxlength="500"></textarea>
+<div class="mt-3 flex items-center justify-between gap-3"><span class="text-[11px] text-white/40">Кто увидит публикацию</span><select id="compose-visibility" class="bg-white/[0.06] border border-white/10 rounded-full px-3 py-2 text-[11px] text-white"><option value="public">Все</option><option value="followers">Подписчики</option><option value="private">Только я</option></select></div>
 <div class="mt-3 flex gap-2 flex-wrap" id="compose-imgs"></div>
 <button onclick="addComposeImg()" class="mt-4 flex items-center gap-2 text-[13px] text-white/50 press">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
 Добавить фото</button>
-<p class="text-[11px] text-white/25 mt-6">Демо: данные сохраняются на устройстве.</p>
+<p class="text-[11px] text-white/25 mt-6">Без входа пост останется на устройстве. При подключённом аккаунте он синхронизируется с облачной лентой.</p>
 </div></div>
+<input id="compose-file-input" type="file" accept="image/*" multiple hidden onchange="handleComposeFiles(this)"><input id="story-file-input" type="file" accept="image/*" multiple hidden onchange="handleStoryFiles(this)">
 <div id="story-viewer">
 <div class="flex gap-1 px-2" style="padding-top:max(10px,var(--st))" id="sv-bars"></div>
 <div class="flex items-center gap-2 px-3 py-2">
@@ -231,7 +405,30 @@ html,body{height:100%;background:#000;color:#fff;font-family:Inter,system-ui,san
 <div id="comments-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Комментарии</p><div class="sbody space-y-3 pb-2" id="clist-c"></div><div class="sfoot"><div class="flex gap-2"><input id="cminput" type="text" placeholder="Комментарий…" class="flex-1 bg-[#1a1a1c] rounded-full px-4 py-2.5 text-[13px] outline-none border border-white/5" onkeydown="if(event.key==='Enter')addCm()"><button onclick="addCm()" class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center press font-bold">↑</button></div></div></div>
 <div id="product-sheet" class="sheet"><div class="handle"></div><div class="sbody pb-2" id="pdetail"></div><div class="sfoot" id="pfoot"></div></div>
 <div id="cart-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Корзина</p><div class="sbody space-y-3 pb-2" id="cart-list"></div><div class="sfoot" id="cart-foot"></div></div>
-<div id="edit-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-3">Редактировать профиль</p><div class="sbody space-y-3 pb-2"><label class="text-[12px] text-white/40">Имя</label><input id="edit-name" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/40">Username</label><input id="edit-handle" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/40">О себе</label><textarea id="edit-bio" rows="3" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea></div><div class="sfoot"><button onclick="saveProfile()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить</button></div></div>
+<div id="channel-create-sheet" class="sheet"><div class="handle"></div><p id="channel-create-title" class="text-[16px] font-semibold mb-2">Новый канал</p><div class="sbody space-y-3 pb-2"><label class="text-[12px] text-white/45">Название</label><input id="new-channel-name" maxlength="80" placeholder="Например, Design Daily" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/45">Описание</label><textarea id="new-channel-desc" maxlength="500" rows="3" placeholder="О чём этот канал?" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><button onclick="chooseChannelCover()" class="w-full py-3 rounded-xl bg-white/[0.06] text-[13px] text-white/70 press">＋ Добавить обложку канала</button><img id="channel-cover-preview" hidden class="w-full max-h-36 object-cover rounded-xl" alt="Предпросмотр обложки"><input id="channel-cover-input" type="file" accept="image/*" hidden onchange="handleChannelCover(this)"><label class="text-[12px] text-white/45">Доступ</label><select id="new-channel-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="public">Публичный — можно найти</option><option value="private">Приватный — только участники</option></select></div><div class="sfoot"><button id="channel-save-btn" onclick="createChannel()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать канал</button></div></div>
+<div id="shop-create-sheet" class="sheet"><div class="handle"></div><p id="shop-create-title" class="text-[16px] font-semibold mb-2">Новый магазин</p><div class="sbody space-y-3 pb-2"><label class="text-[12px] text-white/45">Название</label><input id="new-shop-name" maxlength="80" placeholder="Название бренда или магазина" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/45">Описание</label><textarea id="new-shop-desc" maxlength="500" rows="3" placeholder="Что вы продаёте?" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><label class="text-[12px] text-white/45">Доступ</label><select id="new-shop-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="public">Публичный магазин</option><option value="private">Приватный каталог</option></select></div><div class="sfoot"><button id="shop-save-btn" onclick="createShop()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать магазин</button></div></div>
+<div id="product-create-sheet" class="sheet"><div class="handle"></div><p id="product-create-title" class="text-[16px] font-semibold mb-2">Новый товар</p><div class="sbody space-y-3 pb-2"><label class="text-[12px] text-white/45">Название</label><input id="new-product-name" maxlength="120" placeholder="Название товара" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/45">Цена, ₽</label><input id="new-product-price" inputmode="decimal" placeholder="0" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/45">Описание</label><textarea id="new-product-desc" maxlength="3000" rows="3" placeholder="Подробности о товаре" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><button onclick="chooseProductImage()" class="w-full py-3 rounded-xl bg-white/[0.06] text-[13px] text-white/70 press">＋ Добавить фото</button><img id="product-image-preview" hidden class="w-full max-h-40 object-cover rounded-xl" alt="Предпросмотр фото"></div><div class="sfoot"><button id="product-save-btn" onclick="createProduct()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Добавить товар</button></div></div>
+<input id="product-file-input" type="file" accept="image/*" hidden onchange="handleProductFile(this)">
+<div id="privacy-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Конфиденциальность</p><p class="text-[12px] text-white/45 mb-3">Локальная настройка прототипа. Реальная серверная защита включится после подключения аккаунтов.</p><div class="sbody space-y-3 pb-2"><label class="text-[12px] text-white/45">Кто может видеть профиль</label><select id="privacy-profile-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="public">Все пользователи</option><option value="followers">Одобренные подписчики</option><option value="private">Только я</option></select></div><div class="sfoot"><button onclick="savePrivacySettings()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить</button></div></div>
+<div id="blocks-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-1">Блокировки</p><p class="text-[11px] text-white/40 mb-2">Локальный список для тестирования</p><div id="block-list" class="sbody pb-2"></div><div class="sfoot"><button onclick="closeSheet()" class="w-full h-11 rounded-full glass text-white font-semibold text-[14px] press">Готово</button></div></div>
+<div id="clip-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новый клип</p><div class="sbody space-y-3 pb-2"><p class="text-[11px] text-white/40">Вертикальное видео до 100 МБ. Сейчас ролик хранится только на этом устройстве.</p><button onclick="chooseClipVideo()" class="w-full py-3 rounded-xl bg-white/[0.06] text-[13px] text-white/75 press">＋ Выбрать видео</button><video id="clip-preview" hidden class="w-full max-h-64 rounded-xl bg-black" playsinline muted controls></video><textarea id="clip-caption" maxlength="1500" rows="3" placeholder="Добавь описание к клипу…" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><input id="clip-file-input" type="file" accept="video/*" hidden onchange="handleClipVideo(this)"></div><div class="sfoot"><button onclick="createClip()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Опубликовать клип</button></div></div>
+<div id="playlist-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новый плейлист</p><div class="sbody space-y-3 pb-2"><input id="playlist-name" maxlength="120" placeholder="Название плейлиста" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="playlist-desc" rows="2" placeholder="Описание" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><select id="playlist-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="private">Приватный</option><option value="followers">Подписчики</option><option value="public">Публичный</option></select></div><div class="sfoot"><button onclick="createPlaylist()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать плейлист</button></div></div>
+<div id="track-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Добавить трек</p><div class="sbody space-y-3 pb-2"><input id="track-title" maxlength="200" placeholder="Название трека" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><input id="track-artist" maxlength="200" placeholder="Исполнитель" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><select id="track-provider" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="spotify">Spotify</option><option value="apple_music">Apple Music</option><option value="youtube_music">YouTube Music</option><option value="youtube">YouTube</option><option value="other">Другое</option></select><input id="track-url" type="url" placeholder="HTTPS-ссылка на трек" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><div class="sfoot"><button onclick="createTrack()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Добавить трек</button></div></div>
+<div id="watchlist-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новая подборка</p><div class="sbody space-y-3 pb-2"><input id="watchlist-name" maxlength="120" placeholder="Название подборки" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="watchlist-desc" rows="2" placeholder="Описание" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><select id="watchlist-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="private">Приватная</option><option value="followers">Подписчики</option><option value="public">Публичная</option></select></div><div class="sfoot"><button onclick="createWatchlist()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать подборку</button></div></div>
+<div id="watch-item-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Добавить в подборку</p><div class="sbody space-y-3 pb-2"><input id="watch-item-title" maxlength="240" placeholder="Название фильма или сериала" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><select id="watch-item-type" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="movie">Фильм</option><option value="series">Сериал</option><option value="documentary">Документальный</option><option value="live_event">Трансляция</option></select><select id="watch-item-provider" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="kinopoisk">Кинопоиск</option><option value="ivi">Иви</option><option value="netflix">Netflix</option><option value="prime_video">Prime Video</option><option value="disney_plus">Disney+</option><option value="youtube">YouTube</option><option value="other">Другое</option></select><input id="watch-item-url" type="url" placeholder="HTTPS-ссылка на легальную площадку" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><div class="sfoot"><button onclick="createWatchlistItem()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Добавить</button></div></div>
+<div id="fitness-profile-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Мой профиль формы</p><p class="text-[11px] text-white/40 mb-3">Личные параметры. Не медицинская диагностика.</p><div class="sbody space-y-3 pb-2"><input id="fitness-height" inputmode="decimal" placeholder="Рост, см" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><input id="fitness-weight" inputmode="decimal" placeholder="Вес, кг" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="fitness-goal" rows="2" maxlength="500" placeholder="Цель и заметки" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea></div><div class="sfoot"><button onclick="saveFitnessProfile()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить</button></div></div>
+<div id="workout-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новая тренировка</p><div class="sbody space-y-3 pb-2"><select id="workout-type" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option>Силовая</option><option>Кардио</option><option>Бег</option><option>Ходьба</option><option>Растяжка</option><option>Другое</option></select><input id="workout-duration" inputmode="numeric" placeholder="Длительность, минут" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="workout-notes" rows="3" maxlength="4000" placeholder="Упражнения, подходы, заметки" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea></div><div class="sfoot"><button onclick="createWorkout()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить тренировку</button></div></div>
+<div id="nutrition-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Запись питания</p><div class="sbody space-y-3 pb-2"><input id="nutrition-food" maxlength="200" placeholder="Продукт или блюдо" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><div class="grid grid-cols-2 gap-2"><input id="nutrition-grams" inputmode="decimal" placeholder="Граммы" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><input id="nutrition-calories" inputmode="decimal" placeholder="Ккал" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><div class="grid grid-cols-3 gap-2"><input id="nutrition-protein" inputmode="decimal" placeholder="Белки, г" class="w-full bg-[#1a1a1c] rounded-xl px-3 py-3 text-[12px] outline-none border border-white/5"><input id="nutrition-carbs" inputmode="decimal" placeholder="Углеводы, г" class="w-full bg-[#1a1a1c] rounded-xl px-3 py-3 text-[12px] outline-none border border-white/5"><input id="nutrition-fat" inputmode="decimal" placeholder="Жиры, г" class="w-full bg-[#1a1a1c] rounded-xl px-3 py-3 text-[12px] outline-none border border-white/5"></div></div><div class="sfoot"><button onclick="createNutritionEntry()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить питание</button></div></div>
+<div id="chat-wallpaper-sheet" class="sheet"><div class="handle"></div><div class="flex items-center justify-between mb-2"><p class="text-[16px] font-semibold">Оформление чата</p><button onclick="closeSheet()" class="w-9 h-9 rounded-full glass flex items-center justify-center press" aria-label="Закрыть">×</button></div><p class="text-[11px] text-white/40 mb-4">Обои видны только в этом диалоге на вашем устройстве</p><div class="sbody pb-2"><div class="chat-wallpaper-grid"><button class="chat-wallpaper-option" data-wallpaper="midnight" style="background:radial-gradient(circle at 80% 20%,#47376f,transparent 55%),linear-gradient(135deg,#151827,#080a12)" onclick="chooseChatWallpaper('midnight')"><span>Полночь</span></button><button class="chat-wallpaper-option" data-wallpaper="aurora" style="background:radial-gradient(circle at 15% 15%,#256b69,transparent 55%),radial-gradient(circle at 90% 90%,#5a3a83,transparent 55%),#0b151b" onclick="chooseChatWallpaper('aurora')"><span>Северное сияние</span></button><button class="chat-wallpaper-option" data-wallpaper="graphite" style="background:linear-gradient(145deg,#30343d,#101116 70%)" onclick="chooseChatWallpaper('graphite')"><span>Графит</span></button><button class="chat-wallpaper-option" data-wallpaper="lavender" style="background:radial-gradient(circle at 70% 10%,#624b8e,transparent 55%),linear-gradient(145deg,#29213c,#11101b)" onclick="chooseChatWallpaper('lavender')"><span>Лаванда</span></button><button class="chat-wallpaper-option" data-wallpaper="ocean" style="background:radial-gradient(circle at 20% 15%,#245c83,transparent 55%),linear-gradient(145deg,#102433,#090e18)" onclick="chooseChatWallpaper('ocean')"><span>Океан</span></button><button class="chat-wallpaper-option" data-wallpaper="plain" style="background:#090a10" onclick="chooseChatWallpaper('plain')"><span>Минимализм</span></button></div></div></div><div id="new-chat-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-1">Новое сообщение</p><p class="text-[11px] text-white/40 mb-3">Выбери одного или нескольких собеседников</p><div class="sbody space-y-3 pb-2"><input id="chat-group-name" maxlength="80" placeholder="Название группы (необязательно)" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><select id="chat-people" multiple size="6" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"></select><p class="text-[10px] text-white/35">Локальный прототип: сообщения пока сохраняются на этом устройстве.</p></div><div class="sfoot"><button onclick="createChat()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать чат</button></div></div>
+<div id="report-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Пожаловаться</p><p class="text-[11px] text-white/40 mb-3">Жалоба сохранится локально в прототипе. Отправка модераторам будет подключена с сервером.</p><div class="sbody space-y-3 pb-2"><input id="report-target-type" type="hidden"><input id="report-target-id" type="hidden"><select id="report-reason" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] border border-white/5"><option value="spam">Спам или мошенничество</option><option value="harassment">Оскорбления или травля</option><option value="impersonation">Выдаёт себя за другого</option><option value="illegal">Незаконный контент</option><option value="other">Другое</option></select><textarea id="report-details" maxlength="2000" rows="3" placeholder="Дополнительные детали (необязательно)" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea></div><div class="sfoot"><button onclick="submitReport()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Отправить жалобу</button></div></div>
+<div id="organization-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новая организация</p><div class="sbody space-y-3 pb-2"><input id="organization-name" maxlength="120" placeholder="Название компании или проекта" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="organization-desc" maxlength="1000" rows="3" placeholder="Описание" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><p class="text-[10px] text-white/35">Организация может объединять несколько каналов и магазинов.</p></div><div class="sfoot"><button onclick="createOrganization()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать организацию</button></div></div>
+<div id="organization-link-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Связать ресурсы</p><div class="sbody space-y-3 pb-2"><label class="text-[11px] text-white/40">Каналы — можно выбрать несколько</label><select id="organization-channels" multiple size="5" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"></select><label class="text-[11px] text-white/40">Магазины — можно выбрать несколько</label><select id="organization-shops" multiple size="5" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"></select></div><div class="sfoot"><button onclick="saveOrganizationLinks()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить связи</button></div></div>
+<div id="organization-members-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Команда организации</p><p class="text-[11px] text-white/40 mb-3">Добавляй участников и назначай базовую роль. Пока это локальный прототип.</p><div class="sbody space-y-3 pb-2"><label class="text-[11px] text-white/40">Участники</label><select id="organization-members" multiple size="6" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"></select><label class="text-[11px] text-white/40">Роль выбранных участников</label><select id="organization-member-role" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"><option value="admin">Администратор</option><option value="moderator">Модератор</option><option value="member">Участник</option></select></div><div class="sfoot"><button onclick="saveOrganizationMembers()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить команду</button></div></div>
+<div id="space-create-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Новое пространство</p><div class="sbody space-y-3 pb-2"><input id="space-name" maxlength="120" placeholder="Название пространства" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><textarea id="space-desc" maxlength="1500" rows="2" placeholder="Описание" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea><select id="space-type" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"><option value="community">Сообщество</option><option value="team">Команда</option><option value="project">Проект</option></select><select id="space-visibility" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"><option value="private">Приватное</option><option value="followers">Участники</option><option value="public">Публичное</option></select></div><div class="sfoot"><button onclick="createSpace()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Создать пространство</button></div></div>
+<div id="space-link-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-2">Ресурсы пространства</p><div class="sbody space-y-3 pb-2"><label class="text-[11px] text-white/40">Каналы</label><select id="space-channels" multiple size="4" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"></select><label class="text-[11px] text-white/40">Магазины</label><select id="space-shops" multiple size="4" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[13px] border border-white/5"></select></div><div class="sfoot"><button onclick="saveSpaceLinks()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить связи</button></div></div>
+<input id="health-vault-import-file" type="file" accept="application/json,.json" hidden onchange="importHealthVaultBackup(this)"><div id="auth-sheet" class="sheet"><div class="handle"></div><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-xl bg-violet-400/10 flex items-center justify-center text-xl">✦</div><p id="auth-title" class="text-[16px] font-semibold">Войти в Nexus</p></div><p id="auth-info" class="text-[11px] text-white/40 leading-relaxed mb-3"></p><div class="sbody space-y-3 pb-2"><div id="auth-name-wrap" hidden><label class="text-[11px] text-white/40">Имя</label><input id="auth-name" maxlength="60" autocomplete="name" placeholder="Как тебя называть" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><div id="auth-username-wrap" hidden><label class="text-[11px] text-white/40">Логин</label><input id="auth-username" maxlength="30" autocomplete="username" placeholder="например, max_154" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><label class="text-[11px] text-white/40">Электронная почта</label><input id="auth-email" type="email" autocomplete="email" placeholder="name@example.com" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><div id="auth-password-wrap"><label class="text-[11px] text-white/40">Пароль</label><input id="auth-password" type="password" autocomplete="current-password" minlength="12" placeholder="Минимум 12 символов" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><div id="auth-confirm-wrap" hidden><label class="text-[11px] text-white/40">Повтори пароль</label><input id="auth-confirm" type="password" autocomplete="new-password" minlength="12" placeholder="Повтори пароль" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><p id="auth-error" role="alert" class="text-[11px] text-red-300 min-h-4"></p><div class="flex items-center justify-between text-[11px]"><button id="auth-switch" onclick="setAuthMode(AUTH_MODE==='login'?'signup':'login')" class="text-white/55 press">Нет аккаунта? Создать</button><button id="auth-reset" onclick="setAuthMode('reset')" class="text-violet-300 press">Забыл пароль?</button></div></div><div class="sfoot"><button id="auth-submit" onclick="submitAuth()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Войти</button></div></div>
+<div id="health-vault-sheet" class="sheet"><div class="handle"></div><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-xl bg-emerald-400/10 flex items-center justify-center text-xl">🔐</div><p id="health-vault-title" class="text-[16px] font-semibold">Личный сейф здоровья</p></div><p id="health-vault-copy" class="text-[12px] text-white/45 leading-relaxed mb-3"></p><div class="sbody space-y-3 pb-2"><label class="text-[11px] text-white/40">Парольная фраза</label><input id="health-vault-pass" type="password" autocomplete="current-password" minlength="12" placeholder="Минимум 12 символов" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><div id="health-vault-confirm-wrap"><label class="text-[11px] text-white/40">Повтори парольную фразу</label><input id="health-vault-confirm" type="password" autocomplete="new-password" placeholder="Повтори пароль" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"></div><p id="health-vault-error" role="alert" class="text-[11px] text-red-300 min-h-4"></p><p class="text-[10px] text-white/30">Если забудешь парольную фразу, восстановить данные будет невозможно. Храни её в надёжном менеджере паролей.</p></div><div class="sfoot"><button id="health-vault-submit" onclick="submitHealthVault()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Продолжить</button></div></div>
+<div id="edit-sheet" class="sheet"><div class="handle"></div><p class="text-[16px] font-semibold mb-3">Редактировать профиль</p><div class="sbody space-y-3 pb-2"><div class="grid grid-cols-2 gap-3"><div><button onclick="chooseProfileAvatar()" class="w-full py-2.5 rounded-xl bg-white/[0.06] text-[12px] press">Фото профиля</button><img id="edit-avatar-preview" class="w-20 h-20 rounded-full object-cover mt-2 mx-auto" alt="Аватар"></div><div><button onclick="chooseProfileCover()" class="w-full py-2.5 rounded-xl bg-white/[0.06] text-[12px] press">Обложка</button><img id="edit-cover-preview" class="w-full h-20 rounded-xl object-cover mt-2" alt="Обложка"></div></div><input id="edit-avatar-file" type="file" accept="image/*" hidden onchange="handleProfileAvatar(this)"><input id="edit-cover-file" type="file" accept="image/*" hidden onchange="handleProfileCover(this)"><label class="text-[12px] text-white/40">Имя</label><input id="edit-name" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/40">Username</label><input id="edit-handle" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5"><label class="text-[12px] text-white/40">О себе</label><textarea id="edit-bio" rows="3" class="w-full bg-[#1a1a1c] rounded-xl px-4 py-3 text-[14px] outline-none border border-white/5 resize-none"></textarea></div><div class="sfoot"><button onclick="saveProfile()" class="w-full h-11 rounded-full bg-white text-black font-semibold text-[14px] press">Сохранить</button></div></div>
 <nav id="bnav" class="absolute bottom-0 left-0 right-0 px-3 z-30" style="padding-bottom:max(5px,calc(var(--sb)*.55))">
 <div class="flex items-center justify-between rounded-full px-1 py-0.5 max-w-[300px] mx-auto" style="background:rgba(22,22,24,.92);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.07)">
 <button data-r="home" class="nav-btn nav-item active w-11 h-11 rounded-full flex items-center justify-center press" onclick="go('home')"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>

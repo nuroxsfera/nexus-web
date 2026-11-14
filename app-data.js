@@ -1,7 +1,13 @@
 const LS='atlantis_v2';
 const defaultDB=()=>({
   onboarded:false,
-  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊'},
+  me:{name:'Вы',handle:'@you',bio:'Привет, я в Atlantis 🌊',visibility:'public',avatar:'https://i.pravatar.cc/300?u=me',cover:'https://picsum.photos/seed/mehero/1200/1600'},
+  pendingAvatar:null,pendingCover:null,
+  blocked:{},
+  clips:[],pendingClipVideo:null,
+  playlists:[],watchlists:[],activePlaylist:null,activeWatchlist:null,
+  fitnessProfile:{},workouts:[],nutritionEntries:[],reports:[],
+  organizations:[],activeOrganization:null,spaces:[],activeSpace:null,
   following:{},channelSub:{},cart:[],seenStories:{},
   stories:[
     {id:'add',type:'add',name:'Добавить'},
@@ -40,11 +46,28 @@ const defaultDB=()=>({
     alfredo:{name:'Альфредо',handle:'@alfredo',bio:'Product design.',hero:'https://picsum.photos/seed/alfh/1200/1600',posts:67,followers:'11K',following:340}
   },
   activeChat:null,activePost:null,activeChannel:null,activeShop:null,activeProduct:null,etab:'all',
-  composeImgs:[],storyIdx:0,storyUser:null,storyTimer:null
+  composeImgs:[],composeChannelId:null,pendingProductImage:null,editingProductId:null,editingChannelId:null,editingShopId:null,pendingChannelCover:null,storyIdx:0,storyUser:null,storyTimer:null
 });
 
 let DB;
 try{DB=JSON.parse(localStorage.getItem(LS))||defaultDB()}catch(e){DB=defaultDB()}
 const def=defaultDB();
 for(const k of Object.keys(def)){if(DB[k]===undefined)DB[k]=def[k]}
-function save(){try{localStorage.setItem(LS,JSON.stringify({...DB,storyTimer:null}))}catch(e){}}
+// Strip account-backed records from older local snapshots; they are reloaded after authentication.
+DB.posts=(DB.posts||[]).filter(post=>!post.cloudId);
+DB.channels=(DB.channels||[]).filter(channel=>!channel.cloudId);
+DB.shops=(DB.shops||[]).filter(shop=>!shop.cloudId);
+DB.chats=(DB.chats||[]).filter(chat=>!chat.cloudId);
+DB.profiles=Object.fromEntries(Object.entries(DB.profiles||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+DB.following=Object.fromEntries(Object.entries(DB.following||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+DB.blocked=Object.fromEntries(Object.entries(DB.blocked||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+function save(){try{const snapshot={...DB,storyTimer:null};
+  snapshot.posts=(DB.posts||[]).filter(post=>!post.cloudId);
+  snapshot.channels=(DB.channels||[]).filter(channel=>!channel.cloudId);
+  snapshot.shops=(DB.shops||[]).filter(shop=>!shop.cloudId);
+  snapshot.chats=(DB.chats||[]).filter(chat=>!chat.cloudId);
+  snapshot.profiles=Object.fromEntries(Object.entries(DB.profiles||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  snapshot.following=Object.fromEntries(Object.entries(DB.following||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  snapshot.blocked=Object.fromEntries(Object.entries(DB.blocked||{}).filter(([key])=>!key.startsWith('cloud-user-')));
+  if(DB.me?.cloudId)snapshot.me={...DB.me,name:'Вы',handle:'@you',bio:'',avatar:'',cover:'',cloudId:null,visibility:'public'};
+  snapshot.fitnessProfile={};snapshot.workouts=[];snapshot.nutritionEntries=[];snapshot.healthMeasurements=[];snapshot.healthVaultUnlocked=false;localStorage.setItem(LS,JSON.stringify(snapshot));if(window.NEXUS_HEALTH_VAULT?.isUnlocked())void window.NEXUS_HEALTH_VAULT.persist(DB).catch(e=>console.warn('Health vault save failed:',e?.message||e))}catch(e){}}

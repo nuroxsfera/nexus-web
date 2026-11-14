@@ -1,0 +1,24 @@
+name: Quality checks
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check app.js
+      - run: node --check app-data.js
+      - run: node --check health-vault.js
+      - run: node --check auth.js
+      - run: node --check cloud-social.js
+      - run: node --check app-logic.js
+      - run: node --check api/config.js
+      - run: node --check api/health.js
+      - run: npm install
+      - run: npm test
