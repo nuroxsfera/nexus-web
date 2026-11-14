@@ -69,7 +69,7 @@ struct FeedView: View {
                 ForEach(stories) { story in
                     VStack(spacing: 7) {
                         ZStack {
-                            Circle().stroke(story.isAdd ? NexusStyle.line : NexusStyle.gradient, lineWidth: 2).frame(width: 61, height: 61)
+                            Circle().stroke(story.isAdd ? AnyShapeStyle(NexusStyle.line) : AnyShapeStyle(NexusStyle.gradient), lineWidth: 2).frame(width: 61, height: 61)
                             AvatarView(initials: story.initials, size: 53, tint: story.tint)
                             if story.isAdd {
                                 Circle().fill(NexusStyle.violet).frame(width: 19, height: 19).overlay(Image(systemName: "plus").font(.system(size: 10, weight: .bold)).foregroundStyle(.white)).offset(x: 22, y: 21)
